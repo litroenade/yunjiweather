@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#F5F8FC"
+            android:fillViewport="true"
+            tools:context=".ui.alert.AlertFragment">
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="18dp">
+
+        <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="天气预警"
+                android:textColor="@color/weather_text_primary"
+                android:textSize="24sp"
+                android:textStyle="bold"/>
+
+        <ProgressBar
+                android:id="@+id/alert_progress_bar"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="14dp"
+                android:visibility="gone"/>
+
+        <com.google.android.material.card.MaterialCardView
+                android:id="@+id/alert_empty_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="0dp">
+
+            <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:padding="28dp">
+
+                <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:text="暂无预警"
+                        android:textColor="@color/weather_text_primary"
+                        android:textSize="20sp"
+                        android:textStyle="bold"/>
+
+                <TextView
+                        android:id="@+id/alert_empty_text"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:gravity="center"
+                        android:textColor="@color/weather_text_secondary"
+                        android:textSize="14sp"/>
+
+                <com.google.android.material.button.MaterialButton
+                        android:id="@+id/refresh_alert_button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:text="刷新预警状态"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <LinearLayout
+                android:id="@+id/warning_list_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical"
+                android:visibility="gone"/>
+
+        <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:text="预警等级样式"
+                android:textColor="@color/weather_text_primary"
+                android:textSize="17sp"
+                android:textStyle="bold"/>
+
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:orientation="vertical">
+
+            <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="12dp"
+                    android:text="蓝色预警：注意天气变化"
+                    android:textColor="#155EEF"/>
+
+            <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="12dp"
+                    android:text="黄色预警：减少不必要外出"
+                    android:textColor="#B54708"/>
+
+            <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="12dp"
+                    android:text="橙色预警：加强安全防护"
+                    android:textColor="#C4320A"/>
+
+            <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:padding="12dp"
+                    android:text="红色预警：必要时暂停出行"
+                    android:textColor="#B42318"/>
+        </LinearLayout>
+    </LinearLayout>
+</ScrollView>

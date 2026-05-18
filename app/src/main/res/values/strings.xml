@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">云迹天气</string>
+    <string name="title_home">天气</string>
+    <string name="title_city">城市</string>
+    <string name="title_index">指数</string>
+    <string name="title_alert">预警</string>
+    <string name="title_mine">我的</string>
+</resources>

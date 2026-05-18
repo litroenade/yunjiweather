@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#F5F8FC"
+            android:fillViewport="true"
+            tools:context=".ui.index.LifeIndexFragment">
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="18dp">
+
+        <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="生活指数"
+                android:textColor="@color/weather_text_primary"
+                android:textSize="24sp"
+                android:textStyle="bold"/>
+
+        <TextView
+                android:id="@+id/index_state_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="根据天气、风力和空气质量生成今日建议"
+                android:textColor="@color/weather_text_secondary"
+                android:textSize="14sp"/>
+
+        <GridLayout
+                android:id="@+id/index_grid"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:columnCount="2"/>
+    </LinearLayout>
+</ScrollView>

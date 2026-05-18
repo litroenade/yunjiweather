@@ -1,0 +1,35 @@
+# Gradle / Android
+.gradle/
+build/
+**/build/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Local machine configuration
+local.properties
+*.keystore
+*.jks
+
+# Generated packages and reports
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+lint-results*.html
+lint-results*.xml
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Codex local verification output
+.codex-check/

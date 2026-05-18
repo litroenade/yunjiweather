@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:app="http://schemas.android.com/apk/res-auto"
+            xmlns:tools="http://schemas.android.com/tools"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#F5F8FC"
+            android:fillViewport="true"
+            tools:context=".ui.mine.MineFragment">
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="18dp">
+
+        <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="我的"
+                android:textColor="@color/weather_text_primary"
+                android:textSize="24sp"
+                android:textStyle="bold"/>
+
+        <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="0dp">
+
+            <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="18dp">
+
+                <TextView
+                        android:id="@+id/default_city_text"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/weather_text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold"/>
+
+                <TextView
+                        android:id="@+id/data_update_text"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:textColor="@color/weather_text_secondary"
+                        android:textSize="14sp"
+                        tools:text="数据更新时间：2026-05-18 20:30"/>
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/warning_switch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="天气预警通知"/>
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/daily_reminder_switch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="每日天气提醒"/>
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/animation_switch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="天气动画"/>
+
+                <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/dark_mode_switch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="深色模式偏好"/>
+
+                <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
+                        android:text="温度单位"
+                        android:textColor="@color/weather_text_secondary"
+                        android:textSize="14sp"/>
+
+                <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                            android:id="@+id/celsius_button"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:layout_weight="1"
+                            android:text="摄氏度 °C"/>
+
+                    <com.google.android.material.button.MaterialButton
+                            android:id="@+id/fahrenheit_button"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="华氏度 °F"/>
+                </LinearLayout>
+
+                <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:text="风速单位"
+                        android:textColor="@color/weather_text_secondary"
+                        android:textSize="14sp"/>
+
+                <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                            android:id="@+id/wind_scale_button"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginEnd="8dp"
+                            android:layout_weight="1"
+                            android:text="风力等级"/>
+
+                    <com.google.android.material.button.MaterialButton
+                            android:id="@+id/wind_ms_button"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="米/秒"/>
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <com.google.android.material.button.MaterialButton
+                android:id="@+id/clear_cache_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="清理天气缓存"/>
+
+        <com.google.android.material.button.MaterialButton
+                android:id="@+id/data_source_button"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="API 数据来源说明"/>
+
+        <com.google.android.material.button.MaterialButton
+                android:id="@+id/help_button"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="使用帮助"/>
+
+        <com.google.android.material.button.MaterialButton
+                android:id="@+id/about_button"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:text="关于 App"/>
+    </LinearLayout>
+</ScrollView>
