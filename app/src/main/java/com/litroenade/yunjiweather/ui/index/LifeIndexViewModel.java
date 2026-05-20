@@ -8,6 +8,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.google.gson.Gson;
+import com.litroenade.yunjiweather.auth.AuthSessionManager;
 import com.litroenade.yunjiweather.data.api.WeatherGatewayFactory;
 import com.litroenade.yunjiweather.data.api.WeatherApiService;
 import com.litroenade.yunjiweather.data.api.model.QWeatherIndicesResponse;
@@ -34,16 +35,18 @@ public class LifeIndexViewModel extends AndroidViewModel {
     private final CityDao cityDao;
     private final WeatherApiService apiService;
     private final LifeIndexCacheGateway cacheGateway;
+    private final long ownerUserId;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final MutableLiveData<List<LifeIndexItem>> indexItems = new MutableLiveData<>();
     private final MutableLiveData<String> stateText = new MutableLiveData<>();
 
     public LifeIndexViewModel(@NonNull Application application) {
         super(application);
+        ownerUserId = new AuthSessionManager(application).requireUserId();
         AppDatabase database = AppDatabase.getInstance(application);
         cityDao = database.cityDao();
         apiService = WeatherGatewayFactory.createQWeatherServiceOrNull();
-        cacheGateway = new LifeIndexCacheGateway(database.weatherCacheDao(), new Gson());
+        cacheGateway = new LifeIndexCacheGateway(ownerUserId, database.weatherCacheDao(), new Gson());
         refresh();
     }
 
@@ -57,7 +60,7 @@ public class LifeIndexViewModel extends AndroidViewModel {
 
     public void refresh() {
         executorService.execute(() -> {
-            CityEntity city = DefaultCityUtils.resolveDefaultCity(cityDao, System.currentTimeMillis());
+            CityEntity city = DefaultCityUtils.resolveDefaultCity(cityDao, ownerUserId, System.currentTimeMillis());
             long nowTime = System.currentTimeMillis();
             if (apiService == null) {
                 if (renderCacheIfAvailable(city, nowTime, "未配置 QWeather API，已显示缓存生活指数。")) {

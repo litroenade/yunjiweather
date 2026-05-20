@@ -7,6 +7,7 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
+import com.litroenade.yunjiweather.auth.AuthSessionManager;
 import com.litroenade.yunjiweather.data.api.ApiClient;
 import com.litroenade.yunjiweather.data.api.ApiConfig;
 import com.litroenade.yunjiweather.data.entity.CityEntity;
@@ -32,6 +33,7 @@ public class AlertViewModel extends AndroidViewModel {
     private final CityDao cityDao;
     private final WarningDao warningDao;
     private final AlertRepository alertRepository;
+    private final long ownerUserId;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final MutableLiveData<String> alertStateText = new MutableLiveData<>();
     private final MutableLiveData<List<WarningEntity>> warnings = new MutableLiveData<>(Collections.emptyList());
@@ -39,11 +41,13 @@ public class AlertViewModel extends AndroidViewModel {
 
     public AlertViewModel(@NonNull Application application) {
         super(application);
+        ownerUserId = new AuthSessionManager(application).requireUserId();
         settingsManager = new SettingsManager(application);
         AppDatabase database = AppDatabase.getInstance(application);
         cityDao = database.cityDao();
         warningDao = database.warningDao();
         alertRepository = new AlertRepository(
+                ownerUserId,
                 ApiConfig.isConfigured() ? ApiClient.createWeatherApiService() : null,
                 warningDao
         );
@@ -69,7 +73,7 @@ public class AlertViewModel extends AndroidViewModel {
             try {
                 city = resolveDefaultCity();
                 if (!ApiConfig.isConfigured()) {
-                    List<WarningEntity> cachedWarnings = warningDao.findByLocationId(city.locationId);
+                    List<WarningEntity> cachedWarnings = warningDao.findByLocationId(ownerUserId, city.locationId);
                     warnings.postValue(cachedWarnings);
                     alertStateText.postValue(WarningListUtils.createNoQWeatherText(city.cityName, cachedWarnings));
                     return;
@@ -81,7 +85,7 @@ public class AlertViewModel extends AndroidViewModel {
             } catch (IOException | RuntimeException exception) {
                 List<WarningEntity> cachedWarnings = city == null
                         ? Collections.emptyList()
-                        : warningDao.findByLocationId(city.locationId);
+                        : warningDao.findByLocationId(ownerUserId, city.locationId);
                 warnings.postValue(cachedWarnings);
                 alertStateText.postValue(createErrorText(cachedWarnings, exception));
             } finally {
@@ -92,8 +96,11 @@ public class AlertViewModel extends AndroidViewModel {
 
     public void markWarningRead(String warningId) {
         executorService.execute(() -> {
-            warningDao.markRead(warningId);
             List<WarningEntity> currentWarnings = warnings.getValue();
+            WarningEntity targetWarning = findWarning(currentWarnings, warningId);
+            if (targetWarning != null) {
+                warningDao.markRead(ownerUserId, targetWarning.locationId, warningId);
+            }
             if (currentWarnings != null) {
                 warnings.postValue(WarningListUtils.markRead(currentWarnings, warningId));
             }
@@ -107,7 +114,7 @@ public class AlertViewModel extends AndroidViewModel {
     }
 
     private CityEntity resolveDefaultCity() {
-        return DefaultCityUtils.resolveDefaultCity(cityDao, System.currentTimeMillis());
+        return DefaultCityUtils.resolveDefaultCity(cityDao, ownerUserId, System.currentTimeMillis());
     }
 
     private void notifyNewWarnings(List<WarningEntity> warningList) {
@@ -116,10 +123,22 @@ public class AlertViewModel extends AndroidViewModel {
         }
         for (WarningEntity warning : warningList) {
             if (!warning.isNotified && NotificationHelper.showWarningNotification(getApplication(), warning)) {
-                warningDao.markNotified(warning.warningId);
+                warningDao.markNotified(ownerUserId, warning.locationId, warning.warningId);
                 warning.isNotified = true;
             }
         }
+    }
+
+    private WarningEntity findWarning(List<WarningEntity> warningList, String warningId) {
+        if (warningList == null) {
+            return null;
+        }
+        for (WarningEntity warning : warningList) {
+            if (warning.warningId.equals(warningId)) {
+                return warning;
+            }
+        }
+        return null;
     }
 
     private String createSuccessText(CityEntity city, List<WarningEntity> warningList) {

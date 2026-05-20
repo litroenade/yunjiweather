@@ -57,6 +57,7 @@ public class WarningListUtilsTest {
 
     private static WarningEntity warning(String warningId, boolean isRead) {
         WarningEntity warning = new WarningEntity(
+                1L,
                 warningId,
                 "101010100",
                 "暴雨蓝色预警",

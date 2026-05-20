@@ -10,8 +10,14 @@
     <color name="weather_primary">#1E88E5</color>
     <color name="weather_primary_dark">#0D47A1</color>
     <color name="weather_accent">#26C6DA</color>
+    <color name="weather_background_top">#EEF7FF</color>
+    <color name="weather_background_bottom">#F8FBFF</color>
+    <color name="weather_surface">#FFFFFFFF</color>
+    <color name="weather_surface_tint">#F2F8FF</color>
     <color name="weather_text_primary">#1F2937</color>
     <color name="weather_text_secondary">#64748B</color>
+    <color name="weather_text_inverse">#FFFFFFFF</color>
     <color name="weather_card">#F4FFFFFF</color>
     <color name="weather_error">#B42318</color>
+    <color name="weather_success">#0F766E</color>
 </resources>

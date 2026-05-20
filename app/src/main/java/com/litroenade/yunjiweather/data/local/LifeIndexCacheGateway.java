@@ -18,10 +18,12 @@ public final class LifeIndexCacheGateway {
     private static final Type LIFE_INDEX_LIST_TYPE = new TypeToken<List<LifeIndexItem>>() {
     }.getType();
 
+    private final long ownerUserId;
     private final WeatherCacheDao weatherCacheDao;
     private final Gson gson;
 
-    public LifeIndexCacheGateway(WeatherCacheDao weatherCacheDao, Gson gson) {
+    public LifeIndexCacheGateway(long ownerUserId, WeatherCacheDao weatherCacheDao, Gson gson) {
+        this.ownerUserId = ownerUserId;
         this.weatherCacheDao = weatherCacheDao;
         this.gson = gson;
     }
@@ -29,6 +31,7 @@ public final class LifeIndexCacheGateway {
     public void save(String locationId, String cityName, List<LifeIndexItem> items, long updateTime, long expireTime) {
         Objects.requireNonNull(items, "items");
         WeatherCacheEntity entity = new WeatherCacheEntity(
+                ownerUserId,
                 requireText(locationId, "locationId"),
                 requireText(cityName, "cityName"),
                 WEATHER_TYPE_INDEX,
@@ -40,7 +43,7 @@ public final class LifeIndexCacheGateway {
     }
 
     public CacheRecord readValid(String locationId, long nowTime) {
-        WeatherCacheEntity entity = weatherCacheDao.findByLocationAndType(locationId, WEATHER_TYPE_INDEX);
+        WeatherCacheEntity entity = weatherCacheDao.findByLocationAndType(ownerUserId, locationId, WEATHER_TYPE_INDEX);
         if (entity == null || DateTimeUtils.isCacheExpired(nowTime, entity.expireTime)) {
             return null;
         }

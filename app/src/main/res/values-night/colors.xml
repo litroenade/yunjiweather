@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="weather_primary">#4BA3FF</color>
+    <color name="weather_primary_dark">#061A2F</color>
+    <color name="weather_accent">#44D7E8</color>
+    <color name="weather_background_top">#071524</color>
+    <color name="weather_background_bottom">#0B1220</color>
+    <color name="weather_surface">#111827</color>
+    <color name="weather_surface_tint">#172033</color>
+    <color name="weather_text_primary">#E5EEF8</color>
+    <color name="weather_text_secondary">#9AAFC4</color>
+    <color name="weather_text_inverse">#FFFFFFFF</color>
+    <color name="weather_card">#E61B2738</color>
+    <color name="weather_error">#FFB4AB</color>
+    <color name="weather_success">#5EEAD4</color>
+</resources>

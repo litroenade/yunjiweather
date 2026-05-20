@@ -8,6 +8,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.google.gson.Gson;
+import com.litroenade.yunjiweather.auth.AuthSessionManager;
 import com.litroenade.yunjiweather.common.UiState;
 import com.litroenade.yunjiweather.data.api.OpenMeteoCitySearchGateway;
 import com.litroenade.yunjiweather.data.api.WeatherGatewayFactory;
@@ -39,6 +40,7 @@ public class CityViewModel extends AndroidViewModel {
     private final WeatherApiService apiService;
     private final OpenMeteoCitySearchGateway openMeteoCitySearchGateway;
     private final WeatherRepository weatherRepository;
+    private final long ownerUserId;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final MutableLiveData<List<CityEntity>> cities = new MutableLiveData<>();
     private final MutableLiveData<Map<String, CityWeatherSummary>> citySummaries = new MutableLiveData<>();
@@ -47,13 +49,14 @@ public class CityViewModel extends AndroidViewModel {
 
     public CityViewModel(@NonNull Application application) {
         super(application);
+        ownerUserId = new AuthSessionManager(application).requireUserId();
         AppDatabase database = AppDatabase.getInstance(application);
         cityDao = database.cityDao();
         apiService = WeatherGatewayFactory.createQWeatherServiceOrNull();
         openMeteoCitySearchGateway = WeatherGatewayFactory.createOpenMeteoCitySearchGateway();
         weatherRepository = new WeatherRepository(
                 WeatherGatewayFactory.createHomeRemoteGateway(apiService),
-                new RoomWeatherCacheGateway(database.weatherCacheDao(), new Gson()),
+                new RoomWeatherCacheGateway(ownerUserId, database.weatherCacheDao(), new Gson()),
                 System::currentTimeMillis
         );
         reload();
@@ -88,11 +91,11 @@ public class CityViewModel extends AndroidViewModel {
                 message.postValue("请输入城市名称");
                 return;
             }
-            if (cityDao.findByLocationId(city.locationId) != null) {
+            if (cityDao.findByLocationId(ownerUserId, city.locationId) != null) {
                 message.postValue("该城市已存在");
                 return;
             }
-            if (cityDao.count() == 0) {
+            if (cityDao.count(ownerUserId) == 0) {
                 city.isDefault = true;
             }
             cityDao.insert(city);
@@ -103,12 +106,12 @@ public class CityViewModel extends AndroidViewModel {
 
     public void removeCity(CityEntity city) {
         executorService.execute(() -> {
-            cityDao.deleteByLocationId(city.locationId);
+            cityDao.deleteByLocationId(ownerUserId, city.locationId);
             if (city.isDefault) {
-                List<CityEntity> remainingCities = cityDao.findAll();
+                List<CityEntity> remainingCities = cityDao.findAll(ownerUserId);
                 if (!remainingCities.isEmpty()) {
-                    cityDao.clearDefaultCity();
-                    cityDao.setDefaultCity(remainingCities.get(0).locationId, System.currentTimeMillis());
+                    cityDao.clearDefaultCity(ownerUserId);
+                    cityDao.setDefaultCity(ownerUserId, remainingCities.get(0).locationId, System.currentTimeMillis());
                 }
             }
             message.postValue("城市已删除");
@@ -118,8 +121,8 @@ public class CityViewModel extends AndroidViewModel {
 
     public void setDefaultCity(CityEntity city) {
         executorService.execute(() -> {
-            cityDao.clearDefaultCity();
-            cityDao.setDefaultCity(city.locationId, System.currentTimeMillis());
+            cityDao.clearDefaultCity(ownerUserId);
+            cityDao.setDefaultCity(ownerUserId, city.locationId, System.currentTimeMillis());
             message.postValue("默认城市已切换为 " + city.cityName);
             reload();
         });
@@ -127,9 +130,9 @@ public class CityViewModel extends AndroidViewModel {
 
     private void reload() {
         executorService.execute(() -> {
-            DefaultCityUtils.resolveDefaultCity(cityDao, System.currentTimeMillis());
-            List<CityEntity> cityEntities = cityDao.findAll();
-            CityEntity defaultCityEntity = cityDao.findDefaultCity();
+            DefaultCityUtils.resolveDefaultCity(cityDao, ownerUserId, System.currentTimeMillis());
+            List<CityEntity> cityEntities = cityDao.findAll(ownerUserId);
+            CityEntity defaultCityEntity = cityDao.findDefaultCity(ownerUserId);
             cities.postValue(cityEntities);
             defaultCity.postValue(defaultCityEntity == null ? DefaultCityUtils.DEFAULT_CITY_NAME : defaultCityEntity.cityName);
             refreshCityWeatherSummaries(cityEntities);
@@ -168,9 +171,10 @@ public class CityViewModel extends AndroidViewModel {
         }
         if (apiService == null) {
             return openMeteoCitySearchGateway.searchCity(
+                    ownerUserId,
                     normalized,
                     isDefault,
-                    cityDao.count() + 1,
+                    cityDao.count(ownerUserId) + 1,
                     System.currentTimeMillis()
             );
         }
@@ -185,6 +189,7 @@ public class CityViewModel extends AndroidViewModel {
         QWeatherCityLookupResponse.Location location = body.location.get(0);
         long nowTime = System.currentTimeMillis();
         return new CityEntity(
+                ownerUserId,
                 requireText(location.name, "location.name"),
                 requireText(location.id, "location.id"),
                 requireText(location.adm1, "location.adm1"),
@@ -192,7 +197,7 @@ public class CityViewModel extends AndroidViewModel {
                 parseCoordinate(location.lat, "location.lat"),
                 parseCoordinate(location.lon, "location.lon"),
                 isDefault,
-                cityDao.count() + 1,
+                cityDao.count(ownerUserId) + 1,
                 nowTime,
                 nowTime
         );
@@ -201,16 +206,16 @@ public class CityViewModel extends AndroidViewModel {
     private CityEntity createPresetCity(String cityName, boolean isDefault) {
         long nowTime = System.currentTimeMillis();
         if ("北京".equals(cityName)) {
-            return new CityEntity("北京", "101010100", "北京", "中国", 39.9042, 116.4074, isDefault, 0, nowTime, nowTime);
+            return new CityEntity(ownerUserId, "北京", "101010100", "北京", "中国", 39.9042, 116.4074, isDefault, 0, nowTime, nowTime);
         }
         if ("上海".equals(cityName)) {
-            return new CityEntity("上海", "101020100", "上海", "中国", 31.2304, 121.4737, isDefault, 1, nowTime, nowTime);
+            return new CityEntity(ownerUserId, "上海", "101020100", "上海", "中国", 31.2304, 121.4737, isDefault, 1, nowTime, nowTime);
         }
         if ("广州".equals(cityName)) {
-            return new CityEntity("广州", "101280101", "广东", "中国", 23.1291, 113.2644, isDefault, 2, nowTime, nowTime);
+            return new CityEntity(ownerUserId, "广州", "101280101", "广东", "中国", 23.1291, 113.2644, isDefault, 2, nowTime, nowTime);
         }
         if ("深圳".equals(cityName)) {
-            return new CityEntity("深圳", "101280601", "广东", "中国", 22.5431, 114.0579, isDefault, 3, nowTime, nowTime);
+            return new CityEntity(ownerUserId, "深圳", "101280601", "广东", "中国", 22.5431, 114.0579, isDefault, 3, nowTime, nowTime);
         }
         return null;
     }

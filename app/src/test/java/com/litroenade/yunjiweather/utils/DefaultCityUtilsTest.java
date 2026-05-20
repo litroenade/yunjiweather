@@ -15,33 +15,38 @@ import static org.junit.Assert.assertTrue;
 public class DefaultCityUtilsTest {
 
     @Test
-    public void resolveDefaultCity_keepsExistingDefaultCity() {
+    public void resolveDefaultCity_keepsExistingDefaultCityForCurrentUser() {
         FakeCityDao cityDao = new FakeCityDao();
-        CityEntity shanghai = new CityEntity("上海", "101020100", "上海", "中国", 31.2304, 121.4737, true, 1, 10L, 10L);
+        CityEntity shanghai = new CityEntity(1L, "上海", "101020100", "上海", "中国", 31.2304, 121.4737, true, 1, 10L, 10L);
         cityDao.insert(shanghai);
+        cityDao.insert(new CityEntity(2L, "深圳", "101280601", "广东", "中国", 22.5431, 114.0579, true, 1, 10L, 10L));
 
-        CityEntity result = DefaultCityUtils.resolveDefaultCity(cityDao, 99L);
+        CityEntity result = DefaultCityUtils.resolveDefaultCity(cityDao, 1L, 99L);
 
         assertSame(shanghai, result);
-        assertEquals(1, cityDao.findAll().size());
+        assertEquals(1, cityDao.findAll(1L).size());
+        assertEquals(1, cityDao.findAll(2L).size());
     }
 
     @Test
-    public void resolveDefaultCity_seedsBeijingWhenDatabaseIsEmpty() {
+    public void resolveDefaultCity_seedsBeijingOnlyForCurrentUserWhenEmpty() {
         FakeCityDao cityDao = new FakeCityDao();
+        cityDao.insert(new CityEntity(2L, "深圳", "101280601", "广东", "中国", 22.5431, 114.0579, true, 1, 10L, 10L));
 
-        CityEntity result = DefaultCityUtils.resolveDefaultCity(cityDao, 123L);
+        CityEntity result = DefaultCityUtils.resolveDefaultCity(cityDao, 1L, 123L);
 
+        assertEquals(1L, result.ownerUserId);
         assertEquals("北京", result.cityName);
         assertEquals("101010100", result.locationId);
         assertTrue(result.isDefault);
         assertEquals(123L, result.createTime);
-        assertEquals(1, cityDao.findAll().size());
+        assertEquals(1, cityDao.findAll(1L).size());
+        assertEquals(1, cityDao.findAll(2L).size());
     }
 
     @Test
     public void formatDefaultCityText_usesRoomCityName() {
-        CityEntity city = new CityEntity("深圳", "101280601", "广东", "中国", 22.5431, 114.0579, true, 3, 1L, 2L);
+        CityEntity city = new CityEntity(1L, "深圳", "101280601", "广东", "中国", 22.5431, 114.0579, true, 3, 1L, 2L);
 
         String text = DefaultCityUtils.formatDefaultCityText(city);
 
@@ -54,7 +59,7 @@ public class DefaultCityUtilsTest {
 
         @Override
         public void insert(CityEntity city) {
-            CityEntity oldCity = findByLocationId(city.locationId);
+            CityEntity oldCity = findByLocationId(city.ownerUserId, city.locationId);
             if (oldCity != null) {
                 cities.remove(oldCity);
             }
@@ -62,14 +67,20 @@ public class DefaultCityUtilsTest {
         }
 
         @Override
-        public List<CityEntity> findAll() {
-            return new ArrayList<>(cities);
+        public List<CityEntity> findAll(long ownerUserId) {
+            List<CityEntity> result = new ArrayList<>();
+            for (CityEntity city : cities) {
+                if (city.ownerUserId == ownerUserId) {
+                    result.add(city);
+                }
+            }
+            return result;
         }
 
         @Override
-        public CityEntity findByLocationId(String locationId) {
+        public CityEntity findByLocationId(long ownerUserId, String locationId) {
             for (CityEntity city : cities) {
-                if (city.locationId.equals(locationId)) {
+                if (city.ownerUserId == ownerUserId && city.locationId.equals(locationId)) {
                     return city;
                 }
             }
@@ -77,9 +88,9 @@ public class DefaultCityUtilsTest {
         }
 
         @Override
-        public CityEntity findDefaultCity() {
+        public CityEntity findDefaultCity(long ownerUserId) {
             for (CityEntity city : cities) {
-                if (city.isDefault) {
+                if (city.ownerUserId == ownerUserId && city.isDefault) {
                     return city;
                 }
             }
@@ -87,15 +98,17 @@ public class DefaultCityUtilsTest {
         }
 
         @Override
-        public void clearDefaultCity() {
+        public void clearDefaultCity(long ownerUserId) {
             for (CityEntity city : cities) {
-                city.isDefault = false;
+                if (city.ownerUserId == ownerUserId) {
+                    city.isDefault = false;
+                }
             }
         }
 
         @Override
-        public void setDefaultCity(String locationId, long updateTime) {
-            CityEntity city = findByLocationId(locationId);
+        public void setDefaultCity(long ownerUserId, String locationId, long updateTime) {
+            CityEntity city = findByLocationId(ownerUserId, locationId);
             if (city != null) {
                 city.isDefault = true;
                 city.updateTime = updateTime;
@@ -103,16 +116,16 @@ public class DefaultCityUtilsTest {
         }
 
         @Override
-        public void deleteByLocationId(String locationId) {
-            CityEntity city = findByLocationId(locationId);
+        public void deleteByLocationId(long ownerUserId, String locationId) {
+            CityEntity city = findByLocationId(ownerUserId, locationId);
             if (city != null) {
                 cities.remove(city);
             }
         }
 
         @Override
-        public int count() {
-            return cities.size();
+        public int count(long ownerUserId) {
+            return findAll(ownerUserId).size();
         }
     }
 }

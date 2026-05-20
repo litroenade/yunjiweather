@@ -13,19 +13,20 @@ public final class DefaultCityUtils {
     private DefaultCityUtils() {
     }
 
-    public static CityEntity resolveDefaultCity(CityDao cityDao, long nowTime) {
+    public static CityEntity resolveDefaultCity(CityDao cityDao, long ownerUserId, long nowTime) {
         Objects.requireNonNull(cityDao, "cityDao");
-        CityEntity defaultCity = cityDao.findDefaultCity();
+        CityEntity defaultCity = cityDao.findDefaultCity(ownerUserId);
         if (defaultCity != null) {
             return defaultCity;
         }
-        CityEntity seedCity = createDefaultCity(nowTime);
+        CityEntity seedCity = createDefaultCity(ownerUserId, nowTime);
         cityDao.insert(seedCity);
         return seedCity;
     }
 
-    public static CityEntity createDefaultCity(long nowTime) {
+    public static CityEntity createDefaultCity(long ownerUserId, long nowTime) {
         return new CityEntity(
+                ownerUserId,
                 DEFAULT_CITY_NAME,
                 DEFAULT_LOCATION_ID,
                 "北京",

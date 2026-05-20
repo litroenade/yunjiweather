@@ -8,5 +8,7 @@
         <item name="colorOnSecondary">@color/black</item>
         <item name="android:statusBarColor">@color/weather_primary_dark</item>
         <item name="android:navigationBarColor">@color/black</item>
+        <item name="android:fontFamily">sans</item>
+        <item name="materialButtonStyle">@style/Widget.YunJi.Button</item>
     </style>
 </resources>

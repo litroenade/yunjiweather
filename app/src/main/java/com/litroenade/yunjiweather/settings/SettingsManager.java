@@ -9,12 +9,13 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.litroenade.yunjiweather.auth.AuthSessionManager;
 import com.litroenade.yunjiweather.utils.CityListUtils;
 import com.litroenade.yunjiweather.utils.WeatherDisplayUtils;
 
 public final class SettingsManager {
 
-    private static final String PREF_NAME = "yunji_weather_settings";
+    private static final String PREF_NAME_PREFIX = "yunji_weather_settings_user_";
     private static final String KEY_CITIES = "cities";
     private static final String KEY_DEFAULT_CITY = "default_city";
     private static final String KEY_WARNING_ENABLED = "warning_enabled";
@@ -28,7 +29,8 @@ public final class SettingsManager {
     private final SharedPreferences preferences;
 
     public SettingsManager(Context context) {
-        preferences = context.getApplicationContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        long userId = new AuthSessionManager(context).requireUserId();
+        preferences = context.getApplicationContext().getSharedPreferences(PREF_NAME_PREFIX + userId, Context.MODE_PRIVATE);
         ensureDefaultCity();
     }
 

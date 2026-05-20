@@ -15,18 +15,21 @@ public interface WarningDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(List<WarningEntity> warnings);
 
-    @Query("SELECT * FROM warning WHERE locationId = :locationId ORDER BY publishTime DESC")
-    List<WarningEntity> findByLocationId(String locationId);
+    @Query("SELECT * FROM warning WHERE ownerUserId = :ownerUserId AND locationId = :locationId ORDER BY publishTime DESC")
+    List<WarningEntity> findByLocationId(long ownerUserId, String locationId);
 
-    @Query("SELECT * FROM warning WHERE warningId = :warningId LIMIT 1")
-    WarningEntity findByWarningId(String warningId);
+    @Query("SELECT * FROM warning WHERE ownerUserId = :ownerUserId AND locationId = :locationId AND warningId = :warningId LIMIT 1")
+    WarningEntity findByWarningId(long ownerUserId, String locationId, String warningId);
 
-    @Query("SELECT * FROM warning WHERE isNotified = 0 ORDER BY publishTime DESC")
-    List<WarningEntity> findUnnotifiedWarnings();
+    @Query("SELECT * FROM warning WHERE ownerUserId = :ownerUserId AND isNotified = 0 ORDER BY publishTime DESC")
+    List<WarningEntity> findUnnotifiedWarnings(long ownerUserId);
 
-    @Query("UPDATE warning SET isNotified = 1 WHERE warningId = :warningId")
-    void markNotified(String warningId);
+    @Query("UPDATE warning SET isNotified = 1 WHERE ownerUserId = :ownerUserId AND locationId = :locationId AND warningId = :warningId")
+    void markNotified(long ownerUserId, String locationId, String warningId);
 
-    @Query("UPDATE warning SET isRead = 1 WHERE warningId = :warningId")
-    void markRead(String warningId);
+    @Query("UPDATE warning SET isRead = 1 WHERE ownerUserId = :ownerUserId AND locationId = :locationId AND warningId = :warningId")
+    void markRead(long ownerUserId, String locationId, String warningId);
+
+    @Query("SELECT COUNT(*) FROM warning WHERE ownerUserId = :ownerUserId")
+    int count(long ownerUserId);
 }

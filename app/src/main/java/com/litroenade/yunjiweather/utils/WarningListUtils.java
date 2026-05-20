@@ -36,6 +36,7 @@ public final class WarningListUtils {
 
     private static WarningEntity copyWarning(WarningEntity warning) {
         WarningEntity copiedWarning = new WarningEntity(
+                warning.ownerUserId,
                 warning.warningId,
                 warning.locationId,
                 warning.title,

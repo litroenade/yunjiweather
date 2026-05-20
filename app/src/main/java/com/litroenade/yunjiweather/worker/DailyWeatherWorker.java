@@ -7,6 +7,7 @@ import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
 import com.google.gson.Gson;
+import com.litroenade.yunjiweather.auth.AuthSessionManager;
 import com.litroenade.yunjiweather.common.UiState;
 import com.litroenade.yunjiweather.data.api.WeatherGatewayFactory;
 import com.litroenade.yunjiweather.data.api.WeatherApiService;
@@ -29,6 +30,12 @@ public class DailyWeatherWorker extends Worker {
     @Override
     public Result doWork() {
         Context context = getApplicationContext();
+        AuthSessionManager authSessionManager = new AuthSessionManager(context);
+        long scheduledOwnerUserId = getInputData().getLong(WorkerScopeUtils.KEY_OWNER_USER_ID, -1L);
+        if (!WorkerScopeUtils.shouldRunForCurrentUser(scheduledOwnerUserId, authSessionManager)) {
+            return Result.success();
+        }
+        long ownerUserId = scheduledOwnerUserId;
         SettingsManager settingsManager = new SettingsManager(context);
         if (!settingsManager.isDailyReminderEnabled()) {
             return Result.success();
@@ -36,7 +43,7 @@ public class DailyWeatherWorker extends Worker {
 
         try {
             AppDatabase database = AppDatabase.getInstance(context);
-            CityEntity defaultCity = database.cityDao().findDefaultCity();
+            CityEntity defaultCity = database.cityDao().findDefaultCity(ownerUserId);
             if (defaultCity == null) {
                 return Result.success();
             }
@@ -44,7 +51,7 @@ public class DailyWeatherWorker extends Worker {
             WeatherApiService apiService = WeatherGatewayFactory.createQWeatherServiceOrNull();
             WeatherRepository repository = new WeatherRepository(
                     WeatherGatewayFactory.createHomeRemoteGateway(apiService),
-                    new RoomWeatherCacheGateway(database.weatherCacheDao(), new Gson()),
+                    new RoomWeatherCacheGateway(ownerUserId, database.weatherCacheDao(), new Gson()),
                     System::currentTimeMillis
             );
             UiState<HomeWeatherData> state = repository.loadHomeWeather(

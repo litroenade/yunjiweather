@@ -17,17 +17,19 @@ public final class AlertRepository {
 
     private static final String SUCCESS_CODE = "200";
 
+    private final long ownerUserId;
     private final WeatherApiService apiService;
     private final WarningDao warningDao;
 
-    public AlertRepository(WeatherApiService apiService, WarningDao warningDao) {
+    public AlertRepository(long ownerUserId, WeatherApiService apiService, WarningDao warningDao) {
+        this.ownerUserId = ownerUserId;
         this.apiService = apiService;
         this.warningDao = warningDao;
     }
 
     public List<WarningEntity> refreshWarnings(String locationId) throws IOException {
         if (!ApiConfig.isConfigured()) {
-            return warningDao.findByLocationId(locationId);
+            return warningDao.findByLocationId(ownerUserId, locationId);
         }
         Response<QWeatherWarningResponse> response = apiService.getWeatherWarning(locationId, "zh").execute();
         QWeatherWarningResponse body = response.body();
@@ -38,15 +40,15 @@ public final class AlertRepository {
         if (!warnings.isEmpty()) {
             warningDao.insertAll(warnings);
         }
-        return warningDao.findByLocationId(locationId);
+        return warningDao.findByLocationId(ownerUserId, locationId);
     }
 
     public List<WarningEntity> findUnnotifiedWarnings() {
-        return warningDao.findUnnotifiedWarnings();
+        return warningDao.findUnnotifiedWarnings(ownerUserId);
     }
 
-    public void markNotified(String warningId) {
-        warningDao.markNotified(warningId);
+    public void markNotified(String locationId, String warningId) {
+        warningDao.markNotified(ownerUserId, locationId, warningId);
     }
 
     private List<WarningEntity> mapWarnings(String locationId, List<QWeatherWarningResponse.Warning> warnings) throws IOException {
@@ -58,7 +60,7 @@ public final class AlertRepository {
             if (warning == null || warning.id == null || warning.id.trim().isEmpty()) {
                 continue;
             }
-            WarningEntity oldWarning = warningDao.findByWarningId(warning.id);
+            WarningEntity oldWarning = warningDao.findByWarningId(ownerUserId, locationId, warning.id);
             String typeText = warning.typeName == null || warning.typeName.trim().isEmpty()
                     ? requireText(warning.type, "warning.type")
                     : warning.typeName;
@@ -66,6 +68,7 @@ public final class AlertRepository {
                     ? requireText(warning.severity, "warning.severity")
                     : warning.severityColor;
             result.add(new WarningEntity(
+                    ownerUserId,
                     warning.id,
                     locationId,
                     requireText(warning.title, "warning.title"),

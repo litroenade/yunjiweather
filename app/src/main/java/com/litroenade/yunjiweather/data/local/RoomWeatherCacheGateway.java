@@ -9,10 +9,12 @@ public final class RoomWeatherCacheGateway implements WeatherRepository.CacheGat
 
     private static final String WEATHER_TYPE_HOME = "HOME";
 
+    private final long ownerUserId;
     private final WeatherCacheDao weatherCacheDao;
     private final Gson gson;
 
-    public RoomWeatherCacheGateway(WeatherCacheDao weatherCacheDao, Gson gson) {
+    public RoomWeatherCacheGateway(long ownerUserId, WeatherCacheDao weatherCacheDao, Gson gson) {
+        this.ownerUserId = ownerUserId;
         this.weatherCacheDao = weatherCacheDao;
         this.gson = gson;
     }
@@ -20,6 +22,7 @@ public final class RoomWeatherCacheGateway implements WeatherRepository.CacheGat
     @Override
     public void saveHomeWeather(String locationId, HomeWeatherData data, long updateTime, long expireTime) {
         WeatherCacheEntity entity = new WeatherCacheEntity(
+                ownerUserId,
                 locationId,
                 data.getCityName(),
                 WEATHER_TYPE_HOME,
@@ -32,7 +35,7 @@ public final class RoomWeatherCacheGateway implements WeatherRepository.CacheGat
 
     @Override
     public WeatherRepository.CacheRecord<HomeWeatherData> readHomeWeather(String locationId) {
-        WeatherCacheEntity entity = weatherCacheDao.findByLocationAndType(locationId, WEATHER_TYPE_HOME);
+        WeatherCacheEntity entity = weatherCacheDao.findByLocationAndType(ownerUserId, locationId, WEATHER_TYPE_HOME);
         if (entity == null) {
             return null;
         }

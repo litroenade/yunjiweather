@@ -1,6 +1,7 @@
 package com.litroenade.yunjiweather.ui.mine;
 
 import android.os.Bundle;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,7 +14,9 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.litroenade.yunjiweather.databinding.FragmentMineBinding;
+import com.litroenade.yunjiweather.ui.auth.AuthActivity;
 import com.litroenade.yunjiweather.utils.PermissionUtils;
+import com.litroenade.yunjiweather.utils.ThemeModeUtils;
 import com.litroenade.yunjiweather.utils.WeatherDisplayUtils;
 import com.google.android.material.button.MaterialButton;
 
@@ -67,10 +70,12 @@ public class MineFragment extends Fragment {
                 viewModel.setWindUnit(WeatherDisplayUtils.WIND_METER_PER_SECOND)
         );
         binding.clearCacheButton.setOnClickListener(view -> viewModel.clearCache());
+        binding.logoutButton.setOnClickListener(view -> viewModel.logout());
         binding.aboutButton.setOnClickListener(view -> showAboutDialog());
         binding.dataSourceButton.setOnClickListener(view -> showDataSourceDialog());
         binding.helpButton.setOnClickListener(view -> showHelpDialog());
 
+        viewModel.getAccountText().observe(getViewLifecycleOwner(), binding.accountText::setText);
         viewModel.getDefaultCity().observe(getViewLifecycleOwner(), binding.defaultCityText::setText);
         viewModel.getWarningEnabled().observe(getViewLifecycleOwner(), enabled -> setSwitchChecked(binding.warningSwitch, enabled));
         viewModel.getDailyReminderEnabled().observe(getViewLifecycleOwner(), enabled -> setSwitchChecked(binding.dailyReminderSwitch, enabled));
@@ -79,9 +84,19 @@ public class MineFragment extends Fragment {
         viewModel.getTemperatureUnit().observe(getViewLifecycleOwner(), this::renderTemperatureUnit);
         viewModel.getWindUnit().observe(getViewLifecycleOwner(), this::renderWindUnit);
         viewModel.getDataUpdateTime().observe(getViewLifecycleOwner(), binding.dataUpdateText::setText);
+        viewModel.getLocalStorageSummary().observe(getViewLifecycleOwner(), binding.localStorageSummaryText::setText);
         viewModel.getMessage().observe(getViewLifecycleOwner(), message ->
                 Toast.makeText(requireContext(), message, Toast.LENGTH_SHORT).show()
         );
+        viewModel.getLogoutEvent().observe(getViewLifecycleOwner(), shouldLogout -> {
+            if (Boolean.TRUE.equals(shouldLogout)) {
+                viewModel.consumeLogoutEvent();
+                Intent intent = new Intent(requireContext(), AuthActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+                requireActivity().finish();
+            }
+        });
         return binding.getRoot();
     }
 
@@ -113,9 +128,14 @@ public class MineFragment extends Fragment {
     }
 
     private void applyDarkMode(boolean enabled) {
-        AppCompatDelegate.setDefaultNightMode(
-                enabled ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO
+        int targetMode = ThemeModeUtils.resolveNightMode(
+                enabled,
+                AppCompatDelegate.MODE_NIGHT_YES,
+                AppCompatDelegate.MODE_NIGHT_NO
         );
+        if (ThemeModeUtils.shouldApplyNightMode(AppCompatDelegate.getDefaultNightMode(), targetMode)) {
+            AppCompatDelegate.setDefaultNightMode(targetMode);
+        }
     }
 
     private void showAboutDialog() {
@@ -137,7 +157,7 @@ public class MineFragment extends Fragment {
     private void showHelpDialog() {
         new AlertDialog.Builder(requireContext())
                 .setTitle("使用帮助")
-                .setMessage("首页可下拉刷新天气，点击定位后才会申请定位权限。城市页可添加、删除和切换默认城市。网络失败时会优先显示本地缓存。预警通知和每日提醒需要开启通知权限。未配置 QWeather 时，不会伪造官方天气预警。")
+                .setMessage("本项目账户为本地账户，不上传密码；不同账户的城市、缓存、设置和预警状态互相隔离。首页可下拉刷新天气，点击定位后才会申请定位权限。城市页可添加、删除和切换默认城市。网络失败时会优先显示当前账户的本地缓存。预警通知和每日提醒需要开启通知权限。未配置 QWeather 时，不会伪造官方天气预警。")
                 .setPositiveButton("知道了", null)
                 .show();
     }

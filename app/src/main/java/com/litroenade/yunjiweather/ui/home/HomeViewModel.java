@@ -8,6 +8,7 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.google.gson.Gson;
+import com.litroenade.yunjiweather.auth.AuthSessionManager;
 import com.litroenade.yunjiweather.common.UiState;
 import com.litroenade.yunjiweather.data.api.WeatherGatewayFactory;
 import com.litroenade.yunjiweather.data.api.WeatherApiService;
@@ -38,15 +39,17 @@ public class HomeViewModel extends AndroidViewModel {
     private final WeatherRepository weatherRepository;
     private final WeatherApiService apiService;
     private final CityDao cityDao;
+    private final long ownerUserId;
 
     public HomeViewModel(@NonNull Application application) {
         super(application);
+        ownerUserId = new AuthSessionManager(application).requireUserId();
         AppDatabase database = AppDatabase.getInstance(application);
         cityDao = database.cityDao();
         apiService = WeatherGatewayFactory.createQWeatherServiceOrNull();
         weatherRepository = new WeatherRepository(
                 WeatherGatewayFactory.createHomeRemoteGateway(apiService),
-                new RoomWeatherCacheGateway(database.weatherCacheDao(), new Gson()),
+                new RoomWeatherCacheGateway(ownerUserId, database.weatherCacheDao(), new Gson()),
                 System::currentTimeMillis
         );
     }
@@ -103,7 +106,7 @@ public class HomeViewModel extends AndroidViewModel {
     }
 
     private CityEntity resolveDefaultCity() {
-        return DefaultCityUtils.resolveDefaultCity(cityDao, System.currentTimeMillis());
+        return DefaultCityUtils.resolveDefaultCity(cityDao, ownerUserId, System.currentTimeMillis());
     }
 
     private CityEntity resolveCityByCoordinate(double latitude, double longitude) throws IOException {
@@ -122,6 +125,7 @@ public class HomeViewModel extends AndroidViewModel {
         QWeatherCityLookupResponse.Location location = body.location.get(0);
         long nowTime = System.currentTimeMillis();
         return new CityEntity(
+                ownerUserId,
                 requireText(location.name, "location.name"),
                 requireText(location.id, "location.id"),
                 requireText(location.adm1, "location.adm1"),
@@ -138,6 +142,7 @@ public class HomeViewModel extends AndroidViewModel {
     private CityEntity createCoordinateCity(double latitude, double longitude) {
         long nowTime = System.currentTimeMillis();
         return new CityEntity(
+                ownerUserId,
                 "当前位置",
                 String.format(Locale.US, "openmeteo:%.4f,%.4f", latitude, longitude),
                 "定位坐标",
@@ -152,12 +157,13 @@ public class HomeViewModel extends AndroidViewModel {
     }
 
     private void saveAsDefaultCity(CityEntity city) {
-        cityDao.clearDefaultCity();
-        CityEntity oldCity = cityDao.findByLocationId(city.locationId);
+        city.ownerUserId = ownerUserId;
+        cityDao.clearDefaultCity(ownerUserId);
+        CityEntity oldCity = cityDao.findByLocationId(ownerUserId, city.locationId);
         if (oldCity == null) {
             cityDao.insert(city);
         } else {
-            cityDao.setDefaultCity(oldCity.locationId, System.currentTimeMillis());
+            cityDao.setDefaultCity(ownerUserId, oldCity.locationId, System.currentTimeMillis());
         }
     }
 
