@@ -6,16 +6,16 @@ import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
-import com.google.gson.Gson;
 import com.litroenade.yunjiweather.auth.AuthSessionManager;
 import com.litroenade.yunjiweather.common.UiState;
 import com.litroenade.yunjiweather.data.api.WeatherGatewayFactory;
 import com.litroenade.yunjiweather.data.api.WeatherApiService;
 import com.litroenade.yunjiweather.data.entity.CityEntity;
 import com.litroenade.yunjiweather.data.local.AppDatabase;
-import com.litroenade.yunjiweather.data.local.RoomWeatherCacheGateway;
 import com.litroenade.yunjiweather.data.model.HomeWeatherData;
+import com.litroenade.yunjiweather.data.repository.CityRepository;
 import com.litroenade.yunjiweather.data.repository.WeatherRepository;
+import com.litroenade.yunjiweather.data.repository.WeatherRepositoryFactory;
 import com.litroenade.yunjiweather.notification.NotificationHelper;
 import com.litroenade.yunjiweather.settings.SettingsManager;
 import com.litroenade.yunjiweather.utils.WeatherDisplayUtils;
@@ -43,17 +43,13 @@ public class DailyWeatherWorker extends Worker {
 
         try {
             AppDatabase database = AppDatabase.getInstance(context);
-            CityEntity defaultCity = database.cityDao().findDefaultCity(ownerUserId);
+            CityEntity defaultCity = new CityRepository(ownerUserId, database.cityDao()).findDefaultCity();
             if (defaultCity == null) {
                 return Result.success();
             }
 
             WeatherApiService apiService = WeatherGatewayFactory.createQWeatherServiceOrNull();
-            WeatherRepository repository = new WeatherRepository(
-                    WeatherGatewayFactory.createHomeRemoteGateway(apiService),
-                    new RoomWeatherCacheGateway(ownerUserId, database.weatherCacheDao(), new Gson()),
-                    System::currentTimeMillis
-            );
+            WeatherRepository repository = WeatherRepositoryFactory.createHomeRepository(ownerUserId, database, apiService);
             UiState<HomeWeatherData> state = repository.loadHomeWeather(
                     defaultCity.locationId,
                     defaultCity.cityName,

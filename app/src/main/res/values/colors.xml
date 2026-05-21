@@ -1,10 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_200">#FFBB86FC</color>
-    <color name="purple_500">#FF6200EE</color>
-    <color name="purple_700">#FF3700B3</color>
-    <color name="teal_200">#FF03DAC5</color>
-    <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
     <color name="weather_primary">#1E88E5</color>
@@ -14,10 +9,15 @@
     <color name="weather_background_bottom">#F8FBFF</color>
     <color name="weather_surface">#FFFFFFFF</color>
     <color name="weather_surface_tint">#F2F8FF</color>
+    <color name="weather_stroke">#DDEAF7</color>
     <color name="weather_text_primary">#1F2937</color>
     <color name="weather_text_secondary">#64748B</color>
     <color name="weather_text_inverse">#FFFFFFFF</color>
     <color name="weather_card">#F4FFFFFF</color>
     <color name="weather_error">#B42318</color>
-    <color name="weather_success">#0F766E</color>
+    <color name="auth_hero_title">#083D77</color>
+    <color name="auth_hero_subtitle">#24526F</color>
+    <color name="auth_chip_text">#174763</color>
+    <color name="auth_card_background">#FAFFFFFF</color>
+    <color name="auth_card_stroke">#E4F0FA</color>
 </resources>

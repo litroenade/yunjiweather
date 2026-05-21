@@ -7,21 +7,19 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import com.google.gson.Gson;
 import com.litroenade.yunjiweather.auth.AuthSessionManager;
 import com.litroenade.yunjiweather.common.UiState;
 import com.litroenade.yunjiweather.data.api.OpenMeteoCitySearchGateway;
-import com.litroenade.yunjiweather.data.api.WeatherGatewayFactory;
 import com.litroenade.yunjiweather.data.api.WeatherApiService;
+import com.litroenade.yunjiweather.data.api.WeatherGatewayFactory;
 import com.litroenade.yunjiweather.data.api.model.QWeatherCityLookupResponse;
 import com.litroenade.yunjiweather.data.entity.CityEntity;
 import com.litroenade.yunjiweather.data.local.AppDatabase;
-import com.litroenade.yunjiweather.data.local.CityDao;
-import com.litroenade.yunjiweather.data.local.RoomWeatherCacheGateway;
 import com.litroenade.yunjiweather.data.model.CityWeatherSummary;
 import com.litroenade.yunjiweather.data.model.HomeWeatherData;
+import com.litroenade.yunjiweather.data.repository.CityRepository;
 import com.litroenade.yunjiweather.data.repository.WeatherRepository;
-import com.litroenade.yunjiweather.utils.DefaultCityUtils;
+import com.litroenade.yunjiweather.data.repository.WeatherRepositoryFactory;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
@@ -36,7 +34,7 @@ public class CityViewModel extends AndroidViewModel {
 
     private static final String SUCCESS_CODE = "200";
 
-    private final CityDao cityDao;
+    private final CityRepository cityRepository;
     private final WeatherApiService apiService;
     private final OpenMeteoCitySearchGateway openMeteoCitySearchGateway;
     private final WeatherRepository weatherRepository;
@@ -51,14 +49,10 @@ public class CityViewModel extends AndroidViewModel {
         super(application);
         ownerUserId = new AuthSessionManager(application).requireUserId();
         AppDatabase database = AppDatabase.getInstance(application);
-        cityDao = database.cityDao();
+        cityRepository = new CityRepository(ownerUserId, database.cityDao());
         apiService = WeatherGatewayFactory.createQWeatherServiceOrNull();
         openMeteoCitySearchGateway = WeatherGatewayFactory.createOpenMeteoCitySearchGateway();
-        weatherRepository = new WeatherRepository(
-                WeatherGatewayFactory.createHomeRemoteGateway(apiService),
-                new RoomWeatherCacheGateway(ownerUserId, database.weatherCacheDao(), new Gson()),
-                System::currentTimeMillis
-        );
+        weatherRepository = WeatherRepositoryFactory.createHomeRepository(ownerUserId, database, apiService);
         reload();
     }
 
@@ -91,14 +85,14 @@ public class CityViewModel extends AndroidViewModel {
                 message.postValue("请输入城市名称");
                 return;
             }
-            if (cityDao.findByLocationId(ownerUserId, city.locationId) != null) {
+            if (cityRepository.findByLocationId(city.locationId) != null) {
                 message.postValue("该城市已存在");
                 return;
             }
-            if (cityDao.count(ownerUserId) == 0) {
+            if (cityRepository.count() == 0) {
                 city.isDefault = true;
             }
-            cityDao.insert(city);
+            cityRepository.insert(city);
             message.postValue("城市已添加");
             reload();
         });
@@ -106,14 +100,7 @@ public class CityViewModel extends AndroidViewModel {
 
     public void removeCity(CityEntity city) {
         executorService.execute(() -> {
-            cityDao.deleteByLocationId(ownerUserId, city.locationId);
-            if (city.isDefault) {
-                List<CityEntity> remainingCities = cityDao.findAll(ownerUserId);
-                if (!remainingCities.isEmpty()) {
-                    cityDao.clearDefaultCity(ownerUserId);
-                    cityDao.setDefaultCity(ownerUserId, remainingCities.get(0).locationId, System.currentTimeMillis());
-                }
-            }
+            cityRepository.deleteCity(city, System.currentTimeMillis());
             message.postValue("城市已删除");
             reload();
         });
@@ -121,8 +108,7 @@ public class CityViewModel extends AndroidViewModel {
 
     public void setDefaultCity(CityEntity city) {
         executorService.execute(() -> {
-            cityDao.clearDefaultCity(ownerUserId);
-            cityDao.setDefaultCity(ownerUserId, city.locationId, System.currentTimeMillis());
+            cityRepository.setDefaultCity(city.locationId, System.currentTimeMillis());
             message.postValue("默认城市已切换为 " + city.cityName);
             reload();
         });
@@ -130,11 +116,11 @@ public class CityViewModel extends AndroidViewModel {
 
     private void reload() {
         executorService.execute(() -> {
-            DefaultCityUtils.resolveDefaultCity(cityDao, ownerUserId, System.currentTimeMillis());
-            List<CityEntity> cityEntities = cityDao.findAll(ownerUserId);
-            CityEntity defaultCityEntity = cityDao.findDefaultCity(ownerUserId);
+            cityRepository.resolveDefaultCity(System.currentTimeMillis());
+            List<CityEntity> cityEntities = cityRepository.findAll();
+            CityEntity defaultCityEntity = cityRepository.findDefaultCity();
             cities.postValue(cityEntities);
-            defaultCity.postValue(defaultCityEntity == null ? DefaultCityUtils.DEFAULT_CITY_NAME : defaultCityEntity.cityName);
+            defaultCity.postValue(defaultCityEntity == null ? "北京" : defaultCityEntity.cityName);
             refreshCityWeatherSummaries(cityEntities);
         });
     }
@@ -174,7 +160,7 @@ public class CityViewModel extends AndroidViewModel {
                     ownerUserId,
                     normalized,
                     isDefault,
-                    cityDao.count(ownerUserId) + 1,
+                    cityRepository.count() + 1,
                     System.currentTimeMillis()
             );
         }
@@ -197,7 +183,7 @@ public class CityViewModel extends AndroidViewModel {
                 parseCoordinate(location.lat, "location.lat"),
                 parseCoordinate(location.lon, "location.lon"),
                 isDefault,
-                cityDao.count(ownerUserId) + 1,
+                cityRepository.count() + 1,
                 nowTime,
                 nowTime
         );

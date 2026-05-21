@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="wrap_content"
+              android:gravity="center_vertical"
+              android:orientation="horizontal"
+              android:paddingTop="10dp"
+              android:paddingBottom="10dp">
+
+    <TextView
+            android:id="@+id/daily_date_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textColor="@color/weather_text_secondary"
+            android:textSize="14sp"
+            tools:text="今天"/>
+
+    <ImageView
+            android:id="@+id/daily_icon_image"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:importantForAccessibility="no"
+            tools:src="@drawable/ic_weather_sunny"/>
+
+    <TextView
+            android:id="@+id/daily_condition_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:textColor="@color/weather_text_secondary"
+            android:textSize="14sp"
+            tools:text="晴"/>
+
+    <TextView
+            android:id="@+id/daily_temp_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="end"
+            android:textColor="@color/weather_text_primary"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            tools:text="20° / 30°"/>
+</LinearLayout>

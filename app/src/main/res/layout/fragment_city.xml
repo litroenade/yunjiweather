@@ -4,7 +4,8 @@
             xmlns:tools="http://schemas.android.com/tools"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/weather_background_bottom"
+            android:background="@drawable/bg_app_soft"
+            android:clipToPadding="false"
             android:fillViewport="true"
             tools:context=".ui.city.CityFragment">
 
@@ -12,15 +13,42 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="18dp">
+            android:paddingStart="18dp"
+            android:paddingTop="22dp"
+            android:paddingEnd="18dp"
+            android:paddingBottom="104dp">
 
-        <TextView
+        <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="城市管理"
-                android:textColor="@color/weather_text_primary"
-                android:textSize="24sp"
-                android:textStyle="bold"/>
+                app:cardCornerRadius="24dp"
+                app:cardElevation="4dp"
+                app:strokeWidth="0dp">
+
+            <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_page_header"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/city_title"
+                        android:textColor="@color/weather_text_inverse"
+                        android:textSize="25sp"
+                        android:textStyle="bold"/>
+
+                <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="@string/city_subtitle"
+                        android:textColor="#EAFBFF"
+                        android:textSize="14sp"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <LinearLayout
                 android:layout_width="match_parent"
@@ -29,10 +57,16 @@
                 android:orientation="horizontal">
 
             <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:hint="输入城市名称">
+                    android:hint="@string/city_search_hint"
+                    app:boxBackgroundColor="@color/weather_surface"
+                    app:boxCornerRadiusBottomEnd="16dp"
+                    app:boxCornerRadiusBottomStart="16dp"
+                    app:boxCornerRadiusTopEnd="16dp"
+                    app:boxCornerRadiusTopStart="16dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/city_input"
@@ -46,14 +80,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="56dp"
                     android:layout_marginStart="10dp"
-                    android:text="添加"/>
+                    android:text="@string/city_add"/>
         </LinearLayout>
 
         <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="20dp"
-                android:text="热门城市"
+                android:text="@string/city_popular_title"
                 android:textColor="@color/weather_text_primary"
                 android:textSize="17sp"
                 android:textStyle="bold"/>
@@ -70,7 +104,7 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="北京"/>
+                    android:text="@string/city_beijing"/>
 
             <com.google.android.material.button.MaterialButton
                     android:id="@+id/shanghai_button"
@@ -79,7 +113,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:layout_weight="1"
-                    android:text="上海"/>
+                    android:text="@string/city_shanghai"/>
 
             <com.google.android.material.button.MaterialButton
                     android:id="@+id/guangzhou_button"
@@ -88,7 +122,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:layout_weight="1"
-                    android:text="广州"/>
+                    android:text="@string/city_guangzhou"/>
 
             <com.google.android.material.button.MaterialButton
                     android:id="@+id/shenzhen_button"
@@ -97,32 +131,34 @@
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
                     android:layout_weight="1"
-                    android:text="深圳"/>
+                    android:text="@string/city_shenzhen"/>
         </LinearLayout>
 
         <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="22dp"
-                android:text="已关注城市"
+                android:text="@string/city_followed_title"
                 android:textColor="@color/weather_text_primary"
                 android:textSize="17sp"
                 android:textStyle="bold"/>
 
-        <LinearLayout
-                android:id="@+id/city_list_container"
+        <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/city_recycler_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
-                android:orientation="vertical"/>
+                android:nestedScrollingEnabled="false"
+                tools:listitem="@layout/item_city_card"/>
 
         <TextView
                 android:id="@+id/empty_text"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="96dp"
                 android:layout_marginTop="18dp"
+                android:background="@drawable/bg_card_soft"
                 android:gravity="center"
-                android:text="暂无关注城市"
+                android:text="@string/city_empty"
                 android:textColor="@color/weather_text_secondary"
                 android:textSize="14sp"
                 android:visibility="gone"/>

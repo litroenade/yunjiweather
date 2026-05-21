@@ -13,6 +13,7 @@ import com.litroenade.yunjiweather.data.entity.CityEntity;
 import com.litroenade.yunjiweather.data.entity.WarningEntity;
 import com.litroenade.yunjiweather.data.local.AppDatabase;
 import com.litroenade.yunjiweather.data.repository.AlertRepository;
+import com.litroenade.yunjiweather.data.repository.CityRepository;
 import com.litroenade.yunjiweather.notification.NotificationHelper;
 import com.litroenade.yunjiweather.settings.SettingsManager;
 
@@ -41,7 +42,7 @@ public class WeatherAlertWorker extends Worker {
         }
 
         AppDatabase database = AppDatabase.getInstance(context);
-        CityEntity defaultCity = database.cityDao().findDefaultCity(ownerUserId);
+        CityEntity defaultCity = new CityRepository(ownerUserId, database.cityDao()).findDefaultCity();
         if (defaultCity == null) {
             return Result.success();
         }

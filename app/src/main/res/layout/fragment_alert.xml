@@ -4,7 +4,8 @@
             xmlns:tools="http://schemas.android.com/tools"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/weather_background_bottom"
+            android:background="@drawable/bg_app_soft"
+            android:clipToPadding="false"
             android:fillViewport="true"
             tools:context=".ui.alert.AlertFragment">
 
@@ -12,15 +13,42 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="18dp">
+            android:paddingStart="18dp"
+            android:paddingTop="22dp"
+            android:paddingEnd="18dp"
+            android:paddingBottom="104dp">
 
-        <TextView
+        <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="天气预警"
-                android:textColor="@color/weather_text_primary"
-                android:textSize="24sp"
-                android:textStyle="bold"/>
+                app:cardCornerRadius="24dp"
+                app:cardElevation="4dp"
+                app:strokeWidth="0dp">
+
+            <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_page_header"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/alert_title"
+                        android:textColor="@color/weather_text_inverse"
+                        android:textSize="25sp"
+                        android:textStyle="bold"/>
+
+                <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="@string/alert_subtitle"
+                        android:textColor="#EAFBFF"
+                        android:textSize="14sp"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <ProgressBar
                 android:id="@+id/alert_progress_bar"
@@ -35,8 +63,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
+                app:cardBackgroundColor="@color/weather_surface"
                 app:cardCornerRadius="18dp"
-                app:cardElevation="0dp">
+                app:cardElevation="0dp"
+                app:strokeColor="@color/weather_stroke"
+                app:strokeWidth="1dp">
 
             <LinearLayout
                     android:layout_width="match_parent"
@@ -49,7 +80,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:gravity="center"
-                        android:text="暂无预警"
+                        android:text="@string/alert_empty_title"
                         android:textColor="@color/weather_text_primary"
                         android:textSize="20sp"
                         android:textStyle="bold"/>
@@ -68,23 +99,24 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="18dp"
-                        android:text="刷新预警状态"/>
+                        android:text="@string/alert_refresh"/>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <LinearLayout
-                android:id="@+id/warning_list_container"
+        <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/warning_recycler_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:orientation="vertical"
-                android:visibility="gone"/>
+                android:nestedScrollingEnabled="false"
+                android:visibility="gone"
+                tools:listitem="@layout/item_warning_card"/>
 
         <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
-                android:text="预警等级样式"
+                android:text="@string/alert_level_style"
                 android:textColor="@color/weather_text_primary"
                 android:textSize="17sp"
                 android:textStyle="bold"/>
@@ -98,29 +130,36 @@
             <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:background="@drawable/bg_alert_hint_blue"
                     android:padding="12dp"
-                    android:text="蓝色预警：注意天气变化"
+                    android:text="@string/alert_blue_hint"
                     android:textColor="#155EEF"/>
 
             <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_alert_hint_yellow"
                     android:padding="12dp"
-                    android:text="黄色预警：减少不必要外出"
+                    android:text="@string/alert_yellow_hint"
                     android:textColor="#B54708"/>
 
             <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_alert_hint_orange"
                     android:padding="12dp"
-                    android:text="橙色预警：加强安全防护"
+                    android:text="@string/alert_orange_hint"
                     android:textColor="#C4320A"/>
 
             <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:background="@drawable/bg_alert_hint_red"
                     android:padding="12dp"
-                    android:text="红色预警：必要时暂停出行"
+                    android:text="@string/alert_red_hint"
                     android:textColor="#B42318"/>
         </LinearLayout>
     </LinearLayout>

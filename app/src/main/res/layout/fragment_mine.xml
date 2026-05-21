@@ -21,7 +21,7 @@
         <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="我的"
+                android:text="@string/mine_title"
                 android:textColor="@color/weather_text_primary"
                 android:textSize="26sp"
                 android:textStyle="bold"/>
@@ -44,7 +44,7 @@
                 <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="账户空间"
+                        android:text="@string/mine_account_space"
                         android:textColor="#DFF8FF"
                         android:textSize="13sp"/>
 
@@ -83,7 +83,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="46dp"
                         android:layout_marginTop="16dp"
-                        android:text="退出登录"
+                        android:text="@string/mine_logout"
                         android:textColor="@color/weather_text_inverse"
                         app:cornerRadius="15dp"
                         app:strokeColor="#A8F1FF"
@@ -95,7 +95,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="22dp"
-                android:text="天气偏好"
+                android:text="@string/mine_weather_preference"
                 android:textColor="@color/weather_text_primary"
                 android:textSize="18sp"
                 android:textStyle="bold"/>
@@ -112,31 +112,31 @@
                     android:id="@+id/warning_switch"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="天气预警通知"/>
+                    android:text="@string/mine_warning_notification"/>
 
             <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/daily_reminder_switch"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="每日天气提醒"/>
+                    android:text="@string/mine_daily_reminder"/>
 
             <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/animation_switch"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="天气动画"/>
+                    android:text="@string/mine_weather_animation"/>
 
             <com.google.android.material.switchmaterial.SwitchMaterial
                     android:id="@+id/dark_mode_switch"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="深色模式偏好"/>
+                    android:text="@string/mine_dark_mode"/>
 
             <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
-                    android:text="温度单位"
+                    android:text="@string/mine_temperature_unit"
                     android:textColor="@color/weather_text_secondary"
                     android:textSize="14sp"/>
 
@@ -153,7 +153,7 @@
                         android:layout_height="48dp"
                         android:layout_marginEnd="8dp"
                         android:layout_weight="1"
-                        android:text="摄氏度 °C"/>
+                        android:text="@string/mine_celsius"/>
 
                 <com.google.android.material.button.MaterialButton
                         android:id="@+id/fahrenheit_button"
@@ -161,14 +161,14 @@
                         android:layout_width="0dp"
                         android:layout_height="48dp"
                         android:layout_weight="1"
-                        android:text="华氏度 °F"/>
+                        android:text="@string/mine_fahrenheit"/>
             </LinearLayout>
 
             <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="14dp"
-                    android:text="风速单位"
+                    android:text="@string/mine_wind_unit"
                     android:textColor="@color/weather_text_secondary"
                     android:textSize="14sp"/>
 
@@ -185,7 +185,7 @@
                         android:layout_height="48dp"
                         android:layout_marginEnd="8dp"
                         android:layout_weight="1"
-                        android:text="风力等级"/>
+                        android:text="@string/mine_wind_scale"/>
 
                 <com.google.android.material.button.MaterialButton
                         android:id="@+id/wind_ms_button"
@@ -193,7 +193,7 @@
                         android:layout_width="0dp"
                         android:layout_height="48dp"
                         android:layout_weight="1"
-                        android:text="米/秒"/>
+                        android:text="@string/mine_meter_per_second"/>
             </LinearLayout>
         </LinearLayout>
 
@@ -201,7 +201,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="22dp"
-                android:text="应用信息"
+                android:text="@string/mine_app_info"
                 android:textColor="@color/weather_text_primary"
                 android:textSize="18sp"
                 android:textStyle="bold"/>
@@ -217,7 +217,7 @@
             <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="本地存储状态"
+                    android:text="@string/mine_local_storage_status"
                     android:textColor="@color/weather_text_primary"
                     android:textSize="15sp"
                     android:textStyle="bold"/>
@@ -232,12 +232,30 @@
                     android:textSize="14sp"
                     tools:text="本地账户：已保存&#10;城市数据：1 个&#10;天气缓存：5 条&#10;预警记录：0 条"/>
 
+            <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="18dp"
+                    android:text="@string/mine_project_status"
+                    android:textColor="@color/weather_text_primary"
+                    android:textSize="15sp"
+                    android:textStyle="bold"/>
+
+            <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:lineSpacingExtra="4dp"
+                    android:text="@string/mine_project_status_detail"
+                    android:textColor="@color/weather_text_secondary"
+                    android:textSize="13sp"/>
+
             <com.google.android.material.button.MaterialButton
                     android:id="@+id/clear_cache_button"
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
                     android:layout_marginTop="14dp"
-                    android:text="清理天气缓存"/>
+                    android:text="@string/mine_clear_weather_cache"/>
 
             <com.google.android.material.button.MaterialButton
                     android:id="@+id/data_source_button"
@@ -245,7 +263,15 @@
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
                     android:layout_marginTop="10dp"
-                    android:text="API 数据来源说明"/>
+                    android:text="@string/mine_api_source"/>
+
+            <com.google.android.material.button.MaterialButton
+                    android:id="@+id/developer_info_button"
+                    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/mine_developer_info"/>
 
             <com.google.android.material.button.MaterialButton
                     android:id="@+id/help_button"
@@ -253,7 +279,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
                     android:layout_marginTop="10dp"
-                    android:text="使用帮助"/>
+                    android:text="@string/mine_help"/>
 
             <com.google.android.material.button.MaterialButton
                     android:id="@+id/about_button"
@@ -261,7 +287,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="48dp"
                     android:layout_marginTop="10dp"
-                    android:text="关于 App"/>
+                    android:text="@string/mine_about"/>
         </LinearLayout>
     </LinearLayout>
 </ScrollView>

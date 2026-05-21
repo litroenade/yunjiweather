@@ -13,10 +13,10 @@ import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.litroenade.yunjiweather.R;
 import com.litroenade.yunjiweather.databinding.FragmentMineBinding;
 import com.litroenade.yunjiweather.ui.auth.AuthActivity;
 import com.litroenade.yunjiweather.utils.PermissionUtils;
-import com.litroenade.yunjiweather.utils.ThemeModeUtils;
 import com.litroenade.yunjiweather.utils.WeatherDisplayUtils;
 import com.google.android.material.button.MaterialButton;
 
@@ -73,6 +73,7 @@ public class MineFragment extends Fragment {
         binding.logoutButton.setOnClickListener(view -> viewModel.logout());
         binding.aboutButton.setOnClickListener(view -> showAboutDialog());
         binding.dataSourceButton.setOnClickListener(view -> showDataSourceDialog());
+        binding.developerInfoButton.setOnClickListener(view -> showDeveloperDialog());
         binding.helpButton.setOnClickListener(view -> showHelpDialog());
 
         viewModel.getAccountText().observe(getViewLifecycleOwner(), binding.accountText::setText);
@@ -128,37 +129,41 @@ public class MineFragment extends Fragment {
     }
 
     private void applyDarkMode(boolean enabled) {
-        int targetMode = ThemeModeUtils.resolveNightMode(
-                enabled,
-                AppCompatDelegate.MODE_NIGHT_YES,
-                AppCompatDelegate.MODE_NIGHT_NO
-        );
-        if (ThemeModeUtils.shouldApplyNightMode(AppCompatDelegate.getDefaultNightMode(), targetMode)) {
+        int targetMode = enabled ? AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO;
+        if (AppCompatDelegate.getDefaultNightMode() != targetMode) {
             AppCompatDelegate.setDefaultNightMode(targetMode);
         }
     }
 
     private void showAboutDialog() {
         new AlertDialog.Builder(requireContext())
-                .setTitle("关于云迹天气")
-                .setMessage("云迹天气是一个课程项目级天气生活服务 App，当前已接入首页天气、城市管理、生活指数、预警状态和基础设置。")
-                .setPositiveButton("知道了", null)
+                .setTitle(R.string.mine_about_title)
+                .setMessage(R.string.mine_about_message)
+                .setPositiveButton(R.string.mine_dialog_positive, null)
                 .show();
     }
 
     private void showDataSourceDialog() {
         new AlertDialog.Builder(requireContext())
-                .setTitle("数据来源")
-                .setMessage("默认使用 Open-Meteo 获取天气、空气质量和城市搜索数据，无需 API Key。配置 QWeather 后，可增强生活指数和官方天气预警能力。请在 local.properties 中配置 qweather.apiHost 和 qweather.apiKey。")
-                .setPositiveButton("知道了", null)
+                .setTitle(R.string.mine_data_source_title)
+                .setMessage(R.string.mine_data_source_message)
+                .setPositiveButton(R.string.mine_dialog_positive, null)
+                .show();
+    }
+
+    private void showDeveloperDialog() {
+        new AlertDialog.Builder(requireContext())
+                .setTitle(R.string.mine_developer_title)
+                .setMessage(R.string.mine_developer_message)
+                .setPositiveButton(R.string.mine_dialog_positive, null)
                 .show();
     }
 
     private void showHelpDialog() {
         new AlertDialog.Builder(requireContext())
-                .setTitle("使用帮助")
-                .setMessage("本项目账户为本地账户，不上传密码；不同账户的城市、缓存、设置和预警状态互相隔离。首页可下拉刷新天气，点击定位后才会申请定位权限。城市页可添加、删除和切换默认城市。网络失败时会优先显示当前账户的本地缓存。预警通知和每日提醒需要开启通知权限。未配置 QWeather 时，不会伪造官方天气预警。")
-                .setPositiveButton("知道了", null)
+                .setTitle(R.string.mine_help_title)
+                .setMessage(R.string.mine_help_message)
+                .setPositiveButton(R.string.mine_dialog_positive, null)
                 .show();
     }
 

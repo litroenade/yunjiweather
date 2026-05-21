@@ -7,10 +7,15 @@
     <color name="weather_background_bottom">#0B1220</color>
     <color name="weather_surface">#111827</color>
     <color name="weather_surface_tint">#172033</color>
+    <color name="weather_stroke">#253449</color>
     <color name="weather_text_primary">#E5EEF8</color>
     <color name="weather_text_secondary">#9AAFC4</color>
     <color name="weather_text_inverse">#FFFFFFFF</color>
     <color name="weather_card">#E61B2738</color>
     <color name="weather_error">#FFB4AB</color>
-    <color name="weather_success">#5EEAD4</color>
+    <color name="auth_hero_title">#EAFBFF</color>
+    <color name="auth_hero_subtitle">#B7D2EA</color>
+    <color name="auth_chip_text">#CDEBFF</color>
+    <color name="auth_card_background">#F01B2738</color>
+    <color name="auth_card_stroke">#334762</color>
 </resources>

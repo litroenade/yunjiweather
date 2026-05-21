@@ -33,8 +33,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
                 android:gravity="center"
-                android:text="云迹天气"
-                android:textColor="#083D77"
+                android:text="@string/app_name"
+                android:textColor="@color/auth_hero_title"
                 android:textSize="34sp"
                 android:textStyle="bold"/>
 
@@ -43,8 +43,8 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:gravity="center"
-                android:text="记录你的城市与天气偏好"
-                android:textColor="#24526F"
+                android:text="@string/auth_subtitle"
+                android:textColor="@color/auth_hero_subtitle"
                 android:textSize="15sp"/>
 
         <TextView
@@ -56,18 +56,18 @@
                 android:minWidth="178dp"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
-                android:text="本地账户 · 数据隔离"
-                android:textColor="#174763"
+                android:text="@string/auth_badge_local_account"
+                android:textColor="@color/auth_chip_text"
                 android:textSize="13sp"/>
 
         <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="28dp"
-                app:cardBackgroundColor="#FAFFFFFF"
+                app:cardBackgroundColor="@color/auth_card_background"
                 app:cardCornerRadius="24dp"
                 app:cardElevation="8dp"
-                app:strokeColor="#E4F0FA"
+                app:strokeColor="@color/auth_card_stroke"
                 app:strokeWidth="1dp">
 
             <LinearLayout
@@ -80,7 +80,7 @@
                         android:id="@+id/mode_title"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="登录账户"
+                        android:text="@string/auth_login_title"
                         android:textColor="@color/weather_text_primary"
                         android:textSize="22sp"
                         android:textStyle="bold"/>
@@ -90,7 +90,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="登录后进入你的专属天气空间"
+                        android:text="@string/auth_login_subtitle"
                         android:textColor="@color/weather_text_secondary"
                         android:textSize="14sp"/>
 
@@ -104,8 +104,8 @@
                         android:paddingTop="8dp"
                         android:paddingEnd="12dp"
                         android:paddingBottom="8dp"
-                        android:text="使用已注册的本地账户登录；用户名不区分大小写"
-                        android:textColor="#174763"
+                        android:text="@string/auth_login_helper"
+                        android:textColor="@color/auth_chip_text"
                         android:textSize="13sp"/>
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -114,11 +114,12 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="22dp"
-                        android:hint="用户名"
+                        android:hint="@string/auth_username_hint"
                         app:boxCornerRadiusBottomEnd="14dp"
                         app:boxCornerRadiusBottomStart="14dp"
                         app:boxCornerRadiusTopEnd="14dp"
                         app:boxCornerRadiusTopStart="14dp"
+                        app:startIconTint="@color/weather_text_secondary"
                         app:startIconDrawable="@drawable/ic_mine_black_24dp">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -127,7 +128,9 @@
                             android:layout_height="wrap_content"
                             android:imeOptions="actionNext"
                             android:inputType="text"
-                            android:maxLines="1"/>
+                            android:maxLines="1"
+                            android:textColor="@color/weather_text_primary"
+                            android:textColorHint="@color/weather_text_secondary"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -136,12 +139,13 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:hint="显示名称（可选）"
+                        android:hint="@string/auth_display_name_hint"
                         android:visibility="gone"
                         app:boxCornerRadiusBottomEnd="14dp"
                         app:boxCornerRadiusBottomStart="14dp"
                         app:boxCornerRadiusTopEnd="14dp"
                         app:boxCornerRadiusTopStart="14dp"
+                        app:startIconTint="@color/weather_text_secondary"
                         app:startIconDrawable="@drawable/ic_mine_black_24dp">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -150,7 +154,9 @@
                             android:layout_height="wrap_content"
                             android:imeOptions="actionNext"
                             android:inputType="textPersonName"
-                            android:maxLines="1"/>
+                            android:maxLines="1"
+                            android:textColor="@color/weather_text_primary"
+                            android:textColorHint="@color/weather_text_secondary"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -159,12 +165,13 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
-                        android:hint="密码"
+                        android:hint="@string/auth_password_hint"
                         app:boxCornerRadiusBottomEnd="14dp"
                         app:boxCornerRadiusBottomStart="14dp"
                         app:boxCornerRadiusTopEnd="14dp"
                         app:boxCornerRadiusTopStart="14dp"
-                        app:endIconMode="password_toggle">
+                        app:endIconMode="password_toggle"
+                        app:endIconTint="@color/weather_text_secondary">
 
                     <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/password_input"
@@ -172,7 +179,9 @@
                             android:layout_height="wrap_content"
                             android:imeOptions="actionDone"
                             android:inputType="textPassword"
-                            android:maxLines="1"/>
+                            android:maxLines="1"
+                            android:textColor="@color/weather_text_primary"
+                            android:textColorHint="@color/weather_text_secondary"/>
                 </com.google.android.material.textfield.TextInputLayout>
 
                 <TextView
@@ -190,7 +199,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="54dp"
                         android:layout_marginTop="18dp"
-                        android:text="登录"
+                        android:text="@string/auth_login_button"
                         android:textSize="16sp"
                         app:cornerRadius="16dp"/>
 
@@ -200,7 +209,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:text="没有账户？立即注册"/>
+                        android:text="@string/auth_switch_to_register"/>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
     </LinearLayout>

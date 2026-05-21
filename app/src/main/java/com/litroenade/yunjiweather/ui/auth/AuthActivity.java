@@ -34,30 +34,42 @@ public class AuthActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         sessionManager = new AuthSessionManager(this);
-        if (sessionManager.isLoggedIn()) {
-            validateExistingSession();
-            return;
-        }
         showAuthForm();
+        if (sessionManager.isLoggedIn()) {
+            setLoading(true);
+            validateExistingSession();
+        }
     }
 
     private void validateExistingSession() {
         diskExecutor.execute(() -> {
-            AppDatabase database = AppDatabase.getInstance(this);
-            AuthSessionValidator.Result result = new AuthSessionValidator(
-                    sessionManager,
-                    database.userDao()::findById
-            ).validate();
-            runOnUiThread(() -> {
-                if (isDestroyed()) {
-                    return;
-                }
-                if (result.isValid()) {
-                    openMainActivity();
-                    return;
-                }
-                showAuthForm();
-            });
+            try {
+                AppDatabase database = AppDatabase.getInstance(this);
+                AuthSessionValidator.Result result = new AuthSessionValidator(
+                        sessionManager,
+                        database.userDao()::findById
+                ).validate();
+                runOnUiThread(() -> {
+                    if (isDestroyed()) {
+                        return;
+                    }
+                    if (result.isValid()) {
+                        openMainActivity();
+                        return;
+                    }
+                    sessionManager.logout();
+                    setLoading(false);
+                });
+            } catch (RuntimeException exception) {
+                sessionManager.logout();
+                runOnUiThread(() -> {
+                    if (isDestroyed()) {
+                        return;
+                    }
+                    setLoading(false);
+                    showError(buildSessionRestoreErrorMessage(exception), AuthFormController.Field.NONE);
+                });
+            }
         });
     }
 
@@ -194,6 +206,14 @@ public class AuthActivity extends AppCompatActivity {
             detail = exception.getClass().getSimpleName();
         }
         return "账户操作失败，请稍后重试：" + detail;
+    }
+
+    private static String buildSessionRestoreErrorMessage(RuntimeException exception) {
+        String detail = exception.getMessage();
+        if (detail == null || detail.trim().isEmpty()) {
+            detail = exception.getClass().getSimpleName();
+        }
+        return "本地账户数据读取失败，请重新登录：" + detail;
     }
 
     @Override

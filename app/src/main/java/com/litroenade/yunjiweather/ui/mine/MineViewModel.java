@@ -11,6 +11,7 @@ import androidx.work.WorkManager;
 import com.litroenade.yunjiweather.auth.AuthSessionManager;
 import com.litroenade.yunjiweather.data.entity.CityEntity;
 import com.litroenade.yunjiweather.data.local.AppDatabase;
+import com.litroenade.yunjiweather.data.repository.CityRepository;
 import com.litroenade.yunjiweather.settings.SettingsManager;
 import com.litroenade.yunjiweather.utils.DefaultCityUtils;
 import com.litroenade.yunjiweather.utils.LocalStorageSummaryUtils;
@@ -25,6 +26,7 @@ public class MineViewModel extends AndroidViewModel {
     private final SettingsManager settingsManager;
     private final AuthSessionManager authSessionManager;
     private final AppDatabase database;
+    private final CityRepository cityRepository;
     private final long ownerUserId;
     private final ExecutorService diskExecutor = Executors.newSingleThreadExecutor();
     private final MutableLiveData<String> accountText = new MutableLiveData<>();
@@ -46,6 +48,7 @@ public class MineViewModel extends AndroidViewModel {
         ownerUserId = authSessionManager.requireUserId();
         settingsManager = new SettingsManager(application);
         database = AppDatabase.getInstance(application);
+        cityRepository = new CityRepository(ownerUserId, database.cityDao());
         refresh();
     }
 
@@ -170,7 +173,7 @@ public class MineViewModel extends AndroidViewModel {
 
     private void refreshDefaultCity() {
         diskExecutor.execute(() -> {
-            CityEntity city = DefaultCityUtils.resolveDefaultCity(database.cityDao(), ownerUserId, System.currentTimeMillis());
+            CityEntity city = cityRepository.resolveDefaultCity(System.currentTimeMillis());
             defaultCity.postValue(DefaultCityUtils.formatDefaultCityText(city));
         });
     }
@@ -185,7 +188,7 @@ public class MineViewModel extends AndroidViewModel {
     private void refreshLocalStorageSummary() {
         diskExecutor.execute(() -> {
             boolean accountExists = database.userDao().findById(ownerUserId) != null;
-            int cityCount = database.cityDao().count(ownerUserId);
+            int cityCount = cityRepository.count();
             int cacheCount = database.weatherCacheDao().count(ownerUserId);
             int warningCount = database.warningDao().count(ownerUserId);
             localStorageSummary.postValue(LocalStorageSummaryUtils.formatSummary(

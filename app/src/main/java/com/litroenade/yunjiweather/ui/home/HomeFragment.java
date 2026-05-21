@@ -4,14 +4,15 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.CancellationSignal;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -20,11 +21,10 @@ import androidx.annotation.NonNull;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.litroenade.yunjiweather.common.UiState;
 import com.litroenade.yunjiweather.data.model.HomeWeatherData;
-import com.litroenade.yunjiweather.data.model.WeatherDailyData;
-import com.litroenade.yunjiweather.data.model.WeatherHourlyData;
 import com.litroenade.yunjiweather.databinding.FragmentHomeBinding;
 import com.litroenade.yunjiweather.settings.SettingsManager;
 import com.litroenade.yunjiweather.utils.DateTimeUtils;
@@ -32,6 +32,7 @@ import com.litroenade.yunjiweather.utils.PermissionUtils;
 import com.litroenade.yunjiweather.utils.WeatherDisplayUtils;
 import com.litroenade.yunjiweather.utils.WeatherIconUtils;
 
+import java.util.Locale;
 import java.util.Map;
 
 public class HomeFragment extends Fragment {
@@ -41,6 +42,9 @@ public class HomeFragment extends Fragment {
     private SettingsManager settingsManager;
     private ActivityResultLauncher<String[]> locationPermissionLauncher;
     private WeatherAnimationView weatherAnimationView;
+    private HourlyForecastAdapter hourlyForecastAdapter;
+    private DailyForecastAdapter dailyForecastAdapter;
+    private WeatherCalendarAdapter weatherCalendarAdapter;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -57,6 +61,7 @@ public class HomeFragment extends Fragment {
         settingsManager = new SettingsManager(requireContext());
 
         binding = FragmentHomeBinding.inflate(inflater, container, false);
+        setupForecastLists();
         binding.locationButton.setOnClickListener(view -> handleLocationClick());
         binding.refreshButton.setOnClickListener(view -> homeViewModel.refresh());
         binding.retryButton.setOnClickListener(view -> homeViewModel.refresh());
@@ -70,6 +75,27 @@ public class HomeFragment extends Fragment {
             homeViewModel.loadHomeWeather();
         }
         return binding.getRoot();
+    }
+
+    private void setupForecastLists() {
+        hourlyForecastAdapter = new HourlyForecastAdapter();
+        binding.hourlyForecastRecyclerView.setLayoutManager(
+                new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        );
+        binding.hourlyForecastRecyclerView.setAdapter(hourlyForecastAdapter);
+        binding.hourlyForecastRecyclerView.setNestedScrollingEnabled(false);
+
+        weatherCalendarAdapter = new WeatherCalendarAdapter();
+        binding.weatherCalendarRecyclerView.setLayoutManager(
+                new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
+        );
+        binding.weatherCalendarRecyclerView.setAdapter(weatherCalendarAdapter);
+        binding.weatherCalendarRecyclerView.setNestedScrollingEnabled(false);
+
+        dailyForecastAdapter = new DailyForecastAdapter();
+        binding.dailyForecastRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+        binding.dailyForecastRecyclerView.setAdapter(dailyForecastAdapter);
+        binding.dailyForecastRecyclerView.setNestedScrollingEnabled(false);
     }
 
     @Override
@@ -116,13 +142,34 @@ public class HomeFragment extends Fragment {
             Toast.makeText(requireContext(), "请先开启系统定位服务", Toast.LENGTH_SHORT).show();
             return;
         }
-        CancellationSignal cancellationSignal = new CancellationSignal();
-        locationManager.getCurrentLocation(
-                provider,
-                cancellationSignal,
-                ContextCompat.getMainExecutor(requireContext()),
-                this::handleLocationResult
-        );
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            CancellationSignal cancellationSignal = new CancellationSignal();
+            locationManager.getCurrentLocation(
+                    provider,
+                    cancellationSignal,
+                    ContextCompat.getMainExecutor(requireContext()),
+                    this::handleLocationResult
+            );
+            return;
+        }
+        locationManager.requestSingleUpdate(provider, new LocationListener() {
+            @Override
+            public void onLocationChanged(@NonNull Location location) {
+                handleLocationResult(location);
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+            }
+
+            @Override
+            public void onProviderEnabled(@NonNull String provider) {
+            }
+
+            @Override
+            public void onProviderDisabled(@NonNull String provider) {
+            }
+        }, Looper.getMainLooper());
     }
 
     private String resolveLocationProvider(LocationManager locationManager) {
@@ -172,7 +219,13 @@ public class HomeFragment extends Fragment {
         }
         renderWeatherData(data);
         if (state.getStatus() == UiState.Status.CACHE) {
-            binding.cacheStateText.setText(state.getMessage() + " " + DateTimeUtils.formatCacheUpdateTime(state.getUpdateTime()));
+            String cacheText = String.format(
+                    Locale.CHINA,
+                    "%s %s",
+                    state.getMessage(),
+                    DateTimeUtils.formatCacheUpdateTime(state.getUpdateTime())
+            );
+            binding.cacheStateText.setText(cacheText);
             binding.cacheStateText.setVisibility(View.VISIBLE);
         }
     }
@@ -187,26 +240,38 @@ public class HomeFragment extends Fragment {
         binding.cityNameText.setText(data.getCityName());
         binding.tempText.setText(WeatherDisplayUtils.formatTemperature(data.getTemperature(), temperatureUnit));
         binding.conditionText.setText(data.getCondition());
-        binding.feelsLikeText.setText("体感 " + WeatherDisplayUtils.formatTemperature(data.getFeelsLike(), temperatureUnit));
-        binding.tempRangeText.setText("今日 "
-                + WeatherDisplayUtils.formatTemperature(data.getTempMin(), temperatureUnit)
-                + " / "
-                + WeatherDisplayUtils.formatTemperature(data.getTempMax(), temperatureUnit));
-        binding.humidityText.setText("湿度 " + data.getHumidity() + "%");
+        binding.feelsLikeText.setText(String.format(
+                Locale.CHINA,
+                "体感 %s",
+                WeatherDisplayUtils.formatTemperature(data.getFeelsLike(), temperatureUnit)
+        ));
+        binding.tempRangeText.setText(String.format(
+                Locale.CHINA,
+                "今日 %s / %s",
+                WeatherDisplayUtils.formatTemperature(data.getTempMin(), temperatureUnit),
+                WeatherDisplayUtils.formatTemperature(data.getTempMax(), temperatureUnit)
+        ));
+        binding.humidityText.setText(String.format(Locale.CHINA, "湿度 %s%%", data.getHumidity()));
         binding.windText.setText(WeatherDisplayUtils.formatWind(
                 data.getWindDir(),
                 data.getWindScale(),
                 data.getWindSpeed(),
                 windUnit
         ));
-        binding.pressureText.setText("气压 " + data.getPressure() + " hPa");
-        binding.visibilityText.setText("能见度 " + data.getVisibility() + " km");
-        binding.airQualityText.setText("AQI " + data.getAirQualityIndex() + " · " + data.getAirQualityCategory());
-        binding.airPrimaryText.setText("首要污染物：" + data.getPrimaryPollutant());
-        binding.clothingAdviceText.setText("穿衣：" + data.getClothingAdvice());
-        binding.travelAdviceText.setText("出行：" + data.getTravelAdvice());
+        binding.pressureText.setText(String.format(Locale.CHINA, "气压 %s hPa", data.getPressure()));
+        binding.visibilityText.setText(String.format(Locale.CHINA, "能见度 %s km", data.getVisibility()));
+        binding.airQualityText.setText(String.format(
+                Locale.CHINA,
+                "AQI %s · %s",
+                data.getAirQualityIndex(),
+                data.getAirQualityCategory()
+        ));
+        binding.airPrimaryText.setText(String.format(Locale.CHINA, "首要污染物：%s", data.getPrimaryPollutant()));
+        binding.clothingAdviceText.setText(String.format(Locale.CHINA, "穿衣：%s", data.getClothingAdvice()));
+        binding.travelAdviceText.setText(String.format(Locale.CHINA, "出行：%s", data.getTravelAdvice()));
         binding.updateTimeText.setText(DateTimeUtils.formatCacheUpdateTime(data.getUpdateTime()).replace("缓存", ""));
         renderHourlyForecasts(data, temperatureUnit);
+        renderWeatherCalendar(data, temperatureUnit);
         renderDailyForecasts(data, temperatureUnit);
     }
 
@@ -236,67 +301,36 @@ public class HomeFragment extends Fragment {
         int iconIndex = parent.indexOfChild(binding.weatherIconImage);
         weatherAnimationView = new WeatherAnimationView(requireContext());
         ViewGroup.LayoutParams iconParams = binding.weatherIconImage.getLayoutParams();
-        weatherAnimationView.setLayoutParams(new LinearLayout.LayoutParams(iconParams.width, iconParams.height));
+        weatherAnimationView.setLayoutParams(new ViewGroup.LayoutParams(iconParams.width, iconParams.height));
         weatherAnimationView.setVisibility(View.GONE);
         parent.addView(weatherAnimationView, iconIndex + 1);
     }
 
     private void renderHourlyForecasts(HomeWeatherData data, String temperatureUnit) {
-        binding.hourlyForecastContainer.removeAllViews();
-        for (WeatherHourlyData hourlyData : data.getHourlyForecasts()) {
-            TextView itemView = new TextView(requireContext());
-            itemView.setText(hourlyData.getTimeText()
-                    + "\n"
-                    + hourlyData.getCondition()
-                    + "\n"
-                    + WeatherDisplayUtils.formatTemperature(hourlyData.getTemperature(), temperatureUnit));
-            itemView.setTextColor(requireContext().getColor(com.litroenade.yunjiweather.R.color.weather_text_primary));
-            itemView.setTextSize(13f);
-            itemView.setGravity(android.view.Gravity.CENTER);
-            itemView.setMinWidth(130);
-            itemView.setPadding(12, 8, 12, 8);
-            binding.hourlyForecastContainer.addView(itemView);
+        if (hourlyForecastAdapter != null) {
+            hourlyForecastAdapter.submitData(data.getHourlyForecasts(), temperatureUnit);
+        }
+    }
+
+    private void renderWeatherCalendar(HomeWeatherData data, String temperatureUnit) {
+        if (weatherCalendarAdapter != null) {
+            weatherCalendarAdapter.submitData(data.getDailyForecasts(), temperatureUnit);
         }
     }
 
     private void renderDailyForecasts(HomeWeatherData data, String temperatureUnit) {
-        binding.dailyForecastContainer.removeAllViews();
-        for (WeatherDailyData dailyData : data.getDailyForecasts()) {
-            LinearLayout row = new LinearLayout(requireContext());
-            row.setOrientation(LinearLayout.HORIZONTAL);
-            row.setGravity(android.view.Gravity.CENTER_VERTICAL);
-            row.setPadding(0, 10, 0, 10);
-
-            TextView dateText = createDailyText(dailyData.getDateText(), 1f, android.view.Gravity.START);
-            TextView conditionText = createDailyText(dailyData.getCondition(), 1f, android.view.Gravity.CENTER);
-            TextView tempText = createDailyText(
-                    WeatherDisplayUtils.formatTemperature(dailyData.getTempMin(), temperatureUnit)
-                            + " / "
-                            + WeatherDisplayUtils.formatTemperature(dailyData.getTempMax(), temperatureUnit),
-                    1f,
-                    android.view.Gravity.END
-            );
-            row.addView(dateText);
-            row.addView(conditionText);
-            row.addView(tempText);
-            binding.dailyForecastContainer.addView(row);
+        if (dailyForecastAdapter != null) {
+            dailyForecastAdapter.submitData(data.getDailyForecasts(), temperatureUnit);
         }
-    }
-
-    private TextView createDailyText(String text, float weight, int gravity) {
-        TextView textView = new TextView(requireContext());
-        textView.setText(text);
-        textView.setTextColor(requireContext().getColor(com.litroenade.yunjiweather.R.color.weather_text_secondary));
-        textView.setTextSize(14f);
-        textView.setGravity(gravity);
-        textView.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, weight));
-        return textView;
     }
 
     @Override
     public void onDestroyView() {
         super.onDestroyView();
         weatherAnimationView = null;
+        hourlyForecastAdapter = null;
+        weatherCalendarAdapter = null;
+        dailyForecastAdapter = null;
         binding = null;
     }
 }

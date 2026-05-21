@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+            xmlns:app="http://schemas.android.com/apk/res-auto"
             xmlns:tools="http://schemas.android.com/tools"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@color/weather_background_bottom"
+            android:background="@drawable/bg_app_soft"
+            android:clipToPadding="false"
             android:fillViewport="true"
             tools:context=".ui.index.LifeIndexFragment">
 
@@ -11,30 +13,63 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="18dp">
+            android:paddingStart="18dp"
+            android:paddingTop="22dp"
+            android:paddingEnd="18dp"
+            android:paddingBottom="104dp">
 
-        <TextView
+        <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="生活指数"
-                android:textColor="@color/weather_text_primary"
-                android:textSize="24sp"
-                android:textStyle="bold"/>
+                app:cardCornerRadius="24dp"
+                app:cardElevation="4dp"
+                app:strokeWidth="0dp">
+
+            <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_page_header"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/index_title"
+                        android:textColor="@color/weather_text_inverse"
+                        android:textSize="25sp"
+                        android:textStyle="bold"/>
+
+                <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="@string/index_summary"
+                        android:textColor="#EAFBFF"
+                        android:textSize="14sp"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <TextView
                 android:id="@+id/index_state_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="根据天气、风力和空气质量生成今日建议"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/bg_chip_soft"
+                android:paddingStart="14dp"
+                android:paddingTop="9dp"
+                android:paddingEnd="14dp"
+                android:paddingBottom="9dp"
+                android:text="@string/index_summary"
                 android:textColor="@color/weather_text_secondary"
                 android:textSize="14sp"/>
 
-        <GridLayout
-                android:id="@+id/index_grid"
+        <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/index_recycler_view"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
-                android:columnCount="2"/>
+                android:nestedScrollingEnabled="false"
+                tools:listitem="@layout/item_life_index_card"/>
     </LinearLayout>
 </ScrollView>

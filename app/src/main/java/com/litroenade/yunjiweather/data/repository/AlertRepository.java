@@ -47,6 +47,14 @@ public final class AlertRepository {
         return warningDao.findUnnotifiedWarnings(ownerUserId);
     }
 
+    public List<WarningEntity> findByLocationId(String locationId) {
+        return warningDao.findByLocationId(ownerUserId, locationId);
+    }
+
+    public void markRead(String locationId, String warningId) {
+        warningDao.markRead(ownerUserId, locationId, warningId);
+    }
+
     public void markNotified(String locationId, String warningId) {
         warningDao.markNotified(ownerUserId, locationId, warningId);
     }

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+                                                  xmlns:app="http://schemas.android.com/apk/res-auto"
+                                                  xmlns:tools="http://schemas.android.com/tools"
+                                                  android:layout_width="108dp"
+                                                  android:layout_height="154dp"
+                                                  android:layout_marginEnd="10dp"
+                                                  app:cardBackgroundColor="@color/weather_surface"
+                                                  app:cardCornerRadius="20dp"
+                                                  app:cardElevation="1dp"
+                                                  app:strokeColor="@color/weather_stroke"
+                                                  app:strokeWidth="1dp">
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+        <TextView
+                android:id="@+id/calendar_label_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textColor="@color/weather_text_secondary"
+                android:textSize="12sp"
+                tools:text="今天"/>
+
+        <TextView
+                android:id="@+id/calendar_day_text"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_chip_soft"
+                android:gravity="center"
+                android:textColor="@color/weather_primary"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                tools:text="20"/>
+
+        <ImageView
+                android:id="@+id/calendar_icon_image"
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:layout_marginTop="8dp"
+                android:importantForAccessibility="no"
+                tools:src="@drawable/ic_weather_sunny"/>
+
+        <TextView
+                android:id="@+id/calendar_condition_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:maxLines="1"
+                android:textColor="@color/weather_text_primary"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                tools:text="晴"/>
+
+        <TextView
+                android:id="@+id/calendar_temp_text"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:gravity="center"
+                android:textColor="@color/weather_text_secondary"
+                android:textSize="12sp"
+                tools:text="20° / 30°"/>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

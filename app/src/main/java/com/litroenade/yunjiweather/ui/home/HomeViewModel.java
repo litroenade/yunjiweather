@@ -7,7 +7,6 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import com.google.gson.Gson;
 import com.litroenade.yunjiweather.auth.AuthSessionManager;
 import com.litroenade.yunjiweather.common.UiState;
 import com.litroenade.yunjiweather.data.api.WeatherGatewayFactory;
@@ -15,11 +14,10 @@ import com.litroenade.yunjiweather.data.api.WeatherApiService;
 import com.litroenade.yunjiweather.data.api.model.QWeatherCityLookupResponse;
 import com.litroenade.yunjiweather.data.entity.CityEntity;
 import com.litroenade.yunjiweather.data.local.AppDatabase;
-import com.litroenade.yunjiweather.data.local.CityDao;
-import com.litroenade.yunjiweather.data.local.RoomWeatherCacheGateway;
 import com.litroenade.yunjiweather.data.model.HomeWeatherData;
+import com.litroenade.yunjiweather.data.repository.CityRepository;
 import com.litroenade.yunjiweather.data.repository.WeatherRepository;
-import com.litroenade.yunjiweather.utils.DefaultCityUtils;
+import com.litroenade.yunjiweather.data.repository.WeatherRepositoryFactory;
 import com.litroenade.yunjiweather.utils.LocationQueryUtils;
 
 import java.io.IOException;
@@ -38,20 +36,16 @@ public class HomeViewModel extends AndroidViewModel {
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final WeatherRepository weatherRepository;
     private final WeatherApiService apiService;
-    private final CityDao cityDao;
+    private final CityRepository cityRepository;
     private final long ownerUserId;
 
     public HomeViewModel(@NonNull Application application) {
         super(application);
         ownerUserId = new AuthSessionManager(application).requireUserId();
         AppDatabase database = AppDatabase.getInstance(application);
-        cityDao = database.cityDao();
+        cityRepository = new CityRepository(ownerUserId, database.cityDao());
         apiService = WeatherGatewayFactory.createQWeatherServiceOrNull();
-        weatherRepository = new WeatherRepository(
-                WeatherGatewayFactory.createHomeRemoteGateway(apiService),
-                new RoomWeatherCacheGateway(ownerUserId, database.weatherCacheDao(), new Gson()),
-                System::currentTimeMillis
-        );
+        weatherRepository = WeatherRepositoryFactory.createHomeRepository(ownerUserId, database, apiService);
     }
 
     public LiveData<UiState<HomeWeatherData>> getUiState() {
@@ -65,8 +59,12 @@ public class HomeViewModel extends AndroidViewModel {
     public void loadHomeWeather() {
         uiState.setValue(UiState.loading());
         executorService.execute(() -> {
-            CityEntity city = resolveDefaultCity();
-            uiState.postValue(loadWeatherForCity(city));
+            try {
+                CityEntity city = resolveDefaultCity();
+                uiState.postValue(loadWeatherForCity(city));
+            } catch (RuntimeException exception) {
+                uiState.postValue(UiState.error(buildLoadErrorMessage(exception)));
+            }
         });
     }
 
@@ -84,8 +82,12 @@ public class HomeViewModel extends AndroidViewModel {
                 uiState.postValue(loadWeatherForCity(city));
             } catch (IOException | RuntimeException exception) {
                 message.postValue("定位城市解析失败：" + exception.getMessage());
-                CityEntity fallbackCity = resolveDefaultCity();
-                uiState.postValue(loadWeatherForCity(fallbackCity));
+                try {
+                    CityEntity fallbackCity = resolveDefaultCity();
+                    uiState.postValue(loadWeatherForCity(fallbackCity));
+                } catch (RuntimeException fallbackException) {
+                    uiState.postValue(UiState.error(buildLoadErrorMessage(fallbackException)));
+                }
             }
         });
     }
@@ -106,7 +108,7 @@ public class HomeViewModel extends AndroidViewModel {
     }
 
     private CityEntity resolveDefaultCity() {
-        return DefaultCityUtils.resolveDefaultCity(cityDao, ownerUserId, System.currentTimeMillis());
+        return cityRepository.resolveDefaultCity(System.currentTimeMillis());
     }
 
     private CityEntity resolveCityByCoordinate(double latitude, double longitude) throws IOException {
@@ -157,14 +159,7 @@ public class HomeViewModel extends AndroidViewModel {
     }
 
     private void saveAsDefaultCity(CityEntity city) {
-        city.ownerUserId = ownerUserId;
-        cityDao.clearDefaultCity(ownerUserId);
-        CityEntity oldCity = cityDao.findByLocationId(ownerUserId, city.locationId);
-        if (oldCity == null) {
-            cityDao.insert(city);
-        } else {
-            cityDao.setDefaultCity(ownerUserId, oldCity.locationId, System.currentTimeMillis());
-        }
+        cityRepository.saveAsDefaultCity(city, System.currentTimeMillis());
     }
 
     private String requireText(String value, String fieldName) throws IOException {
@@ -180,5 +175,13 @@ public class HomeViewModel extends AndroidViewModel {
         } catch (NumberFormatException exception) {
             throw new IOException("城市反查接口坐标格式错误：" + fieldName, exception);
         }
+    }
+
+    private String buildLoadErrorMessage(RuntimeException exception) {
+        String detail = exception.getMessage();
+        if (detail == null || detail.trim().isEmpty()) {
+            detail = exception.getClass().getSimpleName();
+        }
+        return "首页天气加载失败：" + detail;
     }
 }

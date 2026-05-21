@@ -13,12 +13,10 @@ import com.litroenade.yunjiweather.data.api.ApiConfig;
 import com.litroenade.yunjiweather.data.entity.CityEntity;
 import com.litroenade.yunjiweather.data.entity.WarningEntity;
 import com.litroenade.yunjiweather.data.local.AppDatabase;
-import com.litroenade.yunjiweather.data.local.CityDao;
-import com.litroenade.yunjiweather.data.local.WarningDao;
 import com.litroenade.yunjiweather.data.repository.AlertRepository;
+import com.litroenade.yunjiweather.data.repository.CityRepository;
 import com.litroenade.yunjiweather.notification.NotificationHelper;
 import com.litroenade.yunjiweather.settings.SettingsManager;
-import com.litroenade.yunjiweather.utils.DefaultCityUtils;
 import com.litroenade.yunjiweather.utils.WarningListUtils;
 
 import java.io.IOException;
@@ -30,8 +28,7 @@ import java.util.concurrent.Executors;
 public class AlertViewModel extends AndroidViewModel {
 
     private final SettingsManager settingsManager;
-    private final CityDao cityDao;
-    private final WarningDao warningDao;
+    private final CityRepository cityRepository;
     private final AlertRepository alertRepository;
     private final long ownerUserId;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -44,12 +41,11 @@ public class AlertViewModel extends AndroidViewModel {
         ownerUserId = new AuthSessionManager(application).requireUserId();
         settingsManager = new SettingsManager(application);
         AppDatabase database = AppDatabase.getInstance(application);
-        cityDao = database.cityDao();
-        warningDao = database.warningDao();
+        cityRepository = new CityRepository(ownerUserId, database.cityDao());
         alertRepository = new AlertRepository(
                 ownerUserId,
                 ApiConfig.isConfigured() ? ApiClient.createWeatherApiService() : null,
-                warningDao
+                database.warningDao()
         );
         refreshState();
     }
@@ -73,7 +69,7 @@ public class AlertViewModel extends AndroidViewModel {
             try {
                 city = resolveDefaultCity();
                 if (!ApiConfig.isConfigured()) {
-                    List<WarningEntity> cachedWarnings = warningDao.findByLocationId(ownerUserId, city.locationId);
+                    List<WarningEntity> cachedWarnings = alertRepository.findByLocationId(city.locationId);
                     warnings.postValue(cachedWarnings);
                     alertStateText.postValue(WarningListUtils.createNoQWeatherText(city.cityName, cachedWarnings));
                     return;
@@ -85,7 +81,7 @@ public class AlertViewModel extends AndroidViewModel {
             } catch (IOException | RuntimeException exception) {
                 List<WarningEntity> cachedWarnings = city == null
                         ? Collections.emptyList()
-                        : warningDao.findByLocationId(ownerUserId, city.locationId);
+                        : alertRepository.findByLocationId(city.locationId);
                 warnings.postValue(cachedWarnings);
                 alertStateText.postValue(createErrorText(cachedWarnings, exception));
             } finally {
@@ -99,7 +95,7 @@ public class AlertViewModel extends AndroidViewModel {
             List<WarningEntity> currentWarnings = warnings.getValue();
             WarningEntity targetWarning = findWarning(currentWarnings, warningId);
             if (targetWarning != null) {
-                warningDao.markRead(ownerUserId, targetWarning.locationId, warningId);
+                alertRepository.markRead(targetWarning.locationId, warningId);
             }
             if (currentWarnings != null) {
                 warnings.postValue(WarningListUtils.markRead(currentWarnings, warningId));
@@ -114,7 +110,7 @@ public class AlertViewModel extends AndroidViewModel {
     }
 
     private CityEntity resolveDefaultCity() {
-        return DefaultCityUtils.resolveDefaultCity(cityDao, ownerUserId, System.currentTimeMillis());
+        return cityRepository.resolveDefaultCity(System.currentTimeMillis());
     }
 
     private void notifyNewWarnings(List<WarningEntity> warningList) {
@@ -123,7 +119,7 @@ public class AlertViewModel extends AndroidViewModel {
         }
         for (WarningEntity warning : warningList) {
             if (!warning.isNotified && NotificationHelper.showWarningNotification(getApplication(), warning)) {
-                warningDao.markNotified(ownerUserId, warning.locationId, warning.warningId);
+                alertRepository.markNotified(warning.locationId, warning.warningId);
                 warning.isNotified = true;
             }
         }

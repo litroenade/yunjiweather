@@ -23,6 +23,6 @@ public class WeatherDisplayUtilsTest {
 
     @Test
     public void formatWind_convertsKilometerPerHourToMeterPerSecond() {
-        assertEquals("东南风 5.0 m/s", WeatherDisplayUtils.formatWind("东南风", "3", "18", "MS"));
+        assertEquals("东南风 5.0 米/秒", WeatherDisplayUtils.formatWind("东南风", "3", "18", "MS"));
     }
 }
