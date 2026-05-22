@@ -1,4 +1,4 @@
-package com.litroenade.yunjiweather.ui.index;
+package com.litroenade.yunjiweather.data.model;
 
 import org.junit.Test;
 
@@ -28,11 +28,12 @@ public class LifeIndexDefaultsTest {
 
     @Test
     public void completeWithFallbacks_preservesRemoteItemAndAddsMissingIndexes() {
-        LifeIndexItem remoteClothing = new LifeIndexItem("穿衣", "炎热", "建议穿短袖并及时补水。", "高温天气需要注意防晒。");
+        LifeIndexItem remoteClothing = new LifeIndexItem("穿衣指数", "炎热", "建议穿短袖并及时补水。", "高温天气需要注意防晒。");
 
         List<LifeIndexItem> items = LifeIndexDefaults.completeWithFallbacks(Collections.singletonList(remoteClothing));
 
         assertEquals(10, items.size());
+        assertEquals("穿衣指数", items.get(0).getName());
         assertEquals("炎热", items.get(0).getLevel());
         assertEquals("建议穿短袖并及时补水。", items.get(0).getAdvice());
         assertEquals("出行", items.get(1).getName());

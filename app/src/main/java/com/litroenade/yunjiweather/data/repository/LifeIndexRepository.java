@@ -3,9 +3,9 @@ package com.litroenade.yunjiweather.data.repository;
 import com.litroenade.yunjiweather.data.api.WeatherApiService;
 import com.litroenade.yunjiweather.data.api.model.QWeatherIndicesResponse;
 import com.litroenade.yunjiweather.data.local.LifeIndexCacheGateway;
-import com.litroenade.yunjiweather.ui.index.LifeIndexDefaults;
-import com.litroenade.yunjiweather.ui.index.LifeIndexItem;
-import com.litroenade.yunjiweather.ui.index.LifeIndexMapper;
+import com.litroenade.yunjiweather.data.model.LifeIndexDefaults;
+import com.litroenade.yunjiweather.data.model.LifeIndexItem;
+import com.litroenade.yunjiweather.data.model.LifeIndexMapper;
 
 import java.io.IOException;
 import java.util.List;

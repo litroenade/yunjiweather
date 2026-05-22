@@ -1,5 +1,7 @@
 package com.litroenade.yunjiweather.ui.home;
 
+import com.litroenade.yunjiweather.utils.WeatherIconUtils;
+
 public enum WeatherAnimationType {
     SUNNY,
     CLOUDY,
@@ -7,18 +9,17 @@ public enum WeatherAnimationType {
     SNOW;
 
     public static WeatherAnimationType fromIconCode(String iconCode) {
-        if (iconCode == null || iconCode.trim().isEmpty()) {
-            return CLOUDY;
+        switch (WeatherIconUtils.getWeatherCategory(iconCode)) {
+            case SUNNY:
+            case NIGHT:
+                return SUNNY;
+            case RAIN:
+                return RAIN;
+            case SNOW:
+                return SNOW;
+            case CLOUDY:
+            default:
+                return CLOUDY;
         }
-        if (iconCode.startsWith("3")) {
-            return RAIN;
-        }
-        if (iconCode.startsWith("4")) {
-            return SNOW;
-        }
-        if ("100".equals(iconCode) || "150".equals(iconCode)) {
-            return SUNNY;
-        }
-        return CLOUDY;
     }
 }

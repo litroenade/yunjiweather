@@ -33,3 +33,4 @@ Thumbs.db
 
 # Codex local verification output
 .codex-check/
+artifacts/

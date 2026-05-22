@@ -37,6 +37,7 @@ public class MineViewModel extends AndroidViewModel {
     private final MutableLiveData<String> temperatureUnit = new MutableLiveData<>();
     private final MutableLiveData<String> windUnit = new MutableLiveData<>();
     private final MutableLiveData<Boolean> dailyReminderEnabled = new MutableLiveData<>();
+    private final MutableLiveData<String> visualTheme = new MutableLiveData<>();
     private final MutableLiveData<String> dataUpdateTime = new MutableLiveData<>();
     private final MutableLiveData<String> localStorageSummary = new MutableLiveData<>();
     private final MutableLiveData<String> message = new MutableLiveData<>();
@@ -82,6 +83,14 @@ public class MineViewModel extends AndroidViewModel {
 
     public LiveData<Boolean> getDailyReminderEnabled() {
         return dailyReminderEnabled;
+    }
+
+    public LiveData<String> getVisualTheme() {
+        return visualTheme;
+    }
+
+    public String getCurrentVisualTheme() {
+        return settingsManager.getVisualTheme();
     }
 
     public LiveData<String> getDataUpdateTime() {
@@ -138,6 +147,11 @@ public class MineViewModel extends AndroidViewModel {
         reloadSettings();
     }
 
+    public void setVisualTheme(String themeKey) {
+        settingsManager.setVisualTheme(themeKey);
+        reloadSettings();
+    }
+
     public void clearCache() {
         diskExecutor.execute(() -> {
             database.weatherCacheDao().clearAll(ownerUserId);
@@ -169,6 +183,7 @@ public class MineViewModel extends AndroidViewModel {
         temperatureUnit.setValue(settingsManager.getTemperatureUnit());
         windUnit.setValue(settingsManager.getWindUnit());
         dailyReminderEnabled.setValue(settingsManager.isDailyReminderEnabled());
+        visualTheme.setValue(settingsManager.getVisualTheme());
     }
 
     private void refreshDefaultCity() {

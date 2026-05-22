@@ -25,10 +25,14 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.litroenade.yunjiweather.common.UiState;
 import com.litroenade.yunjiweather.data.model.HomeWeatherData;
+import com.litroenade.yunjiweather.data.model.WeatherDailyData;
 import com.litroenade.yunjiweather.databinding.FragmentHomeBinding;
 import com.litroenade.yunjiweather.settings.SettingsManager;
+import com.litroenade.yunjiweather.ui.calendar.CalendarDetailBottomSheet;
 import com.litroenade.yunjiweather.utils.DateTimeUtils;
+import com.litroenade.yunjiweather.utils.LunarCalendarUtils;
 import com.litroenade.yunjiweather.utils.PermissionUtils;
+import com.litroenade.yunjiweather.utils.VisualThemeUtils;
 import com.litroenade.yunjiweather.utils.WeatherDisplayUtils;
 import com.litroenade.yunjiweather.utils.WeatherIconUtils;
 
@@ -61,6 +65,7 @@ public class HomeFragment extends Fragment {
         settingsManager = new SettingsManager(requireContext());
 
         binding = FragmentHomeBinding.inflate(inflater, container, false);
+        VisualThemeUtils.applyAppBackground(binding.getRoot(), settingsManager.getVisualTheme());
         setupForecastLists();
         binding.locationButton.setOnClickListener(view -> handleLocationClick());
         binding.refreshButton.setOnClickListener(view -> homeViewModel.refresh());
@@ -85,7 +90,7 @@ public class HomeFragment extends Fragment {
         binding.hourlyForecastRecyclerView.setAdapter(hourlyForecastAdapter);
         binding.hourlyForecastRecyclerView.setNestedScrollingEnabled(false);
 
-        weatherCalendarAdapter = new WeatherCalendarAdapter();
+        weatherCalendarAdapter = new WeatherCalendarAdapter(this::showCalendarDayDetail);
         binding.weatherCalendarRecyclerView.setLayoutManager(
                 new LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
         );
@@ -101,6 +106,9 @@ public class HomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
+        if (binding != null && settingsManager != null) {
+            VisualThemeUtils.applyAppBackground(binding.getRoot(), settingsManager.getVisualTheme());
+        }
         if (homeViewModel != null && homeViewModel.getUiState().getValue() != null) {
             renderState(homeViewModel.getUiState().getValue());
         }
@@ -316,6 +324,23 @@ public class HomeFragment extends Fragment {
         if (weatherCalendarAdapter != null) {
             weatherCalendarAdapter.submitData(data.getDailyForecasts(), temperatureUnit);
         }
+    }
+
+    private void showCalendarDayDetail(
+            WeatherDailyData item,
+            LunarCalendarUtils.LunarDayInfo lunarInfo,
+            String temperatureUnit
+    ) {
+        String temperatureText = String.format(
+                Locale.CHINA,
+                "%s / %s",
+                WeatherDisplayUtils.formatTemperature(item.getTempMin(), temperatureUnit),
+                WeatherDisplayUtils.formatTemperature(item.getTempMax(), temperatureUnit)
+        );
+        CalendarDetailBottomSheet.show(
+                requireContext(),
+                CalendarDetailBottomSheet.Detail.weatherCalendar(lunarInfo, item.getCondition(), temperatureText)
+        );
     }
 
     private void renderDailyForecasts(HomeWeatherData data, String temperatureUnit) {

@@ -1,4 +1,4 @@
-package com.litroenade.yunjiweather.ui.index;
+package com.litroenade.yunjiweather.data.model;
 
 import com.litroenade.yunjiweather.data.api.model.QWeatherIndicesResponse;
 

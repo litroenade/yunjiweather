@@ -1,4 +1,4 @@
-package com.litroenade.yunjiweather.ui.index;
+package com.litroenade.yunjiweather.data.model;
 
 import com.litroenade.yunjiweather.utils.WeatherAdviceUtils;
 
@@ -53,14 +53,35 @@ public final class LifeIndexDefaults {
 
     private static String normalizeName(String name) {
         String text = Objects.requireNonNull(name, "name").trim();
-        if ("旅游".equals(text) || "旅行".equals(text)) {
+        if ("穿衣指数".equals(text)) {
+            return "穿衣";
+        }
+        if ("出行指数".equals(text)) {
+            return "出行";
+        }
+        if ("运动指数".equals(text)) {
+            return "运动";
+        }
+        if ("洗车指数".equals(text)) {
+            return "洗车";
+        }
+        if ("旅游".equals(text) || "旅行".equals(text) || "旅游指数".equals(text)) {
             return "旅游";
         }
-        if ("紫外线".equals(text) || "防晒".equals(text)) {
+        if ("紫外线".equals(text) || "防晒".equals(text) || "紫外线指数".equals(text)) {
             return "紫外线";
         }
-        if ("舒适".equals(text) || "舒适度".equals(text)) {
+        if ("感冒指数".equals(text)) {
+            return "感冒";
+        }
+        if ("空气质量".equals(text) || "空气污染扩散条件".equals(text)) {
+            return "空气";
+        }
+        if ("舒适".equals(text) || "舒适度".equals(text) || "舒适度指数".equals(text)) {
             return "舒适度";
+        }
+        if ("晾晒指数".equals(text)) {
+            return "晾晒";
         }
         return text;
     }

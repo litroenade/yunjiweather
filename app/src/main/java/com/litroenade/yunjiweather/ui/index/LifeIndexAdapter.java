@@ -8,6 +8,7 @@ import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.litroenade.yunjiweather.databinding.ItemLifeIndexCardBinding;
+import com.litroenade.yunjiweather.data.model.LifeIndexItem;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -15,6 +15,7 @@ import com.litroenade.yunjiweather.data.entity.CityEntity;
 import com.litroenade.yunjiweather.data.model.CityWeatherSummary;
 import com.litroenade.yunjiweather.databinding.FragmentCityBinding;
 import com.litroenade.yunjiweather.settings.SettingsManager;
+import com.litroenade.yunjiweather.utils.VisualThemeUtils;
 
 import java.util.Collections;
 import java.util.List;
@@ -32,6 +33,7 @@ public class CityFragment extends Fragment {
         viewModel = new ViewModelProvider(this).get(CityViewModel.class);
         settingsManager = new SettingsManager(requireContext());
         binding = FragmentCityBinding.inflate(inflater, container, false);
+        VisualThemeUtils.applyAppBackground(binding.getRoot(), settingsManager.getVisualTheme());
         setupCityList();
 
         binding.addCityButton.setOnClickListener(view -> {
@@ -83,6 +85,14 @@ public class CityFragment extends Fragment {
         String defaultCity = viewModel.getDefaultCity().getValue();
         cityAdapter.submitData(cities, latestSummaries, defaultCity, settingsManager.getTemperatureUnit());
         binding.emptyText.setVisibility(cities.isEmpty() ? View.VISIBLE : View.GONE);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (binding != null && settingsManager != null) {
+            VisualThemeUtils.applyAppBackground(binding.getRoot(), settingsManager.getVisualTheme());
+        }
     }
 
     @Override

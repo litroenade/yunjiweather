@@ -2,7 +2,7 @@
     <string name="app_name">云迹天气</string>
     <string name="title_home">天气</string>
     <string name="title_city">城市</string>
-    <string name="title_index">指数</string>
+    <string name="title_index">日历</string>
     <string name="title_alert">预警</string>
     <string name="title_mine">我的</string>
     <string name="splash_title">云迹天气</string>
@@ -20,12 +20,12 @@
     <string name="home_location">定位</string>
     <string name="home_refresh">刷新</string>
     <string name="home_weather_icon">天气图标</string>
-    <string name="home_today_detail">今日详情</string>
+    <string name="home_today_detail">今日概览</string>
     <string name="home_air_quality">空气质量</string>
     <string name="home_hourly_weather">逐小时天气</string>
     <string name="home_daily_forecast">未来三天</string>
     <string name="home_weather_calendar">天气日历</string>
-    <string name="home_weather_calendar_summary">按日期查看未来天气和温度变化</string>
+    <string name="home_weather_calendar_summary">按日期查看未来天气、星期和农历</string>
     <string name="home_calendar_today">今天</string>
     <string name="home_calendar_unknown_day">--</string>
     <string name="home_life_advice">生活建议</string>
@@ -56,8 +56,11 @@
     <string name="alert_yellow_hint">黄色预警：减少不必要外出</string>
     <string name="alert_orange_hint">橙色预警：加强安全防护</string>
     <string name="alert_red_hint">红色预警：必要时暂停出行</string>
-    <string name="index_title">生活指数</string>
-    <string name="index_summary">根据天气、风力和空气质量生成今日建议</string>
+    <string name="index_title">日历天气</string>
+    <string name="index_summary">未来天气、农历、节日和生活建议，一页查看</string>
+    <string name="index_today_calendar_advice">把天气、农历和生活指数放在同一条出行线索里。</string>
+    <string name="index_week_calendar">未来 7 日日历</string>
+    <string name="index_week_calendar_summary">查看接下来一周的星期、农历和节日</string>
     <string name="mine_title">我的</string>
     <string name="mine_account_space">账户空间</string>
     <string name="mine_logout">退出登录</string>
@@ -66,6 +69,10 @@
     <string name="mine_daily_reminder">每日天气提醒</string>
     <string name="mine_weather_animation">天气动画</string>
     <string name="mine_dark_mode">深色模式偏好</string>
+    <string name="mine_visual_theme">背景主题</string>
+    <string name="mine_theme_sky">经典晴空</string>
+    <string name="mine_theme_fantasy">幻想夜</string>
+    <string name="mine_theme_sakura">樱雨粉</string>
     <string name="mine_temperature_unit">温度单位</string>
     <string name="mine_celsius">摄氏度 °C</string>
     <string name="mine_fahrenheit">华氏度 °F</string>
@@ -93,4 +100,9 @@
     <string name="item_default_badge">默认</string>
     <string name="item_set_default">设为默认</string>
     <string name="item_delete">删除</string>
+    <string name="nav_home_desc">打开今日天气</string>
+    <string name="nav_calendar_desc">打开日历天气</string>
+    <string name="nav_city_desc">打开城市管理</string>
+    <string name="nav_alert_desc">打开天气预警</string>
+    <string name="nav_mine_desc">打开我的设置</string>
 </resources>

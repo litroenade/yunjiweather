@@ -4,12 +4,14 @@ import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.litroenade.yunjiweather.data.model.WeatherDailyData;
 import com.litroenade.yunjiweather.R;
 import com.litroenade.yunjiweather.databinding.ItemWeatherCalendarDayBinding;
+import com.litroenade.yunjiweather.utils.LunarCalendarUtils;
 import com.litroenade.yunjiweather.utils.WeatherDisplayUtils;
 import com.litroenade.yunjiweather.utils.WeatherIconUtils;
 
@@ -21,7 +23,12 @@ import java.util.Objects;
 public final class WeatherCalendarAdapter extends RecyclerView.Adapter<WeatherCalendarAdapter.CalendarViewHolder> {
 
     private final List<WeatherDailyData> items = new ArrayList<>();
+    private final OnCalendarDayClickListener listener;
     private String temperatureUnit = WeatherDisplayUtils.TEMPERATURE_CELSIUS;
+
+    public WeatherCalendarAdapter(OnCalendarDayClickListener listener) {
+        this.listener = listener;
+    }
 
     public void submitData(List<WeatherDailyData> nextItems, String nextTemperatureUnit) {
         List<WeatherDailyData> oldItems = new ArrayList<>(items);
@@ -74,7 +81,7 @@ public final class WeatherCalendarAdapter extends RecyclerView.Adapter<WeatherCa
                 parent,
                 false
         );
-        return new CalendarViewHolder(binding);
+        return new CalendarViewHolder(binding, listener);
     }
 
     @Override
@@ -89,13 +96,24 @@ public final class WeatherCalendarAdapter extends RecyclerView.Adapter<WeatherCa
 
     static final class CalendarViewHolder extends RecyclerView.ViewHolder {
         private final ItemWeatherCalendarDayBinding binding;
+        private final OnCalendarDayClickListener listener;
 
-        private CalendarViewHolder(ItemWeatherCalendarDayBinding binding) {
+        private CalendarViewHolder(ItemWeatherCalendarDayBinding binding, OnCalendarDayClickListener listener) {
             super(binding.getRoot());
             this.binding = binding;
+            this.listener = listener;
         }
 
         private void bind(WeatherDailyData item, String temperatureUnit, boolean today) {
+            LunarCalendarUtils.LunarDayInfo lunarInfo = null;
+            try {
+                lunarInfo = LunarCalendarUtils.fromDisplayDate(item.getDateText(), System.currentTimeMillis());
+                binding.calendarWeekdayText.setText(lunarInfo.getWeekdayText());
+                binding.calendarLunarText.setText(lunarInfo.getLunarText().replace("农历", ""));
+            } catch (IllegalArgumentException exception) {
+                binding.calendarWeekdayText.setText("--");
+                binding.calendarLunarText.setText("农历日期不可用");
+            }
             binding.calendarLabelText.setText(today
                     ? binding.getRoot().getContext().getString(R.string.home_calendar_today)
                     : item.getDateText());
@@ -104,10 +122,26 @@ public final class WeatherCalendarAdapter extends RecyclerView.Adapter<WeatherCa
             binding.calendarConditionText.setText(item.getCondition());
             binding.calendarTempText.setText(String.format(
                     Locale.CHINA,
-                    "%s / %s",
+                    "%s/%s",
                     WeatherDisplayUtils.formatTemperature(item.getTempMin(), temperatureUnit),
                     WeatherDisplayUtils.formatTemperature(item.getTempMax(), temperatureUnit)
             ));
+            binding.getRoot().setStrokeColor(ContextCompat.getColor(
+                    binding.getRoot().getContext(),
+                    today ? R.color.weather_primary : R.color.weather_stroke
+            ));
+            binding.getRoot().setCardElevation(today ? 3f : 1f);
+            LunarCalendarUtils.LunarDayInfo finalLunarInfo = lunarInfo;
+            binding.getRoot().setContentDescription(binding.calendarLabelText.getText()
+                    + "，" + binding.calendarWeekdayText.getText()
+                    + "，" + binding.calendarLunarText.getText()
+                    + "，" + item.getCondition()
+                    + "，" + binding.calendarTempText.getText());
+            binding.getRoot().setOnClickListener(view -> {
+                if (listener != null && finalLunarInfo != null) {
+                    listener.onCalendarDayClick(item, finalLunarInfo, temperatureUnit);
+                }
+            });
         }
 
         private String resolveDayText(String dateText) {
@@ -121,5 +155,13 @@ public final class WeatherCalendarAdapter extends RecyclerView.Adapter<WeatherCa
             }
             return text;
         }
+    }
+
+    public interface OnCalendarDayClickListener {
+        void onCalendarDayClick(
+                WeatherDailyData item,
+                LunarCalendarUtils.LunarDayInfo lunarInfo,
+                String temperatureUnit
+        );
     }
 }

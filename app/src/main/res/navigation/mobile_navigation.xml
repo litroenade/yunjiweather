@@ -12,16 +12,16 @@
             tools:layout="@layout/fragment_home"/>
 
     <fragment
-            android:id="@+id/navigation_city"
-            android:name="com.litroenade.yunjiweather.ui.city.CityFragment"
-            android:label="@string/title_city"
-            tools:layout="@layout/fragment_city"/>
-
-    <fragment
             android:id="@+id/navigation_index"
             android:name="com.litroenade.yunjiweather.ui.index.LifeIndexFragment"
             android:label="@string/title_index"
             tools:layout="@layout/fragment_life_index"/>
+
+    <fragment
+            android:id="@+id/navigation_city"
+            android:name="com.litroenade.yunjiweather.ui.city.CityFragment"
+            android:label="@string/title_city"
+            tools:layout="@layout/fragment_city"/>
 
     <fragment
             android:id="@+id/navigation_alert"

@@ -57,11 +57,11 @@ AuthActivity
 └── 注册模式
 
 MainActivity
-├── HomeFragment          首页天气
-├── CityFragment          城市管理
-├── LifeIndexFragment     生活指数
-├── AlertFragment         天气预警
-└── MineFragment          我的 / 设置 / 项目状态
+├── HomeFragment          天气：当日天气、小时预报、未来预报、生活建议
+├── LifeIndexFragment     日历：农历、节日、未来 7 日天气和生活指数
+├── CityFragment          城市：城市搜索、关注城市和默认城市
+├── AlertFragment         预警：官方预警、已读状态和通知状态
+└── MineFragment          我的：账户、主题、设置和项目状态
 ```
 
 ## 本地账户与数据隔离
@@ -127,6 +127,10 @@ WARNING
 - QWeather 生活指数
 - QWeather 官方天气预警
 - QWeather 城市查询增强
+
+## 视觉素材
+
+经典晴空主题使用 XML drawable 自绘，不依赖外部位图。幻想夜和樱雨粉主题使用了少量 OpenGameArt 位图素材作为背景装饰，来源记录见 [ASSET_CREDITS.md](ASSET_CREDITS.md)。
 
 ## QWeather 配置
 

@@ -13,7 +13,9 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.litroenade.yunjiweather.data.entity.WarningEntity;
 import com.litroenade.yunjiweather.databinding.FragmentAlertBinding;
+import com.litroenade.yunjiweather.settings.SettingsManager;
 import com.litroenade.yunjiweather.utils.DateTimeUtils;
+import com.litroenade.yunjiweather.utils.VisualThemeUtils;
 
 import java.util.List;
 
@@ -22,10 +24,13 @@ public class AlertFragment extends Fragment {
     private FragmentAlertBinding binding;
     private AlertViewModel viewModel;
     private AlertAdapter adapter;
+    private SettingsManager settingsManager;
 
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         viewModel = new ViewModelProvider(this).get(AlertViewModel.class);
+        settingsManager = new SettingsManager(requireContext());
         binding = FragmentAlertBinding.inflate(inflater, container, false);
+        VisualThemeUtils.applyAppBackground(binding.getRoot(), settingsManager.getVisualTheme());
         adapter = new AlertAdapter(this::showWarningDetail);
         binding.warningRecyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
         binding.warningRecyclerView.setAdapter(adapter);
@@ -63,9 +68,18 @@ public class AlertFragment extends Fragment {
     }
 
     @Override
+    public void onResume() {
+        super.onResume();
+        if (binding != null && settingsManager != null) {
+            VisualThemeUtils.applyAppBackground(binding.getRoot(), settingsManager.getVisualTheme());
+        }
+    }
+
+    @Override
     public void onDestroyView() {
         super.onDestroyView();
         adapter = null;
+        settingsManager = null;
         binding = null;
     }
 }

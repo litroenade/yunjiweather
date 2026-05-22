@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape>
+            <gradient
+                    android:angle="135"
+                    android:startColor="#FFE8F1"
+                    android:centerColor="#EAF6FF"
+                    android:endColor="#DDF7F0"
+                    android:type="linear"/>
+        </shape>
+    </item>
+    <item android:gravity="top|end">
+        <bitmap
+                android:alpha="0.50"
+                android:gravity="top|end"
+                android:src="@drawable/asset_oga_sakura_tree"/>
+    </item>
+    <item>
+        <bitmap
+                android:alpha="0.08"
+                android:gravity="center"
+                android:src="@drawable/asset_oga_rain_overlay"/>
+    </item>
+</layer-list>

@@ -3,7 +3,7 @@ package com.litroenade.yunjiweather.data.local;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.litroenade.yunjiweather.data.entity.WeatherCacheEntity;
-import com.litroenade.yunjiweather.ui.index.LifeIndexItem;
+import com.litroenade.yunjiweather.data.model.LifeIndexItem;
 import com.litroenade.yunjiweather.utils.DateTimeUtils;
 
 import java.lang.reflect.Type;

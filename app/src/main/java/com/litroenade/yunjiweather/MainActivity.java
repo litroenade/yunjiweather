@@ -10,6 +10,7 @@ import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.core.view.MenuItemCompat;
 import androidx.navigation.NavController;
 import androidx.navigation.fragment.NavHostFragment;
 import androidx.navigation.ui.NavigationUI;
@@ -98,6 +99,30 @@ public class MainActivity extends AppCompatActivity {
         // FragmentContainerView 在主题重建后不一定立即把 NavController 挂到 View tag，直接从 NavHostFragment 获取更稳定
         NavController navController = navHostFragment.getNavController();
         NavigationUI.setupWithNavController(binding.navView, navController);
+        configureBottomNavigationDescriptions();
+    }
+
+    private void configureBottomNavigationDescriptions() {
+        MenuItemCompat.setContentDescription(
+                binding.navView.getMenu().findItem(R.id.navigation_home),
+                getString(R.string.nav_home_desc)
+        );
+        MenuItemCompat.setContentDescription(
+                binding.navView.getMenu().findItem(R.id.navigation_index),
+                getString(R.string.nav_calendar_desc)
+        );
+        MenuItemCompat.setContentDescription(
+                binding.navView.getMenu().findItem(R.id.navigation_city),
+                getString(R.string.nav_city_desc)
+        );
+        MenuItemCompat.setContentDescription(
+                binding.navView.getMenu().findItem(R.id.navigation_alert),
+                getString(R.string.nav_alert_desc)
+        );
+        MenuItemCompat.setContentDescription(
+                binding.navView.getMenu().findItem(R.id.navigation_mine),
+                getString(R.string.nav_mine_desc)
+        );
     }
 
     private boolean applyUserDarkModeIfNeeded() {

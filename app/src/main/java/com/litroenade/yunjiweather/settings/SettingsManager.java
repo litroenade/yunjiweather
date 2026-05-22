@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import com.litroenade.yunjiweather.auth.AuthSessionManager;
+import com.litroenade.yunjiweather.utils.VisualThemeUtils;
 import com.litroenade.yunjiweather.utils.WeatherDisplayUtils;
 
 public final class SettingsManager {
@@ -15,6 +16,7 @@ public final class SettingsManager {
     private static final String KEY_TEMPERATURE_UNIT = "temperature_unit";
     private static final String KEY_WIND_UNIT = "wind_unit";
     private static final String KEY_DAILY_REMINDER_ENABLED = "daily_reminder_enabled";
+    private static final String KEY_VISUAL_THEME = "visual_theme";
 
     private final SharedPreferences preferences;
 
@@ -78,6 +80,20 @@ public final class SettingsManager {
         preferences.edit().putBoolean(KEY_DAILY_REMINDER_ENABLED, enabled).apply();
     }
 
+    public String getVisualTheme() {
+        String themeKey = preferences.getString(KEY_VISUAL_THEME, VisualThemeUtils.THEME_SKY);
+        if (!VisualThemeUtils.isSupportedTheme(themeKey)) {
+            preferences.edit().putString(KEY_VISUAL_THEME, VisualThemeUtils.THEME_SKY).apply();
+            return VisualThemeUtils.THEME_SKY;
+        }
+        return themeKey;
+    }
+
+    public void setVisualTheme(String themeKey) {
+        VisualThemeUtils.validateThemeKey(themeKey);
+        preferences.edit().putString(KEY_VISUAL_THEME, themeKey).apply();
+    }
+
     private void ensureDefaultSettings() {
         SharedPreferences.Editor editor = preferences.edit();
         boolean changed = false;
@@ -103,6 +119,10 @@ public final class SettingsManager {
         }
         if (!preferences.contains(KEY_DAILY_REMINDER_ENABLED)) {
             editor.putBoolean(KEY_DAILY_REMINDER_ENABLED, false);
+            changed = true;
+        }
+        if (!preferences.contains(KEY_VISUAL_THEME)) {
+            editor.putString(KEY_VISUAL_THEME, VisualThemeUtils.THEME_SKY);
             changed = true;
         }
         if (changed) {
