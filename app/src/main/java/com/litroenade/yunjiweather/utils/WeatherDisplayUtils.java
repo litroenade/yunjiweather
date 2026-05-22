@@ -25,6 +25,13 @@ public final class WeatherDisplayUtils {
         return Math.round(celsius) + "°";
     }
 
+    public static String normalizeTemperatureUnit(String unit) {
+        if (TEMPERATURE_FAHRENHEIT.equals(unit)) {
+            return TEMPERATURE_FAHRENHEIT;
+        }
+        return TEMPERATURE_CELSIUS;
+    }
+
     public static String formatWind(String windDirection, String windScale, String windSpeedKmh, String unit) {
         String direction = requireText(windDirection, "windDirection");
         if (WIND_METER_PER_SECOND.equals(unit)) {
@@ -35,6 +42,13 @@ public final class WeatherDisplayUtils {
             throw new IllegalArgumentException("不支持的风速单位：" + unit);
         }
         return direction + " " + requireText(windScale, "windScale") + "级";
+    }
+
+    public static String normalizeWindUnit(String unit) {
+        if (WIND_METER_PER_SECOND.equals(unit)) {
+            return WIND_METER_PER_SECOND;
+        }
+        return WIND_SCALE;
     }
 
     private static double parseRequiredDouble(String value, String fieldName) {

@@ -16,8 +16,11 @@ import com.litroenade.yunjiweather.settings.SettingsManager;
 import com.litroenade.yunjiweather.utils.DefaultCityUtils;
 import com.litroenade.yunjiweather.utils.LocalStorageSummaryUtils;
 import com.litroenade.yunjiweather.utils.MineCacheStatusUtils;
+import com.litroenade.yunjiweather.utils.VisualTheme;
+import com.litroenade.yunjiweather.utils.VisualThemeCatalog;
 import com.litroenade.yunjiweather.worker.WorkerScopeUtils;
 
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -91,6 +94,10 @@ public class MineViewModel extends AndroidViewModel {
 
     public String getCurrentVisualTheme() {
         return settingsManager.getVisualTheme();
+    }
+
+    public List<VisualTheme> getVisualThemes() {
+        return VisualThemeCatalog.getThemes();
     }
 
     public LiveData<String> getDataUpdateTime() {

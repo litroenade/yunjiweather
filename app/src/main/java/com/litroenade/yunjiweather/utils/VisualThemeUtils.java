@@ -4,8 +4,6 @@ import android.view.View;
 
 import androidx.annotation.DrawableRes;
 
-import com.litroenade.yunjiweather.R;
-
 public final class VisualThemeUtils {
 
     public static final String THEME_SKY = "sky";
@@ -17,14 +15,29 @@ public final class VisualThemeUtils {
 
     @DrawableRes
     public static int resolveAppBackground(String themeKey) {
-        validateThemeKey(themeKey);
-        if (THEME_FANTASY.equals(themeKey)) {
-            return R.drawable.bg_app_fantasy_night;
+        return VisualThemeCatalog.getThemeOrDefault(themeKey).getBackgroundRes();
+    }
+
+    public static VisualTheme resolveTheme(String themeKey) {
+        return VisualThemeCatalog.getThemeOrDefault(themeKey);
+    }
+
+    @DrawableRes
+    public static int resolveHomeBackground(String themeKey, String iconCode) {
+        String normalizedTheme = normalizeThemeKey(themeKey);
+        if (THEME_SKY.equals(normalizedTheme)) {
+            return WeatherIconUtils.getWeatherBackgroundRes(iconCode);
         }
-        if (THEME_SAKURA.equals(themeKey)) {
-            return R.drawable.bg_app_sakura_rain;
+        return resolveAppBackground(normalizedTheme);
+    }
+
+    @DrawableRes
+    public static int resolveHomeBackground(String themeKey, @DrawableRes int weatherBackgroundRes) {
+        String normalizedTheme = normalizeThemeKey(themeKey);
+        if (THEME_SKY.equals(normalizedTheme)) {
+            return weatherBackgroundRes;
         }
-        return R.drawable.bg_app_soft;
+        return resolveAppBackground(normalizedTheme);
     }
 
     public static void applyAppBackground(View root, String themeKey) {
@@ -37,9 +50,11 @@ public final class VisualThemeUtils {
         }
     }
 
+    public static String normalizeThemeKey(String themeKey) {
+        return VisualThemeCatalog.getThemeOrDefault(themeKey).getKey();
+    }
+
     public static boolean isSupportedTheme(String themeKey) {
-        return THEME_SKY.equals(themeKey)
-                || THEME_FANTASY.equals(themeKey)
-                || THEME_SAKURA.equals(themeKey);
+        return VisualThemeCatalog.isSupportedTheme(themeKey);
     }
 }

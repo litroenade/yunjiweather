@@ -3,6 +3,7 @@ package com.litroenade.yunjiweather.ui.home;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.res.ColorStateList;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -32,6 +33,7 @@ import com.litroenade.yunjiweather.ui.calendar.CalendarDetailBottomSheet;
 import com.litroenade.yunjiweather.utils.DateTimeUtils;
 import com.litroenade.yunjiweather.utils.LunarCalendarUtils;
 import com.litroenade.yunjiweather.utils.PermissionUtils;
+import com.litroenade.yunjiweather.utils.VisualTheme;
 import com.litroenade.yunjiweather.utils.VisualThemeUtils;
 import com.litroenade.yunjiweather.utils.WeatherDisplayUtils;
 import com.litroenade.yunjiweather.utils.WeatherIconUtils;
@@ -65,7 +67,7 @@ public class HomeFragment extends Fragment {
         settingsManager = new SettingsManager(requireContext());
 
         binding = FragmentHomeBinding.inflate(inflater, container, false);
-        VisualThemeUtils.applyAppBackground(binding.getRoot(), settingsManager.getVisualTheme());
+        applyIdleHomeTheme();
         setupForecastLists();
         binding.locationButton.setOnClickListener(view -> handleLocationClick());
         binding.refreshButton.setOnClickListener(view -> homeViewModel.refresh());
@@ -106,11 +108,10 @@ public class HomeFragment extends Fragment {
     @Override
     public void onResume() {
         super.onResume();
-        if (binding != null && settingsManager != null) {
-            VisualThemeUtils.applyAppBackground(binding.getRoot(), settingsManager.getVisualTheme());
-        }
         if (homeViewModel != null && homeViewModel.getUiState().getValue() != null) {
             renderState(homeViewModel.getUiState().getValue());
+        } else if (binding != null && settingsManager != null) {
+            applyIdleHomeTheme();
         }
     }
 
@@ -242,7 +243,12 @@ public class HomeFragment extends Fragment {
         String temperatureUnit = settingsManager.getTemperatureUnit();
         String windUnit = settingsManager.getWindUnit();
         binding.contentContainer.setVisibility(View.VISIBLE);
-        binding.homeRoot.setBackgroundResource(WeatherIconUtils.getWeatherBackgroundRes(data.getIconCode()));
+        String themeKey = settingsManager.getVisualTheme();
+        binding.homeRoot.setBackgroundResource(VisualThemeUtils.resolveHomeBackground(
+                themeKey,
+                data.getIconCode()
+        ));
+        applyHomeForeground(themeKey);
         binding.weatherIconImage.setImageResource(WeatherIconUtils.getWeatherIconRes(data.getIconCode()));
         renderWeatherIconAnimation(data.getIconCode());
         binding.cityNameText.setText(data.getCityName());
@@ -347,6 +353,27 @@ public class HomeFragment extends Fragment {
         if (dailyForecastAdapter != null) {
             dailyForecastAdapter.submitData(data.getDailyForecasts(), temperatureUnit);
         }
+    }
+
+    private void applyIdleHomeTheme() {
+        String themeKey = settingsManager.getVisualTheme();
+        VisualThemeUtils.applyAppBackground(binding.getRoot(), themeKey);
+        applyHomeForeground(themeKey);
+    }
+
+    private void applyHomeForeground(String themeKey) {
+        VisualTheme theme = VisualThemeUtils.resolveTheme(themeKey);
+        int primaryColor = ContextCompat.getColor(requireContext(), theme.getHomePrimaryTextColorRes());
+        int secondaryColor = ContextCompat.getColor(requireContext(), theme.getHomeSecondaryTextColorRes());
+        ColorStateList primaryTint = ColorStateList.valueOf(primaryColor);
+
+        binding.cityNameText.setTextColor(primaryColor);
+        binding.locationButton.setTextColor(primaryTint);
+        binding.locationButton.setStrokeColor(primaryTint);
+        binding.refreshButton.setTextColor(primaryTint);
+        binding.refreshButton.setStrokeColor(primaryTint);
+        binding.cacheStateText.setTextColor(secondaryColor);
+        binding.updateTimeText.setTextColor(secondaryColor);
     }
 
     @Override

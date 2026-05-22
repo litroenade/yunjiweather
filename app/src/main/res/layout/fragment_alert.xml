@@ -16,7 +16,7 @@
             android:paddingStart="18dp"
             android:paddingTop="22dp"
             android:paddingEnd="18dp"
-            android:paddingBottom="104dp">
+            android:paddingBottom="28dp">
 
         <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"

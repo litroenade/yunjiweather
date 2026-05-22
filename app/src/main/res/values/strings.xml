@@ -70,9 +70,7 @@
     <string name="mine_weather_animation">天气动画</string>
     <string name="mine_dark_mode">深色模式偏好</string>
     <string name="mine_visual_theme">背景主题</string>
-    <string name="mine_theme_sky">经典晴空</string>
-    <string name="mine_theme_fantasy">幻想夜</string>
-    <string name="mine_theme_sakura">樱雨粉</string>
+    <string name="mine_theme_selected">已选择</string>
     <string name="mine_temperature_unit">温度单位</string>
     <string name="mine_celsius">摄氏度 °C</string>
     <string name="mine_fahrenheit">华氏度 °F</string>

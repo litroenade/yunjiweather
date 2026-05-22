@@ -16,7 +16,7 @@
             android:paddingStart="18dp"
             android:paddingTop="22dp"
             android:paddingEnd="18dp"
-            android:paddingBottom="126dp">
+            android:paddingBottom="28dp">
 
         <TextView
                 android:layout_width="match_parent"
@@ -140,73 +140,18 @@
                     android:textColor="@color/weather_text_secondary"
                     android:textSize="14sp"/>
 
-            <LinearLayout
+            <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/theme_recycler_view"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:orientation="horizontal">
-
-                <com.google.android.material.button.MaterialButton
-                        android:id="@+id/sky_theme_button"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_marginEnd="6dp"
-                        android:layout_weight="1"
-                        android:ellipsize="end"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:maxLines="1"
-                        android:minWidth="0dp"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp"
-                        android:textSize="12sp"
-                        android:text="@string/mine_theme_sky"
-                        app:iconGravity="textStart"
-                        app:iconPadding="4dp"
-                        app:iconSize="18dp"/>
-
-                <com.google.android.material.button.MaterialButton
-                        android:id="@+id/fantasy_theme_button"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_marginStart="3dp"
-                        android:layout_marginEnd="3dp"
-                        android:layout_weight="1"
-                        android:ellipsize="end"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:maxLines="1"
-                        android:minWidth="0dp"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp"
-                        android:textSize="12sp"
-                        android:text="@string/mine_theme_fantasy"
-                        app:iconGravity="textStart"
-                        app:iconPadding="4dp"
-                        app:iconSize="18dp"/>
-
-                <com.google.android.material.button.MaterialButton
-                        android:id="@+id/sakura_theme_button"
-                        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-                        android:layout_width="0dp"
-                        android:layout_height="48dp"
-                        android:layout_marginStart="6dp"
-                        android:layout_weight="1"
-                        android:ellipsize="end"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:maxLines="1"
-                        android:minWidth="0dp"
-                        android:paddingStart="8dp"
-                        android:paddingEnd="8dp"
-                        android:textSize="12sp"
-                        android:text="@string/mine_theme_sakura"
-                        app:iconGravity="textStart"
-                        app:iconPadding="4dp"
-                        app:iconSize="18dp"/>
-            </LinearLayout>
+                    android:clipToPadding="false"
+                    android:nestedScrollingEnabled="false"
+                    android:overScrollMode="never"
+                    android:paddingEnd="8dp"
+                    android:scrollbars="none"
+                    tools:itemCount="3"
+                    tools:listitem="@layout/item_visual_theme_option"/>
 
             <TextView
                     android:layout_width="match_parent"

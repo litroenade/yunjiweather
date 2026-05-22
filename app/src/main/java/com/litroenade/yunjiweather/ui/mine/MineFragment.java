@@ -2,7 +2,6 @@ package com.litroenade.yunjiweather.ui.mine;
 
 import android.os.Bundle;
 import android.content.Intent;
-import android.content.res.ColorStateList;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -13,6 +12,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.LinearLayoutManager;
 
 import com.litroenade.yunjiweather.R;
 import com.litroenade.yunjiweather.databinding.FragmentMineBinding;
@@ -26,13 +26,14 @@ public class MineFragment extends Fragment {
 
     private FragmentMineBinding binding;
     private MineViewModel viewModel;
+    private VisualThemeAdapter visualThemeAdapter;
     private boolean bindingSwitches;
 
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         viewModel = new ViewModelProvider(this).get(MineViewModel.class);
         binding = FragmentMineBinding.inflate(inflater, container, false);
         VisualThemeUtils.applyAppBackground(binding.getRoot(), viewModel.getCurrentVisualTheme());
-        configureThemeButtonIcons();
+        setupVisualThemeList();
 
         binding.warningSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (!bindingSwitches) {
@@ -72,15 +73,6 @@ public class MineFragment extends Fragment {
         );
         binding.windMsButton.setOnClickListener(view ->
                 viewModel.setWindUnit(WeatherDisplayUtils.WIND_METER_PER_SECOND)
-        );
-        binding.skyThemeButton.setOnClickListener(view ->
-                viewModel.setVisualTheme(VisualThemeUtils.THEME_SKY)
-        );
-        binding.fantasyThemeButton.setOnClickListener(view ->
-                viewModel.setVisualTheme(VisualThemeUtils.THEME_FANTASY)
-        );
-        binding.sakuraThemeButton.setOnClickListener(view ->
-                viewModel.setVisualTheme(VisualThemeUtils.THEME_SAKURA)
         );
         binding.clearCacheButton.setOnClickListener(view -> viewModel.clearCache());
         binding.logoutButton.setOnClickListener(view -> viewModel.logout());
@@ -138,29 +130,22 @@ public class MineFragment extends Fragment {
     }
 
     private void renderVisualTheme(String themeKey) {
-        setThemeOptionChecked(binding.skyThemeButton, VisualThemeUtils.THEME_SKY.equals(themeKey));
-        setThemeOptionChecked(binding.fantasyThemeButton, VisualThemeUtils.THEME_FANTASY.equals(themeKey));
-        setThemeOptionChecked(binding.sakuraThemeButton, VisualThemeUtils.THEME_SAKURA.equals(themeKey));
+        if (visualThemeAdapter != null) {
+            visualThemeAdapter.setSelectedThemeKey(themeKey);
+        }
         VisualThemeUtils.applyAppBackground(binding.getRoot(), themeKey);
     }
 
-    private void configureThemeButtonIcons() {
-        setupThemeButtonIcon(binding.skyThemeButton, R.drawable.ic_theme_classic_swatch);
-        setupThemeButtonIcon(binding.fantasyThemeButton, R.drawable.ic_theme_fantasy_swatch);
-        setupThemeButtonIcon(binding.sakuraThemeButton, R.drawable.ic_theme_sakura_swatch);
-    }
-
-    private void setupThemeButtonIcon(MaterialButton button, int iconRes) {
-        button.setIconResource(iconRes);
-        button.setIconTint(null);
-        button.setIconPadding(8);
-    }
-
-    private void setThemeOptionChecked(MaterialButton button, boolean checked) {
-        setOptionChecked(button, checked);
-        int strokeColor = checked ? R.color.weather_primary : R.color.weather_stroke;
-        button.setStrokeColor(ColorStateList.valueOf(requireContext().getColor(strokeColor)));
-        button.setStrokeWidth(checked ? 3 : 1);
+    private void setupVisualThemeList() {
+        visualThemeAdapter = new VisualThemeAdapter(theme -> viewModel.setVisualTheme(theme.getKey()));
+        binding.themeRecyclerView.setLayoutManager(new LinearLayoutManager(
+                requireContext(),
+                LinearLayoutManager.HORIZONTAL,
+                false
+        ));
+        binding.themeRecyclerView.setAdapter(visualThemeAdapter);
+        binding.themeRecyclerView.setNestedScrollingEnabled(false);
+        visualThemeAdapter.submitData(viewModel.getVisualThemes());
     }
 
     private void setOptionChecked(MaterialButton button, boolean checked) {
@@ -210,6 +195,7 @@ public class MineFragment extends Fragment {
     @Override
     public void onDestroyView() {
         super.onDestroyView();
+        visualThemeAdapter = null;
         binding = null;
     }
 }

@@ -26,6 +26,11 @@ public final class SettingsManager {
         ensureDefaultSettings();
     }
 
+    public SettingsManager(SharedPreferences preferences) {
+        this.preferences = preferences;
+        ensureDefaultSettings();
+    }
+
     public boolean isWarningEnabled() {
         return preferences.getBoolean(KEY_WARNING_ENABLED, true);
     }
@@ -51,9 +56,10 @@ public final class SettingsManager {
     }
 
     public String getTemperatureUnit() {
-        String unit = preferences.getString(KEY_TEMPERATURE_UNIT, WeatherDisplayUtils.TEMPERATURE_CELSIUS);
-        validateTemperatureUnit(unit);
-        return unit;
+        String unit = getStringSetting(KEY_TEMPERATURE_UNIT, WeatherDisplayUtils.TEMPERATURE_CELSIUS);
+        String normalizedUnit = WeatherDisplayUtils.normalizeTemperatureUnit(unit);
+        repairStringIfNeeded(KEY_TEMPERATURE_UNIT, unit, normalizedUnit);
+        return normalizedUnit;
     }
 
     public void setTemperatureUnit(String unit) {
@@ -62,9 +68,10 @@ public final class SettingsManager {
     }
 
     public String getWindUnit() {
-        String unit = preferences.getString(KEY_WIND_UNIT, WeatherDisplayUtils.WIND_SCALE);
-        validateWindUnit(unit);
-        return unit;
+        String unit = getStringSetting(KEY_WIND_UNIT, WeatherDisplayUtils.WIND_SCALE);
+        String normalizedUnit = WeatherDisplayUtils.normalizeWindUnit(unit);
+        repairStringIfNeeded(KEY_WIND_UNIT, unit, normalizedUnit);
+        return normalizedUnit;
     }
 
     public void setWindUnit(String unit) {
@@ -81,12 +88,10 @@ public final class SettingsManager {
     }
 
     public String getVisualTheme() {
-        String themeKey = preferences.getString(KEY_VISUAL_THEME, VisualThemeUtils.THEME_SKY);
-        if (!VisualThemeUtils.isSupportedTheme(themeKey)) {
-            preferences.edit().putString(KEY_VISUAL_THEME, VisualThemeUtils.THEME_SKY).apply();
-            return VisualThemeUtils.THEME_SKY;
-        }
-        return themeKey;
+        String themeKey = getStringSetting(KEY_VISUAL_THEME, VisualThemeUtils.THEME_SKY);
+        String normalizedThemeKey = VisualThemeUtils.normalizeThemeKey(themeKey);
+        repairStringIfNeeded(KEY_VISUAL_THEME, themeKey, normalizedThemeKey);
+        return normalizedThemeKey;
     }
 
     public void setVisualTheme(String themeKey) {
@@ -141,6 +146,21 @@ public final class SettingsManager {
         if (!WeatherDisplayUtils.WIND_SCALE.equals(unit)
                 && !WeatherDisplayUtils.WIND_METER_PER_SECOND.equals(unit)) {
             throw new IllegalArgumentException("不支持的风速单位：" + unit);
+        }
+    }
+
+    private String getStringSetting(String key, String defaultValue) {
+        try {
+            return preferences.getString(key, defaultValue);
+        } catch (ClassCastException exception) {
+            preferences.edit().putString(key, defaultValue).apply();
+            return defaultValue;
+        }
+    }
+
+    private void repairStringIfNeeded(String key, String currentValue, String normalizedValue) {
+        if (!normalizedValue.equals(currentValue)) {
+            preferences.edit().putString(key, normalizedValue).apply();
         }
     }
 }
