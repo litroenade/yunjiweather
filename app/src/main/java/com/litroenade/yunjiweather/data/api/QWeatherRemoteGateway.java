@@ -83,7 +83,7 @@ public final class QWeatherRemoteGateway implements WeatherRepository.RemoteGate
                 travelAdvice,
                 requireText(airIndex.aqiDisplay, "air.indexes.aqiDisplay"),
                 requireText(airIndex.category, "air.indexes.category"),
-                requirePrimaryPollutantName(airIndex),
+                resolvePrimaryPollutantName(airIndex),
                 mapHourlyForecasts(hourlyResponse.hourly),
                 mapDailyForecasts(dailyResponse.daily)
         );
@@ -190,12 +190,21 @@ public final class QWeatherRemoteGateway implements WeatherRepository.RemoteGate
         return value;
     }
 
-    private static String requirePrimaryPollutantName(QWeatherAirQualityResponse.AirIndex airIndex) throws IOException {
-        QWeatherAirQualityResponse.PrimaryPollutant pollutant = requireNonNull(
-                airIndex.primaryPollutant,
-                "air.indexes.primaryPollutant"
-        );
-        return requireText(pollutant.name, "air.indexes.primaryPollutant.name");
+    static String resolvePrimaryPollutantName(QWeatherAirQualityResponse.AirIndex airIndex) throws IOException {
+        QWeatherAirQualityResponse.PrimaryPollutant pollutant = airIndex.primaryPollutant;
+        if (pollutant == null) {
+            return "无";
+        }
+        if (pollutant.name != null && !pollutant.name.trim().isEmpty()) {
+            return pollutant.name;
+        }
+        if (pollutant.fullName != null && !pollutant.fullName.trim().isEmpty()) {
+            return pollutant.fullName;
+        }
+        if (pollutant.code != null && !pollutant.code.trim().isEmpty()) {
+            return pollutant.code;
+        }
+        return "无";
     }
 
     private static int parseRequiredInt(String value, String fieldName) throws IOException {

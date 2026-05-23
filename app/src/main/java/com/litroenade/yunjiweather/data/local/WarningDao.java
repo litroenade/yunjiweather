@@ -4,6 +4,7 @@ import androidx.room.Dao;
 import androidx.room.Insert;
 import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
+import androidx.room.Transaction;
 
 import com.litroenade.yunjiweather.data.entity.WarningEntity;
 
@@ -14,6 +15,20 @@ public interface WarningDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insertAll(List<WarningEntity> warnings);
+
+    @Transaction
+    default void replaceByLocation(long ownerUserId, String locationId, List<WarningEntity> warnings) {
+        if (warnings.isEmpty()) {
+            deleteByLocationId(ownerUserId, locationId);
+            return;
+        }
+        List<String> activeWarningIds = new java.util.ArrayList<>();
+        for (WarningEntity warning : warnings) {
+            activeWarningIds.add(warning.warningId);
+        }
+        deleteMissingByLocation(ownerUserId, locationId, activeWarningIds);
+        insertAll(warnings);
+    }
 
     @Query("SELECT * FROM warning WHERE ownerUserId = :ownerUserId AND locationId = :locationId ORDER BY publishTime DESC")
     List<WarningEntity> findByLocationId(long ownerUserId, String locationId);
@@ -29,6 +44,12 @@ public interface WarningDao {
 
     @Query("UPDATE warning SET isRead = 1 WHERE ownerUserId = :ownerUserId AND locationId = :locationId AND warningId = :warningId")
     void markRead(long ownerUserId, String locationId, String warningId);
+
+    @Query("DELETE FROM warning WHERE ownerUserId = :ownerUserId AND locationId = :locationId AND warningId NOT IN (:activeWarningIds)")
+    void deleteMissingByLocation(long ownerUserId, String locationId, List<String> activeWarningIds);
+
+    @Query("DELETE FROM warning WHERE ownerUserId = :ownerUserId AND locationId = :locationId")
+    void deleteByLocationId(long ownerUserId, String locationId);
 
     @Query("SELECT COUNT(*) FROM warning WHERE ownerUserId = :ownerUserId")
     int count(long ownerUserId);

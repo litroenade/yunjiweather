@@ -36,10 +36,10 @@ public final class ApiConfig {
             return "";
         }
         String lowerHost = host.toLowerCase(Locale.US);
-        if (host.contains("://") && !lowerHost.startsWith("https://") && !lowerHost.startsWith("http://")) {
+        if (host.contains("://") && !lowerHost.startsWith("https://")) {
             return "";
         }
-        String candidate = lowerHost.startsWith("https://") || lowerHost.startsWith("http://")
+        String candidate = lowerHost.startsWith("https://")
                 ? host
                 : "https://" + host;
         String normalized = ensureTrailingSlash(candidate);
@@ -56,7 +56,7 @@ public final class ApiConfig {
                 return "";
             }
             String lowerScheme = scheme.toLowerCase(Locale.US);
-            if (!"https".equals(lowerScheme) && !"http".equals(lowerScheme)) {
+            if (!"https".equals(lowerScheme)) {
                 return "";
             }
             return normalized;

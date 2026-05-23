@@ -118,6 +118,18 @@ public class UserScopedWarningTest {
         }
 
         @Override
+        public void deleteMissingByLocation(long ownerUserId, String locationId, List<String> activeWarningIds) {
+            warnings.removeIf(warning -> warning.ownerUserId == ownerUserId
+                    && warning.locationId.equals(locationId)
+                    && !activeWarningIds.contains(warning.warningId));
+        }
+
+        @Override
+        public void deleteByLocationId(long ownerUserId, String locationId) {
+            warnings.removeIf(warning -> warning.ownerUserId == ownerUserId && warning.locationId.equals(locationId));
+        }
+
+        @Override
         public int count(long ownerUserId) {
             int count = 0;
             for (WarningEntity warning : warnings) {

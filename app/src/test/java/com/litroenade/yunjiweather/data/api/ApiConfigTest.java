@@ -15,11 +15,8 @@ public class ApiConfigTest {
     }
 
     @Test
-    public void normalizeQWeatherBaseUrlKeepsValidHttpUrl() {
-        assertEquals(
-                "http://example.com/weather/",
-                ApiConfig.normalizeQWeatherBaseUrl("http://example.com/weather")
-        );
+    public void normalizeQWeatherBaseUrlRejectsHttpUrl() {
+        assertEquals("", ApiConfig.normalizeQWeatherBaseUrl("http://example.com/weather"));
     }
 
     @Test

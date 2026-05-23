@@ -1,6 +1,5 @@
 package com.litroenade.yunjiweather.data.repository;
 
-import com.litroenade.yunjiweather.data.api.ApiConfig;
 import com.litroenade.yunjiweather.data.api.WeatherApiService;
 import com.litroenade.yunjiweather.data.api.model.QWeatherWarningResponse;
 import com.litroenade.yunjiweather.data.entity.WarningEntity;
@@ -28,7 +27,7 @@ public final class AlertRepository {
     }
 
     public List<WarningEntity> refreshWarnings(String locationId) throws IOException {
-        if (!ApiConfig.isConfigured()) {
+        if (apiService == null) {
             return warningDao.findByLocationId(ownerUserId, locationId);
         }
         Response<QWeatherWarningResponse> response = apiService.getWeatherWarning(locationId, "zh").execute();
@@ -37,9 +36,7 @@ public final class AlertRepository {
             throw new IOException("天气预警接口请求失败");
         }
         List<WarningEntity> warnings = mapWarnings(locationId, body.warning);
-        if (!warnings.isEmpty()) {
-            warningDao.insertAll(warnings);
-        }
+        warningDao.replaceByLocation(ownerUserId, locationId, warnings);
         return warningDao.findByLocationId(ownerUserId, locationId);
     }
 
