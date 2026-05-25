@@ -15,24 +15,24 @@ public interface CityDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insert(CityEntity city);
 
-    @Query("SELECT * FROM city WHERE ownerUserId = :ownerUserId ORDER BY isDefault DESC, sortOrder ASC, createTime ASC")
-    List<CityEntity> findAll(long ownerUserId);
+    @Query("SELECT * FROM city ORDER BY isDefault DESC, sortOrder ASC, createTime ASC")
+    List<CityEntity> findAll();
 
-    @Query("SELECT * FROM city WHERE ownerUserId = :ownerUserId AND locationId = :locationId LIMIT 1")
-    CityEntity findByLocationId(long ownerUserId, String locationId);
+    @Query("SELECT * FROM city WHERE locationId = :locationId LIMIT 1")
+    CityEntity findByLocationId(String locationId);
 
-    @Query("SELECT * FROM city WHERE ownerUserId = :ownerUserId AND isDefault = 1 LIMIT 1")
-    CityEntity findDefaultCity(long ownerUserId);
+    @Query("SELECT * FROM city WHERE isDefault = 1 LIMIT 1")
+    CityEntity findDefaultCity();
 
-    @Query("UPDATE city SET isDefault = 0 WHERE ownerUserId = :ownerUserId")
-    void clearDefaultCity(long ownerUserId);
+    @Query("UPDATE city SET isDefault = 0")
+    void clearDefaultCity();
 
-    @Query("UPDATE city SET isDefault = 1, updateTime = :updateTime WHERE ownerUserId = :ownerUserId AND locationId = :locationId")
-    void setDefaultCity(long ownerUserId, String locationId, long updateTime);
+    @Query("UPDATE city SET isDefault = 1, updateTime = :updateTime WHERE locationId = :locationId")
+    void setDefaultCity(String locationId, long updateTime);
 
-    @Query("DELETE FROM city WHERE ownerUserId = :ownerUserId AND locationId = :locationId")
-    void deleteByLocationId(long ownerUserId, String locationId);
+    @Query("DELETE FROM city WHERE locationId = :locationId")
+    void deleteByLocationId(String locationId);
 
-    @Query("SELECT COUNT(*) FROM city WHERE ownerUserId = :ownerUserId")
-    int count(long ownerUserId);
+    @Query("SELECT COUNT(*) FROM city")
+    int count();
 }

@@ -19,12 +19,14 @@ public class WeatherAnimationTypeTest {
     @Test
     public void fromIconCode_returnsRainForRainCodes() {
         assertEquals(WeatherAnimationType.RAIN, WeatherAnimationType.fromIconCode("305"));
+        assertEquals(WeatherAnimationType.RAIN, WeatherAnimationType.fromIconCode("350"));
         assertEquals(WeatherAnimationType.RAIN, WeatherAnimationType.fromIconCode("399"));
     }
 
     @Test
     public void fromIconCode_returnsSnowForSnowCodes() {
         assertEquals(WeatherAnimationType.SNOW, WeatherAnimationType.fromIconCode("400"));
+        assertEquals(WeatherAnimationType.SNOW, WeatherAnimationType.fromIconCode("401"));
     }
 
     @Test

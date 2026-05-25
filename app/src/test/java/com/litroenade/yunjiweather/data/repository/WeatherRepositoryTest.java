@@ -81,6 +81,43 @@ public class WeatherRepositoryTest {
         assertFalse(cacheGateway.saved);
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void loadHomeWeather_propagatesRuntimeExceptionFromRemote() {
+        WeatherRepository repository = new WeatherRepository(
+                (locationId, cityName, latitude, longitude) -> {
+                    throw new IllegalStateException("bad remote mapping");
+                },
+                new FakeCacheGateway(
+                        new WeatherRepository.CacheRecord<>(homeWeather("Beijing", "19", "Sunny"), 500L, 1_800L)
+                ),
+                () -> 1_000L
+        );
+
+        repository.loadHomeWeather("101010100", "Beijing", 39.9042, 116.4074);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void loadHomeWeather_propagatesRuntimeExceptionFromCacheSave() {
+        WeatherRepository.CacheGateway cacheGateway = new WeatherRepository.CacheGateway() {
+            @Override
+            public void saveHomeWeather(String locationId, HomeWeatherData data, long updateTime, long expireTime) {
+                throw new IllegalStateException("cache write failed");
+            }
+
+            @Override
+            public WeatherRepository.CacheRecord<HomeWeatherData> readHomeWeather(String locationId) {
+                return new WeatherRepository.CacheRecord<>(homeWeather("Beijing", "19", "Sunny"), 500L, 1_800L);
+            }
+        };
+        WeatherRepository repository = new WeatherRepository(
+                new FakeRemoteGateway(homeWeather("Beijing", "24", "Cloudy")),
+                cacheGateway,
+                () -> 1_000L
+        );
+
+        repository.loadHomeWeather("101010100", "Beijing", 39.9042, 116.4074);
+    }
+
     private static HomeWeatherData homeWeather(String cityName, String temperature, String condition) {
         return new HomeWeatherData(
                 cityName,

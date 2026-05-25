@@ -1,21 +1,10 @@
 <resources>
-    <style name="Theme.YunJiWeather" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/weather_primary</item>
-        <item name="colorPrimaryVariant">@color/weather_primary_dark</item>
-        <item name="colorOnPrimary">@color/white</item>
-        <item name="colorSecondary">@color/weather_accent</item>
-        <item name="colorSecondaryVariant">@color/weather_accent</item>
-        <item name="colorOnSecondary">@color/black</item>
-        <item name="android:statusBarColor">@color/weather_primary_dark</item>
-        <item name="android:navigationBarColor">@color/weather_background_bottom</item>
-        <item name="android:windowLightStatusBar">false</item>
+    <style name="Theme.YunJiWeather" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:colorAccent">@color/weather_accent</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
         <item name="android:fontFamily">sans</item>
-        <item name="materialButtonStyle">@style/Widget.YunJi.Button</item>
-    </style>
-
-    <style name="Widget.YunJi.Button" parent="Widget.MaterialComponents.Button">
-        <item name="cornerRadius">4dp</item>
-        <item name="android:minHeight">46dp</item>
-        <item name="android:textAllCaps">false</item>
     </style>
 </resources>

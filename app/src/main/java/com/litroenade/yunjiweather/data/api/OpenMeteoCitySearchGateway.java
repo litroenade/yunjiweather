@@ -18,7 +18,7 @@ public final class OpenMeteoCitySearchGateway {
         this.geocodingService = geocodingService;
     }
 
-    public CityEntity searchCity(long ownerUserId, String keyword, boolean isDefault, int sortOrder, long nowTime) throws IOException {
+    public CityEntity searchCity(String keyword, boolean isDefault, int sortOrder, long nowTime) throws IOException {
         Response<OpenMeteoGeocodingResponse> response = geocodingService.searchCity(
                 requireText(keyword, "keyword"),
                 1,
@@ -36,7 +36,6 @@ public final class OpenMeteoCitySearchGateway {
         OpenMeteoGeocodingResponse.Location location = requireNonNull(body.results.get(0), "results[0]");
         Integer id = requireNonNull(location.id, "results[0].id");
         return new CityEntity(
-                ownerUserId,
                 requireText(location.name, "results[0].name"),
                 LOCATION_ID_PREFIX + id,
                 requireText(location.admin1, "results[0].admin1"),

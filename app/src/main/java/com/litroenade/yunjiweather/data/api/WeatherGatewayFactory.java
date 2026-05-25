@@ -17,6 +17,10 @@ public final class WeatherGatewayFactory {
         return new OpenMeteoCitySearchGateway(ApiClient.createOpenMeteoGeocodingService());
     }
 
+    public static CityLookupGateway createCityLookupGateway(WeatherApiService qWeatherApiService) {
+        return new CityLookupGateway(qWeatherApiService, createOpenMeteoCitySearchGateway());
+    }
+
     public static WeatherRepository.RemoteGateway createHomeRemoteGateway(WeatherApiService qWeatherApiService) {
         WeatherRepository.RemoteGateway openMeteoGateway = createOpenMeteoGateway();
         if (qWeatherApiService == null) {

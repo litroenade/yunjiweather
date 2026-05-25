@@ -33,19 +33,33 @@ public class AlertRepositoryTest {
         FakeWarningDao warningDao = new FakeWarningDao();
         warningDao.insertAll(Collections.singletonList(warning("old-warning")));
         FakeWeatherApiService apiService = new FakeWeatherApiService(warningResponse(remoteWarning("new-warning")));
-        AlertRepository repository = new AlertRepository(7L, apiService, warningDao);
+        AlertRepository repository = new AlertRepository(apiService, warningDao);
 
-        List<WarningEntity> warnings = repository.refreshWarnings("101010100");
+        WarningRefreshResult result = repository.refreshWarnings("101010100");
+        List<WarningEntity> warnings = result.getWarnings();
 
+        assertEquals(WarningSource.REMOTE, result.getSource());
         assertEquals(1, warnings.size());
         assertEquals("new-warning", warnings.get(0).warningId);
-        assertEquals(1, warningDao.findByLocationId(7L, "101010100").size());
-        assertEquals("new-warning", warningDao.findByLocationId(7L, "101010100").get(0).warningId);
+        assertEquals(1, warningDao.findByLocationId("101010100").size());
+        assertEquals("new-warning", warningDao.findByLocationId("101010100").get(0).warningId);
+    }
+
+    @Test
+    public void refreshWarnings_withoutApiReturnsCachedWarningsWithoutRemoteRequest() throws IOException {
+        FakeWarningDao warningDao = new FakeWarningDao();
+        warningDao.insertAll(Collections.singletonList(warning("cached-warning")));
+        AlertRepository repository = new AlertRepository(null, warningDao);
+
+        WarningRefreshResult result = repository.refreshWarnings("101010100");
+
+        assertEquals(WarningSource.CACHE_NO_API, result.getSource());
+        assertEquals(1, result.getWarnings().size());
+        assertEquals("cached-warning", result.getWarnings().get(0).warningId);
     }
 
     private static WarningEntity warning(String warningId) {
         return new WarningEntity(
-                7L,
                 warningId,
                 "101010100",
                 "暴雨蓝色预警",
@@ -84,7 +98,7 @@ public class AlertRepositoryTest {
         @Override
         public void insertAll(List<WarningEntity> warningList) {
             for (WarningEntity warning : warningList) {
-                WarningEntity oldWarning = findByWarningId(warning.ownerUserId, warning.locationId, warning.warningId);
+                WarningEntity oldWarning = findByWarningId(warning.locationId, warning.warningId);
                 if (oldWarning != null) {
                     warnings.remove(oldWarning);
                 }
@@ -93,10 +107,10 @@ public class AlertRepositoryTest {
         }
 
         @Override
-        public List<WarningEntity> findByLocationId(long ownerUserId, String locationId) {
+        public List<WarningEntity> findByLocationId(String locationId) {
             List<WarningEntity> result = new ArrayList<>();
             for (WarningEntity warning : warnings) {
-                if (warning.ownerUserId == ownerUserId && warning.locationId.equals(locationId)) {
+                if (warning.locationId.equals(locationId)) {
                     result.add(warning);
                 }
             }
@@ -104,10 +118,9 @@ public class AlertRepositoryTest {
         }
 
         @Override
-        public WarningEntity findByWarningId(long ownerUserId, String locationId, String warningId) {
+        public WarningEntity findByWarningId(String locationId, String warningId) {
             for (WarningEntity warning : warnings) {
-                if (warning.ownerUserId == ownerUserId
-                        && warning.locationId.equals(locationId)
+                if (warning.locationId.equals(locationId)
                         && warning.warningId.equals(warningId)) {
                     return warning;
                 }
@@ -116,10 +129,10 @@ public class AlertRepositoryTest {
         }
 
         @Override
-        public List<WarningEntity> findUnnotifiedWarnings(long ownerUserId) {
+        public List<WarningEntity> findUnnotifiedWarnings() {
             List<WarningEntity> result = new ArrayList<>();
             for (WarningEntity warning : warnings) {
-                if (warning.ownerUserId == ownerUserId && !warning.isNotified) {
+                if (!warning.isNotified) {
                     result.add(warning);
                 }
             }
@@ -127,42 +140,35 @@ public class AlertRepositoryTest {
         }
 
         @Override
-        public void markNotified(long ownerUserId, String locationId, String warningId) {
-            WarningEntity warning = findByWarningId(ownerUserId, locationId, warningId);
+        public void markNotified(String locationId, String warningId) {
+            WarningEntity warning = findByWarningId(locationId, warningId);
             if (warning != null) {
                 warning.isNotified = true;
             }
         }
 
         @Override
-        public void markRead(long ownerUserId, String locationId, String warningId) {
-            WarningEntity warning = findByWarningId(ownerUserId, locationId, warningId);
+        public void markRead(String locationId, String warningId) {
+            WarningEntity warning = findByWarningId(locationId, warningId);
             if (warning != null) {
                 warning.isRead = true;
             }
         }
 
         @Override
-        public void deleteMissingByLocation(long ownerUserId, String locationId, List<String> activeWarningIds) {
-            warnings.removeIf(warning -> warning.ownerUserId == ownerUserId
-                    && warning.locationId.equals(locationId)
+        public void deleteMissingByLocation(String locationId, List<String> activeWarningIds) {
+            warnings.removeIf(warning -> warning.locationId.equals(locationId)
                     && !activeWarningIds.contains(warning.warningId));
         }
 
         @Override
-        public void deleteByLocationId(long ownerUserId, String locationId) {
-            warnings.removeIf(warning -> warning.ownerUserId == ownerUserId && warning.locationId.equals(locationId));
+        public void deleteByLocationId(String locationId) {
+            warnings.removeIf(warning -> warning.locationId.equals(locationId));
         }
 
         @Override
-        public int count(long ownerUserId) {
-            int count = 0;
-            for (WarningEntity warning : warnings) {
-                if (warning.ownerUserId == ownerUserId) {
-                    count++;
-                }
-            }
-            return count;
+        public int count() {
+            return warnings.size();
         }
     }
 

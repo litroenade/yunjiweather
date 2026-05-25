@@ -1,39 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="weather_primary">#D0C3AD</color>
-    <color name="weather_primary_dark">#141311</color>
-    <color name="weather_accent">#C6854F</color>
-    <color name="weather_background_top">#151412</color>
-    <color name="weather_background_bottom">#1B1814</color>
-    <color name="weather_surface">#211E18</color>
-    <color name="weather_surface_tint">#29251D</color>
-    <color name="weather_stroke">#514737</color>
-    <color name="weather_text_primary">#F3EEE4</color>
-    <color name="weather_text_secondary">#C8BDA9</color>
+    <color name="weather_primary">#93C5FD</color>
+    <color name="weather_primary_dark">#0F172A</color>
+    <color name="weather_accent">#5EEAD4</color>
+    <color name="weather_background_top">#111827</color>
+    <color name="weather_background_bottom">#0F172A</color>
+    <color name="weather_text_primary">#E5E7EB</color>
+    <color name="weather_text_secondary">#D1D5DB</color>
     <color name="weather_text_inverse">#FFFFFFFF</color>
-    <color name="weather_card">#F0221F18</color>
-    <color name="weather_error">#FFB4AB</color>
-    <color name="weather_header_start">#51483D</color>
-    <color name="weather_header_end">#51483D</color>
-    <color name="weather_header_secondary">#F4E7D0</color>
-    <color name="weather_chip_background">#2E2920</color>
-    <color name="weather_nav_background">#F0151412</color>
-    <color name="auth_hero_title">#F0ECE3</color>
-    <color name="auth_hero_subtitle">#C6BDAE</color>
-    <color name="auth_chip_text">#E5D5BB</color>
-    <color name="auth_card_background">#F0232019</color>
-    <color name="auth_card_stroke">#514737</color>
-    <color name="warning_blue">#8FB8D8</color>
-    <color name="warning_yellow">#D8B45A</color>
-    <color name="warning_orange">#D99057</color>
-    <color name="warning_red">#E58B84</color>
-    <color name="warning_neutral">#C6BDAE</color>
-    <color name="warning_blue_surface">#243341</color>
-    <color name="warning_blue_stroke">#42596B</color>
-    <color name="warning_yellow_surface">#3A301C</color>
-    <color name="warning_yellow_stroke">#6A5525</color>
-    <color name="warning_orange_surface">#3B2B20</color>
-    <color name="warning_orange_stroke">#704D2D</color>
-    <color name="warning_red_surface">#3A2322</color>
-    <color name="warning_red_stroke">#704341</color>
+    <color name="weather_header_secondary">#DBEAFE</color>
 </resources>

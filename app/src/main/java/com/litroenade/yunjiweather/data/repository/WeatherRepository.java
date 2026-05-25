@@ -6,7 +6,7 @@ import com.litroenade.yunjiweather.utils.DateTimeUtils;
 
 import java.io.IOException;
 
-public class WeatherRepository {
+public class WeatherRepository implements HomeWeatherSource {
 
     private static final long HOME_CACHE_TTL_MILLIS = 30L * 60L * 1000L;
 
@@ -20,6 +20,7 @@ public class WeatherRepository {
         this.clock = clock;
     }
 
+    @Override
     public UiState<HomeWeatherData> loadHomeWeather(String locationId, String cityName, double latitude, double longitude) {
         long nowTime = clock.now();
         try {
@@ -29,7 +30,7 @@ public class WeatherRepository {
             }
             cacheGateway.saveHomeWeather(locationId, data, nowTime, nowTime + HOME_CACHE_TTL_MILLIS);
             return UiState.success(data);
-        } catch (IOException | RuntimeException exception) {
+        } catch (IOException exception) {
             CacheRecord<HomeWeatherData> cacheRecord = cacheGateway.readHomeWeather(locationId);
             if (cacheRecord != null && cacheRecord.getData() != null) {
                 return UiState.cache(

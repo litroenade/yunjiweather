@@ -12,7 +12,7 @@ public final class VisualThemeCatalog {
             new VisualTheme(
                     VisualThemeUtils.THEME_SKY,
                     "经典晴空",
-                    "首页跟随晴雨雪动态变化，保留天气应用的清爽感。",
+                    "跟随晴雨雪动态变化，保留天气应用的清爽感。",
                     R.drawable.bg_app_soft,
                     R.color.weather_primary,
                     R.color.weather_text_primary,
@@ -21,7 +21,7 @@ public final class VisualThemeCatalog {
             new VisualTheme(
                     VisualThemeUtils.THEME_FANTASY,
                     "幻想夜",
-                    "以深绿灰夜色和鸟居剪影为主，适合暗色展示。",
+                    "以深色夜景和剪影层次为主，适合暗色展示。",
                     R.drawable.bg_app_fantasy_night,
                     R.color.weather_primary,
                     R.color.weather_text_inverse,
@@ -30,7 +30,7 @@ public final class VisualThemeCatalog {
             new VisualTheme(
                     VisualThemeUtils.THEME_SAKURA,
                     "樱雨粉",
-                    "使用樱色与雨纹叠层，让设置页和日历更柔和。",
+                    "使用樱色与雨纹层次，让设置页更柔和。",
                     R.drawable.bg_app_sakura_rain,
                     R.color.weather_accent,
                     R.color.weather_text_primary,

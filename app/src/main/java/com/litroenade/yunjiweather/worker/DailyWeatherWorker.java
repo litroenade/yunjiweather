@@ -6,7 +6,6 @@ import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
-import com.litroenade.yunjiweather.auth.AuthSessionManager;
 import com.litroenade.yunjiweather.common.UiState;
 import com.litroenade.yunjiweather.data.api.WeatherGatewayFactory;
 import com.litroenade.yunjiweather.data.api.WeatherApiService;
@@ -30,12 +29,6 @@ public class DailyWeatherWorker extends Worker {
     @Override
     public Result doWork() {
         Context context = getApplicationContext();
-        AuthSessionManager authSessionManager = new AuthSessionManager(context);
-        long scheduledOwnerUserId = getInputData().getLong(WorkerScopeUtils.KEY_OWNER_USER_ID, -1L);
-        if (!WorkerScopeUtils.shouldRunForCurrentUser(scheduledOwnerUserId, authSessionManager)) {
-            return Result.success();
-        }
-        long ownerUserId = scheduledOwnerUserId;
         SettingsManager settingsManager = new SettingsManager(context);
         if (!settingsManager.isDailyReminderEnabled()) {
             return Result.success();
@@ -43,13 +36,13 @@ public class DailyWeatherWorker extends Worker {
 
         try {
             AppDatabase database = AppDatabase.getInstance(context);
-            CityEntity defaultCity = new CityRepository(ownerUserId, database.cityDao()).findDefaultCity();
+            CityEntity defaultCity = new CityRepository(database.cityDao()).findDefaultCity();
             if (defaultCity == null) {
                 return Result.success();
             }
 
             WeatherApiService apiService = WeatherGatewayFactory.createQWeatherServiceOrNull();
-            WeatherRepository repository = WeatherRepositoryFactory.createHomeRepository(ownerUserId, database, apiService);
+            WeatherRepository repository = WeatherRepositoryFactory.createHomeRepository(database, apiService);
             UiState<HomeWeatherData> state = repository.loadHomeWeather(
                     defaultCity.locationId,
                     defaultCity.cityName,

@@ -17,7 +17,7 @@ public class LifeIndexCacheGatewayTest {
     @Test
     public void saveAndReadValidCache_returnsCachedLifeIndexItems() {
         FakeWeatherCacheDao dao = new FakeWeatherCacheDao();
-        LifeIndexCacheGateway gateway = new LifeIndexCacheGateway(1L, dao, new Gson());
+        LifeIndexCacheGateway gateway = new LifeIndexCacheGateway(dao, new Gson());
         List<LifeIndexItem> items = Arrays.asList(
                 new LifeIndexItem("穿衣", "舒适", "建议穿短袖或薄外套。", "早晚温差明显时注意加衣。"),
                 new LifeIndexItem("出行", "适宜", "天气适合出行。", "出门前关注实时天气变化。")
@@ -35,7 +35,7 @@ public class LifeIndexCacheGatewayTest {
     @Test
     public void readValid_returnsNullWhenCacheExpired() {
         FakeWeatherCacheDao dao = new FakeWeatherCacheDao();
-        LifeIndexCacheGateway gateway = new LifeIndexCacheGateway(1L, dao, new Gson());
+        LifeIndexCacheGateway gateway = new LifeIndexCacheGateway(dao, new Gson());
         gateway.save("101010100", "北京", Arrays.asList(
                 new LifeIndexItem("穿衣", "舒适", "建议穿短袖。", "天气较热。")
         ), 1_000L, 2_000L);
@@ -46,8 +46,8 @@ public class LifeIndexCacheGatewayTest {
     @Test
     public void readValid_returnsNullWhenJsonBroken() {
         FakeWeatherCacheDao dao = new FakeWeatherCacheDao();
-        dao.entity = new WeatherCacheEntity(1L, "101010100", "北京", "INDEX", "{broken", 1_000L, 3_000L);
-        LifeIndexCacheGateway gateway = new LifeIndexCacheGateway(1L, dao, new Gson());
+        dao.entity = new WeatherCacheEntity("101010100", "北京", "INDEX", "{broken", 1_000L, 3_000L);
+        LifeIndexCacheGateway gateway = new LifeIndexCacheGateway(dao, new Gson());
 
         assertNull(gateway.readValid("101010100", 2_000L));
     }
@@ -55,7 +55,7 @@ public class LifeIndexCacheGatewayTest {
     @Test
     public void indexCacheDoesNotOverwriteHomeCache() {
         FakeWeatherCacheDao dao = new FakeWeatherCacheDao();
-        LifeIndexCacheGateway gateway = new LifeIndexCacheGateway(1L, dao, new Gson());
+        LifeIndexCacheGateway gateway = new LifeIndexCacheGateway(dao, new Gson());
 
         gateway.save("101010100", "北京", Arrays.asList(
                 new LifeIndexItem("穿衣", "舒适", "建议穿短袖。", "天气较热。")
@@ -65,20 +65,18 @@ public class LifeIndexCacheGatewayTest {
     }
 
     @Test
-    public void userCacheDoesNotOverwriteOtherUserCache() {
+    public void savingSameLocationAndTypeReplacesPreviousIndexCache() {
         FakeWeatherCacheDao dao = new FakeWeatherCacheDao();
-        LifeIndexCacheGateway firstGateway = new LifeIndexCacheGateway(1L, dao, new Gson());
-        LifeIndexCacheGateway secondGateway = new LifeIndexCacheGateway(2L, dao, new Gson());
+        LifeIndexCacheGateway gateway = new LifeIndexCacheGateway(dao, new Gson());
 
-        firstGateway.save("101010100", "北京", Arrays.asList(
-                new LifeIndexItem("穿衣", "舒适", "用户 A 建议", "用户 A 详情")
+        gateway.save("101010100", "北京", Arrays.asList(
+                new LifeIndexItem("穿衣", "舒适", "旧建议", "旧详情")
         ), 1_000L, 3_000L);
-        secondGateway.save("101010100", "北京", Arrays.asList(
-                new LifeIndexItem("穿衣", "偏热", "用户 B 建议", "用户 B 详情")
+        gateway.save("101010100", "北京", Arrays.asList(
+                new LifeIndexItem("穿衣", "偏热", "新建议", "新详情")
         ), 2_000L, 4_000L);
 
-        assertEquals("舒适", firstGateway.readValid("101010100", 2_500L).getItems().get(0).getLevel());
-        assertEquals("偏热", secondGateway.readValid("101010100", 2_500L).getItems().get(0).getLevel());
+        assertEquals("偏热", gateway.readValid("101010100", 2_500L).getItems().get(0).getLevel());
     }
 
     private static final class FakeWeatherCacheDao implements WeatherCacheDao {
@@ -87,44 +85,33 @@ public class LifeIndexCacheGatewayTest {
 
         @Override
         public void insert(WeatherCacheEntity entity) {
-            if (entity.ownerUserId == 1L) {
-                this.entity = entity;
-            } else {
-                this.secondEntity = entity;
-            }
+            this.entity = entity;
         }
 
         @Override
-        public WeatherCacheEntity findByLocationAndType(long ownerUserId, String locationId, String weatherType) {
-            WeatherCacheEntity candidate = ownerUserId == 1L ? entity : secondEntity;
-            if (candidate == null) {
+        public WeatherCacheEntity findByLocationAndType(String locationId, String weatherType) {
+            if (entity == null) {
                 return null;
             }
-            if (!candidate.locationId.equals(locationId) || !candidate.weatherType.equals(weatherType)) {
+            if (!entity.locationId.equals(locationId) || !entity.weatherType.equals(weatherType)) {
                 return null;
             }
-            return candidate;
+            return entity;
         }
 
         @Override
-        public Long findLatestUpdateTime(long ownerUserId) {
-            WeatherCacheEntity candidate = ownerUserId == 1L ? entity : secondEntity;
-            return candidate == null ? null : candidate.updateTime;
+        public Long findLatestUpdateTime() {
+            return entity == null ? null : entity.updateTime;
         }
 
         @Override
-        public int count(long ownerUserId) {
-            WeatherCacheEntity candidate = ownerUserId == 1L ? entity : secondEntity;
-            return candidate == null ? 0 : 1;
+        public int count() {
+            return entity == null ? 0 : 1;
         }
 
         @Override
-        public void clearAll(long ownerUserId) {
-            if (ownerUserId == 1L) {
-                entity = null;
-            } else {
-                secondEntity = null;
-            }
+        public void clearAll() {
+            entity = null;
         }
     }
 }

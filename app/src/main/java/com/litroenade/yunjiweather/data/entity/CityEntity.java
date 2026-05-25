@@ -8,15 +8,13 @@ import androidx.room.PrimaryKey;
 @Entity(
         tableName = "city",
         indices = {
-                @Index(value = {"ownerUserId", "locationId"}, unique = true)
+                @Index(value = {"locationId"}, unique = true)
         }
 )
 public class CityEntity {
 
     @PrimaryKey(autoGenerate = true)
     public long id;
-
-    public long ownerUserId;
 
     @NonNull
     public String cityName;
@@ -43,7 +41,6 @@ public class CityEntity {
     public long updateTime;
 
     public CityEntity(
-            long ownerUserId,
             @NonNull String cityName,
             @NonNull String locationId,
             @NonNull String province,
@@ -55,7 +52,6 @@ public class CityEntity {
             long createTime,
             long updateTime
     ) {
-        this.ownerUserId = ownerUserId;
         this.cityName = cityName;
         this.locationId = locationId;
         this.province = province;

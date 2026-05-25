@@ -42,7 +42,7 @@ public class WarningListUtilsTest {
     public void createNoQWeatherText_reportsNoLocalCache() {
         String text = WarningListUtils.createNoQWeatherText("北京", Collections.emptyList());
 
-        assertEquals("未配置 QWeather API，北京暂无本地预警缓存。", text);
+        assertEquals("未配置 QWeather API，北京 暂无本地预警缓存。", text);
     }
 
     @Test
@@ -52,12 +52,11 @@ public class WarningListUtilsTest {
                 warning("w-2", true)
         ));
 
-        assertEquals("未配置 QWeather API，已显示深圳 2 条本地预警缓存。", text);
+        assertEquals("未配置 QWeather API，已显示 深圳 2 条本地预警缓存。", text);
     }
 
     private static WarningEntity warning(String warningId, boolean isRead) {
         WarningEntity warning = new WarningEntity(
-                1L,
                 warningId,
                 "101010100",
                 "暴雨蓝色预警",

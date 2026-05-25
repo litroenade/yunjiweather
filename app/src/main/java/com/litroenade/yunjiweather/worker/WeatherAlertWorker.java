@@ -6,19 +6,19 @@ import androidx.annotation.NonNull;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
-import com.litroenade.yunjiweather.auth.AuthSessionManager;
 import com.litroenade.yunjiweather.data.api.ApiClient;
 import com.litroenade.yunjiweather.data.api.ApiConfig;
 import com.litroenade.yunjiweather.data.entity.CityEntity;
-import com.litroenade.yunjiweather.data.entity.WarningEntity;
 import com.litroenade.yunjiweather.data.local.AppDatabase;
 import com.litroenade.yunjiweather.data.repository.AlertRepository;
 import com.litroenade.yunjiweather.data.repository.CityRepository;
-import com.litroenade.yunjiweather.notification.NotificationHelper;
+import com.litroenade.yunjiweather.data.repository.WarningRefreshResult;
+import com.litroenade.yunjiweather.notification.NotificationCandidateSelector;
+import com.litroenade.yunjiweather.notification.SystemWarningNotifier;
+import com.litroenade.yunjiweather.notification.WarningNotificationDispatcher;
 import com.litroenade.yunjiweather.settings.SettingsManager;
 
 import java.io.IOException;
-import java.util.List;
 
 public class WeatherAlertWorker extends Worker {
 
@@ -30,35 +30,31 @@ public class WeatherAlertWorker extends Worker {
     @Override
     public Result doWork() {
         Context context = getApplicationContext();
-        AuthSessionManager authSessionManager = new AuthSessionManager(context);
-        long scheduledOwnerUserId = getInputData().getLong(WorkerScopeUtils.KEY_OWNER_USER_ID, -1L);
-        if (!WorkerScopeUtils.shouldRunForCurrentUser(scheduledOwnerUserId, authSessionManager)) {
-            return Result.success();
-        }
-        long ownerUserId = scheduledOwnerUserId;
         SettingsManager settingsManager = new SettingsManager(context);
         if (!settingsManager.isWarningEnabled() || !ApiConfig.isConfigured()) {
             return Result.success();
         }
 
         AppDatabase database = AppDatabase.getInstance(context);
-        CityEntity defaultCity = new CityRepository(ownerUserId, database.cityDao()).findDefaultCity();
+        CityEntity defaultCity = new CityRepository(database.cityDao()).findDefaultCity();
         if (defaultCity == null) {
             return Result.success();
         }
 
         AlertRepository repository = new AlertRepository(
-                ownerUserId,
                 ApiClient.createWeatherApiService(),
                 database.warningDao()
         );
         try {
-            List<WarningEntity> warnings = repository.refreshWarnings(defaultCity.locationId);
-            for (WarningEntity warning : warnings) {
-                if (!warning.isNotified && NotificationHelper.showWarningNotification(context, warning)) {
-                    database.warningDao().markNotified(ownerUserId, warning.locationId, warning.warningId);
-                }
-            }
+            WarningRefreshResult result = repository.refreshWarnings(defaultCity.locationId);
+            WarningNotificationDispatcher dispatcher = new WarningNotificationDispatcher(
+                    new NotificationCandidateSelector()
+            );
+            dispatcher.dispatch(
+                    result.getWarnings(),
+                    new SystemWarningNotifier(context),
+                    repository::markNotified
+            );
             return Result.success();
         } catch (IOException | RuntimeException exception) {
             return Result.retry();

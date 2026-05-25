@@ -12,13 +12,12 @@ public final class WeatherRepositoryFactory {
     }
 
     public static WeatherRepository createHomeRepository(
-            long ownerUserId,
             AppDatabase database,
             WeatherApiService apiService
     ) {
         return new WeatherRepository(
                 WeatherGatewayFactory.createHomeRemoteGateway(apiService),
-                new RoomWeatherCacheGateway(ownerUserId, database.weatherCacheDao(), new Gson()),
+                new RoomWeatherCacheGateway(database.weatherCacheDao(), new Gson()),
                 System::currentTimeMillis
         );
     }

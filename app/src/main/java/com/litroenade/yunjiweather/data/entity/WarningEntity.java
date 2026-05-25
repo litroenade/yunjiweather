@@ -8,16 +8,14 @@ import androidx.room.PrimaryKey;
 @Entity(
         tableName = "warning",
         indices = {
-                @Index(value = {"ownerUserId", "locationId", "warningId"}, unique = true),
-                @Index(value = {"ownerUserId", "locationId"})
+                @Index(value = {"locationId", "warningId"}, unique = true),
+                @Index(value = {"locationId"})
         }
 )
 public class WarningEntity {
 
     @PrimaryKey(autoGenerate = true)
     public long id;
-
-    public long ownerUserId;
 
     @NonNull
     public String warningId;
@@ -44,7 +42,6 @@ public class WarningEntity {
     public boolean isNotified;
 
     public WarningEntity(
-            long ownerUserId,
             @NonNull String warningId,
             @NonNull String locationId,
             @NonNull String title,
@@ -55,7 +52,6 @@ public class WarningEntity {
             boolean isRead,
             boolean isNotified
     ) {
-        this.ownerUserId = ownerUserId;
         this.warningId = warningId;
         this.locationId = locationId;
         this.title = title;

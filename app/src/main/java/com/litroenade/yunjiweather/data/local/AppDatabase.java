@@ -7,7 +7,6 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 
 import com.litroenade.yunjiweather.data.entity.CityEntity;
-import com.litroenade.yunjiweather.data.entity.UserEntity;
 import com.litroenade.yunjiweather.data.entity.WeatherCacheEntity;
 import com.litroenade.yunjiweather.data.entity.WarningEntity;
 
@@ -15,10 +14,9 @@ import com.litroenade.yunjiweather.data.entity.WarningEntity;
         entities = {
                 WeatherCacheEntity.class,
                 CityEntity.class,
-                WarningEntity.class,
-                UserEntity.class
+                WarningEntity.class
         },
-        version = 4,
+        version = 5,
         exportSchema = false
 )
 public abstract class AppDatabase extends RoomDatabase {
@@ -47,6 +45,4 @@ public abstract class AppDatabase extends RoomDatabase {
     public abstract CityDao cityDao();
 
     public abstract WarningDao warningDao();
-
-    public abstract UserDao userDao();
 }

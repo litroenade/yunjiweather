@@ -8,7 +8,6 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.google.gson.Gson;
-import com.litroenade.yunjiweather.auth.AuthSessionManager;
 import com.litroenade.yunjiweather.data.api.WeatherApiService;
 import com.litroenade.yunjiweather.data.api.WeatherGatewayFactory;
 import com.litroenade.yunjiweather.data.entity.CityEntity;
@@ -49,7 +48,7 @@ public class LifeIndexViewModel extends AndroidViewModel {
 
     public void refresh() {
         if (cityRepository == null || lifeIndexRepository == null) {
-            publishLocalFallback("生活服务初始化失败，请重新登录后再试。");
+            publishLocalFallback("生活服务初始化失败，请重启应用后再试。");
             return;
         }
         executorService.execute(() -> {
@@ -68,13 +67,12 @@ public class LifeIndexViewModel extends AndroidViewModel {
     private boolean initializeDependencies() {
         try {
             Application application = getApplication();
-            long ownerUserId = new AuthSessionManager(application).requireUserId();
             AppDatabase database = AppDatabase.getInstance(application);
             WeatherApiService apiService = WeatherGatewayFactory.createQWeatherServiceOrNull();
-            cityRepository = new CityRepository(ownerUserId, database.cityDao());
+            cityRepository = new CityRepository(database.cityDao());
             lifeIndexRepository = new LifeIndexRepository(
                     apiService,
-                    new LifeIndexCacheGateway(ownerUserId, database.weatherCacheDao(), new Gson())
+                    new LifeIndexCacheGateway(database.weatherCacheDao(), new Gson())
             );
             return true;
         } catch (RuntimeException exception) {
@@ -88,10 +86,10 @@ public class LifeIndexViewModel extends AndroidViewModel {
             return "已更新 " + cityName + " 今日生活指数。";
         }
         if (result.getSource() == LifeIndexRepository.LoadSource.CACHE_NO_API) {
-            return "未配置 QWeather API，已显示缓存生活指数。 " + DateTimeUtils.formatCacheUpdateTime(result.getCacheUpdateTime());
+            return "未配置 QWeather API，已显示缓存生活指数。" + DateTimeUtils.formatCacheUpdateTime(result.getCacheUpdateTime());
         }
         if (result.getSource() == LifeIndexRepository.LoadSource.CACHE_ERROR) {
-            return "生活指数刷新失败，已显示缓存生活指数。 " + DateTimeUtils.formatCacheUpdateTime(result.getCacheUpdateTime());
+            return "生活指数刷新失败，已显示缓存生活指数。" + DateTimeUtils.formatCacheUpdateTime(result.getCacheUpdateTime());
         }
         if (result.getErrorMessage() == null || result.getErrorMessage().trim().isEmpty()) {
             return "未配置 QWeather API，已显示本地生活建议。";

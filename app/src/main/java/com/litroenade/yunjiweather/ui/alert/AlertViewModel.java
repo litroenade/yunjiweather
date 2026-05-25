@@ -7,7 +7,6 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import com.litroenade.yunjiweather.auth.AuthSessionManager;
 import com.litroenade.yunjiweather.data.api.ApiClient;
 import com.litroenade.yunjiweather.data.api.ApiConfig;
 import com.litroenade.yunjiweather.data.entity.CityEntity;
@@ -15,7 +14,8 @@ import com.litroenade.yunjiweather.data.entity.WarningEntity;
 import com.litroenade.yunjiweather.data.local.AppDatabase;
 import com.litroenade.yunjiweather.data.repository.AlertRepository;
 import com.litroenade.yunjiweather.data.repository.CityRepository;
-import com.litroenade.yunjiweather.notification.NotificationHelper;
+import com.litroenade.yunjiweather.data.repository.WarningRefreshResult;
+import com.litroenade.yunjiweather.data.repository.WarningSource;
 import com.litroenade.yunjiweather.settings.SettingsManager;
 import com.litroenade.yunjiweather.utils.WarningListUtils;
 
@@ -30,20 +30,18 @@ public class AlertViewModel extends AndroidViewModel {
     private final SettingsManager settingsManager;
     private final CityRepository cityRepository;
     private final AlertRepository alertRepository;
-    private final long ownerUserId;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final MutableLiveData<String> alertStateText = new MutableLiveData<>();
     private final MutableLiveData<List<WarningEntity>> warnings = new MutableLiveData<>(Collections.emptyList());
     private final MutableLiveData<Boolean> loading = new MutableLiveData<>(false);
+    private final MutableLiveData<String> message = new MutableLiveData<>("");
 
     public AlertViewModel(@NonNull Application application) {
         super(application);
-        ownerUserId = new AuthSessionManager(application).requireUserId();
         settingsManager = new SettingsManager(application);
         AppDatabase database = AppDatabase.getInstance(application);
-        cityRepository = new CityRepository(ownerUserId, database.cityDao());
+        cityRepository = new CityRepository(database.cityDao());
         alertRepository = new AlertRepository(
-                ownerUserId,
                 ApiConfig.isConfigured() ? ApiClient.createWeatherApiService() : null,
                 database.warningDao()
         );
@@ -62,22 +60,25 @@ public class AlertViewModel extends AndroidViewModel {
         return loading;
     }
 
+    public LiveData<String> getMessage() {
+        return message;
+    }
+
     public void refreshState() {
         loading.setValue(true);
+        message.setValue("");
         executorService.execute(() -> {
             CityEntity city = null;
             try {
                 city = resolveDefaultCity();
-                if (!ApiConfig.isConfigured()) {
-                    List<WarningEntity> cachedWarnings = alertRepository.findByLocationId(city.locationId);
-                    warnings.postValue(cachedWarnings);
-                    alertStateText.postValue(WarningListUtils.createNoQWeatherText(city.cityName, cachedWarnings));
-                    return;
-                }
-                List<WarningEntity> refreshedWarnings = alertRepository.refreshWarnings(city.locationId);
-                notifyNewWarnings(refreshedWarnings);
+                WarningRefreshResult result = alertRepository.refreshWarnings(city.locationId);
+                List<WarningEntity> refreshedWarnings = result.getWarnings();
                 warnings.postValue(refreshedWarnings);
-                alertStateText.postValue(createSuccessText(city, refreshedWarnings));
+                if (result.getSource() == WarningSource.CACHE_NO_API) {
+                    alertStateText.postValue(WarningListUtils.createNoQWeatherText(city.cityName, refreshedWarnings));
+                } else {
+                    alertStateText.postValue(createSuccessText(city, refreshedWarnings));
+                }
             } catch (IOException | RuntimeException exception) {
                 List<WarningEntity> cachedWarnings = city == null
                         ? Collections.emptyList()
@@ -96,6 +97,7 @@ public class AlertViewModel extends AndroidViewModel {
             WarningEntity targetWarning = findWarning(currentWarnings, warningId);
             if (targetWarning != null) {
                 alertRepository.markRead(targetWarning.locationId, warningId);
+                message.postValue("已标记为已读：" + targetWarning.title);
             }
             if (currentWarnings != null) {
                 warnings.postValue(WarningListUtils.markRead(currentWarnings, warningId));
@@ -113,18 +115,6 @@ public class AlertViewModel extends AndroidViewModel {
         return cityRepository.resolveDefaultCity(System.currentTimeMillis());
     }
 
-    private void notifyNewWarnings(List<WarningEntity> warningList) {
-        if (!settingsManager.isWarningEnabled()) {
-            return;
-        }
-        for (WarningEntity warning : warningList) {
-            if (!warning.isNotified && NotificationHelper.showWarningNotification(getApplication(), warning)) {
-                alertRepository.markNotified(warning.locationId, warning.warningId);
-                warning.isNotified = true;
-            }
-        }
-    }
-
     private WarningEntity findWarning(List<WarningEntity> warningList, String warningId) {
         if (warningList == null) {
             return null;
@@ -140,11 +130,11 @@ public class AlertViewModel extends AndroidViewModel {
     private String createSuccessText(CityEntity city, List<WarningEntity> warningList) {
         if (warningList.isEmpty()) {
             return settingsManager.isWarningEnabled()
-                    ? city.cityName + "暂无天气预警，预警通知已开启。"
-                    : city.cityName + "暂无天气预警，预警通知已关闭。";
+                    ? city.cityName + " 暂无天气预警，预警通知已开启。"
+                    : city.cityName + " 暂无天气预警，预警通知已关闭。";
         }
         String notificationText = settingsManager.isWarningEnabled() ? "通知已开启" : "通知已关闭";
-        return city.cityName + "当前有 " + warningList.size() + " 条天气预警，" + notificationText + "。";
+        return city.cityName + " 当前有 " + warningList.size() + " 条天气预警，" + notificationText + "。";
     }
 
     private String createErrorText(List<WarningEntity> cachedWarnings, Exception exception) {

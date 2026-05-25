@@ -9,15 +9,13 @@ import androidx.room.PrimaryKey;
 @Entity(
         tableName = "weather_cache",
         indices = {
-                @Index(value = {"ownerUserId", "locationId", "weatherType"}, unique = true)
+                @Index(value = {"locationId", "weatherType"}, unique = true)
         }
 )
 public class WeatherCacheEntity {
 
     @PrimaryKey(autoGenerate = true)
     public long id;
-
-    public long ownerUserId;
 
     @NonNull
     public String locationId;
@@ -37,7 +35,6 @@ public class WeatherCacheEntity {
 
     public WeatherCacheEntity(
             long id,
-            long ownerUserId,
             @NonNull String locationId,
             @NonNull String cityName,
             @NonNull String weatherType,
@@ -46,7 +43,6 @@ public class WeatherCacheEntity {
             long expireTime
     ) {
         this.id = id;
-        this.ownerUserId = ownerUserId;
         this.locationId = locationId;
         this.cityName = cityName;
         this.weatherType = weatherType;
@@ -57,7 +53,6 @@ public class WeatherCacheEntity {
 
     @Ignore
     public WeatherCacheEntity(
-            long ownerUserId,
             @NonNull String locationId,
             @NonNull String cityName,
             @NonNull String weatherType,
@@ -65,6 +60,6 @@ public class WeatherCacheEntity {
             long updateTime,
             long expireTime
     ) {
-        this(0L, ownerUserId, locationId, cityName, weatherType, weatherJson, updateTime, expireTime);
+        this(0L, locationId, cityName, weatherType, weatherJson, updateTime, expireTime);
     }
 }

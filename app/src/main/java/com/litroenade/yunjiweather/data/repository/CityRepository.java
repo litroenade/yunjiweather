@@ -8,60 +8,56 @@ import java.util.List;
 
 public final class CityRepository {
 
-    private final long ownerUserId;
     private final CityDao cityDao;
 
-    public CityRepository(long ownerUserId, CityDao cityDao) {
-        this.ownerUserId = ownerUserId;
+    public CityRepository(CityDao cityDao) {
         this.cityDao = cityDao;
     }
 
     public CityEntity resolveDefaultCity(long nowTime) {
-        return DefaultCityUtils.resolveDefaultCity(cityDao, ownerUserId, nowTime);
+        return DefaultCityUtils.resolveDefaultCity(cityDao, nowTime);
     }
 
     public List<CityEntity> findAll() {
-        return cityDao.findAll(ownerUserId);
+        return cityDao.findAll();
     }
 
     public CityEntity findDefaultCity() {
-        return cityDao.findDefaultCity(ownerUserId);
+        return cityDao.findDefaultCity();
     }
 
     public CityEntity findByLocationId(String locationId) {
-        return cityDao.findByLocationId(ownerUserId, locationId);
+        return cityDao.findByLocationId(locationId);
     }
 
     public int count() {
-        return cityDao.count(ownerUserId);
+        return cityDao.count();
     }
 
     public void insert(CityEntity city) {
-        city.ownerUserId = ownerUserId;
         cityDao.insert(city);
     }
 
     public void setDefaultCity(String locationId, long nowTime) {
-        cityDao.clearDefaultCity(ownerUserId);
-        cityDao.setDefaultCity(ownerUserId, locationId, nowTime);
+        cityDao.clearDefaultCity();
+        cityDao.setDefaultCity(locationId, nowTime);
     }
 
     public void deleteCity(CityEntity city, long nowTime) {
-        cityDao.deleteByLocationId(ownerUserId, city.locationId);
+        cityDao.deleteByLocationId(city.locationId);
         if (!city.isDefault) {
             return;
         }
-        List<CityEntity> remainingCities = cityDao.findAll(ownerUserId);
+        List<CityEntity> remainingCities = cityDao.findAll();
         if (!remainingCities.isEmpty()) {
             setDefaultCity(remainingCities.get(0).locationId, nowTime);
         }
     }
 
     public void saveAsDefaultCity(CityEntity city, long nowTime) {
-        city.ownerUserId = ownerUserId;
-        CityEntity oldCity = cityDao.findByLocationId(ownerUserId, city.locationId);
+        CityEntity oldCity = cityDao.findByLocationId(city.locationId);
         if (oldCity == null) {
-            cityDao.clearDefaultCity(ownerUserId);
+            cityDao.clearDefaultCity();
             cityDao.insert(city);
             return;
         }

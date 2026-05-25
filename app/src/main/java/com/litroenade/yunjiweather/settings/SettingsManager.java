@@ -3,13 +3,12 @@ package com.litroenade.yunjiweather.settings;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-import com.litroenade.yunjiweather.auth.AuthSessionManager;
 import com.litroenade.yunjiweather.utils.VisualThemeUtils;
 import com.litroenade.yunjiweather.utils.WeatherDisplayUtils;
 
 public final class SettingsManager {
 
-    private static final String PREF_NAME_PREFIX = "yunji_weather_settings_user_";
+    private static final String PREF_NAME = "yunji_weather_settings";
     private static final String KEY_WARNING_ENABLED = "warning_enabled";
     private static final String KEY_ANIMATION_ENABLED = "animation_enabled";
     private static final String KEY_DARK_MODE_ENABLED = "dark_mode_enabled";
@@ -21,8 +20,7 @@ public final class SettingsManager {
     private final SharedPreferences preferences;
 
     public SettingsManager(Context context) {
-        long userId = new AuthSessionManager(context).requireUserId();
-        preferences = context.getApplicationContext().getSharedPreferences(PREF_NAME_PREFIX + userId, Context.MODE_PRIVATE);
+        preferences = context.getApplicationContext().getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         ensureDefaultSettings();
     }
 
