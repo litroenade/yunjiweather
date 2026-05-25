@@ -16,12 +16,13 @@
             android:paddingStart="18dp"
             android:paddingTop="22dp"
             android:paddingEnd="18dp"
-            android:paddingBottom="92dp">
+            android:paddingBottom="28dp">
 
         <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="12dp"
+                app:cardBackgroundColor="@android:color/transparent"
+                app:cardCornerRadius="0dp"
                 app:cardElevation="0dp"
                 app:strokeWidth="0dp">
 
@@ -68,7 +69,7 @@
                             android:textColor="@color/weather_primary"
                             android:textSize="44sp"
                             android:textStyle="bold"
-                            tools:text="21"/>
+                            tools:text="Preview"/>
 
                     <LinearLayout
                             android:layout_width="0dp"
@@ -84,7 +85,7 @@
                                 android:textColor="@color/weather_text_primary"
                                 android:textSize="17sp"
                                 android:textStyle="bold"
-                                tools:text="2026年05月 · 星期四"/>
+                                tools:text="Preview"/>
 
                         <TextView
                                 android:id="@+id/today_calendar_lunar_text"
@@ -93,7 +94,7 @@
                                 android:layout_marginTop="7dp"
                                 android:textColor="@color/weather_text_secondary"
                                 android:textSize="14sp"
-                                tools:text="农历四月初五"/>
+                                tools:text="Preview"/>
 
                         <TextView
                                 android:id="@+id/today_calendar_festival_text"
@@ -109,7 +110,7 @@
                                 android:paddingBottom="7dp"
                                 android:textColor="@color/weather_primary"
                                 android:textSize="13sp"
-                                tools:text="今日暂无传统节日"/>
+                                tools:text="Preview"/>
                     </LinearLayout>
                 </LinearLayout>
 
@@ -128,7 +129,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
-                app:cardCornerRadius="10dp"
+                app:cardCornerRadius="2dp"
                 app:cardElevation="0dp"
                 app:strokeWidth="0dp">
 

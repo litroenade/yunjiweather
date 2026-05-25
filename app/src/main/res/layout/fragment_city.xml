@@ -16,12 +16,13 @@
             android:paddingStart="18dp"
             android:paddingTop="22dp"
             android:paddingEnd="18dp"
-            android:paddingBottom="92dp">
+            android:paddingBottom="28dp">
 
         <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="12dp"
+                app:cardBackgroundColor="@android:color/transparent"
+                app:cardCornerRadius="0dp"
                 app:cardElevation="0dp"
                 app:strokeWidth="0dp">
 
@@ -63,10 +64,10 @@
                     android:layout_weight="1"
                     android:hint="@string/city_search_hint"
                     app:boxBackgroundColor="@color/weather_surface"
-                    app:boxCornerRadiusBottomEnd="8dp"
-                    app:boxCornerRadiusBottomStart="8dp"
-                    app:boxCornerRadiusTopEnd="8dp"
-                    app:boxCornerRadiusTopStart="8dp">
+                    app:boxCornerRadiusBottomEnd="2dp"
+                    app:boxCornerRadiusBottomStart="2dp"
+                    app:boxCornerRadiusTopEnd="2dp"
+                    app:boxCornerRadiusTopStart="2dp">
 
                 <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/city_input"

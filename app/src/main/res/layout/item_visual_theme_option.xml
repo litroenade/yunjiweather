@@ -10,7 +10,7 @@
                                                   android:focusable="true"
                                                   android:foreground="?attr/selectableItemBackground"
                                                   app:cardBackgroundColor="@color/weather_surface"
-                                                  app:cardCornerRadius="10dp"
+                                                  app:cardCornerRadius="4dp"
                                                   app:cardElevation="0dp"
                                                   app:strokeColor="@color/weather_stroke"
                                                   app:strokeWidth="1dp">
@@ -47,7 +47,7 @@
                     android:textColor="@color/weather_text_primary"
                     android:textSize="15sp"
                     android:textStyle="bold"
-                    tools:text="经典晴空"/>
+                    tools:text="Preview"/>
         </LinearLayout>
 
         <TextView
@@ -61,7 +61,7 @@
                 android:maxLines="2"
                 android:textColor="@color/weather_text_secondary"
                 android:textSize="12sp"
-                tools:text="首页跟随晴雨雪动态变化，保留天气应用的清爽感。"/>
+                tools:text="Preview"/>
 
         <TextView
                 android:id="@+id/theme_selected_text"

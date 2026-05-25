@@ -94,9 +94,9 @@ public class MainActivity extends AppCompatActivity {
         NavHostFragment navHostFragment = (NavHostFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.nav_host_fragment_activity_main);
         if (navHostFragment == null) {
-            throw new IllegalStateException("主界面导航容器初始化失败");
+            throw new IllegalStateException("Main navigation host is not initialized");
         }
-        // FragmentContainerView 在主题重建后不一定立即把 NavController 挂到 View tag，直接从 NavHostFragment 获取更稳定
+        // NavHostFragment keeps NavController resolution stable after theme recreation.
         NavController navController = navHostFragment.getNavController();
         NavigationUI.setupWithNavController(binding.navView, navController);
         configureBottomNavigationDescriptions();

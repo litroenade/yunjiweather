@@ -16,12 +16,13 @@
             android:paddingStart="18dp"
             android:paddingTop="22dp"
             android:paddingEnd="18dp"
-            android:paddingBottom="92dp">
+            android:paddingBottom="28dp">
 
         <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="12dp"
+                app:cardBackgroundColor="@android:color/transparent"
+                app:cardCornerRadius="0dp"
                 app:cardElevation="0dp"
                 app:strokeWidth="0dp">
 
@@ -54,7 +55,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
-                app:cardCornerRadius="12dp"
+                app:cardCornerRadius="2dp"
                 app:cardElevation="0dp"
                 app:strokeWidth="0dp">
 
@@ -80,7 +81,7 @@
                         android:textColor="@color/weather_text_primary"
                         android:textSize="20sp"
                         android:textStyle="bold"
-                        tools:text="当前账户：Alice（alice）"/>
+                        tools:text="Preview"/>
 
                 <TextView
                         android:id="@+id/default_city_text"
@@ -90,7 +91,7 @@
                         android:textColor="@color/weather_text_primary"
                         android:textSize="15sp"
                         android:textStyle="bold"
-                        tools:text="默认城市：北京"/>
+                        tools:text="Preview"/>
 
                 <TextView
                         android:id="@+id/data_update_text"
@@ -99,7 +100,7 @@
                         android:layout_marginTop="6dp"
                         android:textColor="@color/weather_text_secondary"
                         android:textSize="13sp"
-                        tools:text="数据更新时间：2026-05-19 20:30"/>
+                        tools:text="Preview"/>
 
                 <com.google.android.material.button.MaterialButton
                         android:id="@+id/logout_button"
@@ -109,7 +110,7 @@
                         android:layout_marginTop="16dp"
                         android:text="@string/mine_logout"
                         android:textColor="@color/weather_primary"
-                        app:cornerRadius="8dp"
+                        app:cornerRadius="2dp"
                         app:strokeColor="@color/weather_stroke"
                         app:strokeWidth="1dp"/>
             </LinearLayout>
@@ -279,7 +280,7 @@
                     android:lineSpacingExtra="3dp"
                     android:textColor="@color/weather_text_secondary"
                     android:textSize="14sp"
-                    tools:text="本地账户：已保存&#10;城市数据：1 个&#10;天气缓存：5 条&#10;预警记录：0 条"/>
+                    tools:text="Preview"/>
 
             <TextView
                     android:layout_width="match_parent"

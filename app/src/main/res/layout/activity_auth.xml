@@ -65,7 +65,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="28dp"
                 app:cardBackgroundColor="@color/auth_card_background"
-                app:cardCornerRadius="12dp"
+                app:cardCornerRadius="4dp"
                 app:cardElevation="0dp"
                 app:strokeColor="@color/auth_card_stroke"
                 app:strokeWidth="1dp">
@@ -115,10 +115,10 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="22dp"
                         android:hint="@string/auth_username_hint"
-                        app:boxCornerRadiusBottomEnd="12dp"
-                        app:boxCornerRadiusBottomStart="12dp"
-                        app:boxCornerRadiusTopEnd="12dp"
-                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxCornerRadiusBottomEnd="4dp"
+                        app:boxCornerRadiusBottomStart="4dp"
+                        app:boxCornerRadiusTopEnd="4dp"
+                        app:boxCornerRadiusTopStart="4dp"
                         app:startIconTint="@color/weather_text_secondary"
                         app:startIconDrawable="@drawable/ic_mine_black_24dp">
 
@@ -141,10 +141,10 @@
                         android:layout_marginTop="12dp"
                         android:hint="@string/auth_display_name_hint"
                         android:visibility="gone"
-                        app:boxCornerRadiusBottomEnd="12dp"
-                        app:boxCornerRadiusBottomStart="12dp"
-                        app:boxCornerRadiusTopEnd="12dp"
-                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxCornerRadiusBottomEnd="4dp"
+                        app:boxCornerRadiusBottomStart="4dp"
+                        app:boxCornerRadiusTopEnd="4dp"
+                        app:boxCornerRadiusTopStart="4dp"
                         app:startIconTint="@color/weather_text_secondary"
                         app:startIconDrawable="@drawable/ic_mine_black_24dp">
 
@@ -166,10 +166,10 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
                         android:hint="@string/auth_password_hint"
-                        app:boxCornerRadiusBottomEnd="12dp"
-                        app:boxCornerRadiusBottomStart="12dp"
-                        app:boxCornerRadiusTopEnd="12dp"
-                        app:boxCornerRadiusTopStart="12dp"
+                        app:boxCornerRadiusBottomEnd="4dp"
+                        app:boxCornerRadiusBottomStart="4dp"
+                        app:boxCornerRadiusTopEnd="4dp"
+                        app:boxCornerRadiusTopStart="4dp"
                         app:endIconMode="password_toggle"
                         app:endIconTint="@color/weather_text_secondary">
 
@@ -192,7 +192,7 @@
                         android:textColor="@color/weather_error"
                         android:textSize="13sp"
                         android:visibility="gone"
-                        tools:text="用户名或密码错误"/>
+                        tools:text="Preview"/>
 
                 <com.google.android.material.button.MaterialButton
                         android:id="@+id/submit_button"
@@ -201,7 +201,7 @@
                         android:layout_marginTop="18dp"
                         android:text="@string/auth_login_button"
                         android:textSize="16sp"
-                        app:cornerRadius="8dp"/>
+                        app:cornerRadius="2dp"/>
 
                 <com.google.android.material.button.MaterialButton
                         android:id="@+id/switch_mode_button"

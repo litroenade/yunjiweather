@@ -5,7 +5,7 @@
                                                   android:layout_height="wrap_content"
                                                   android:layout_margin="6dp"
                                                   app:cardBackgroundColor="@color/weather_surface"
-                                                  app:cardCornerRadius="10dp"
+                                                  app:cardCornerRadius="4dp"
                                                   app:cardElevation="0dp"
                                                   app:strokeColor="@color/weather_stroke"
                                                   app:strokeWidth="1dp">

@@ -6,7 +6,7 @@
                                                   android:layout_height="wrap_content"
                                                   android:layout_marginBottom="12dp"
                                                   app:cardBackgroundColor="@color/weather_surface"
-                                                  app:cardCornerRadius="10dp"
+                                                  app:cardCornerRadius="4dp"
                                                   app:cardElevation="0dp"
                                                   app:strokeColor="@color/weather_stroke"
                                                   app:strokeWidth="1dp">
@@ -55,7 +55,7 @@
                             android:textColor="@color/weather_text_primary"
                             android:textSize="19sp"
                             android:textStyle="bold"
-                            tools:text="北京"/>
+                            tools:text="Preview"/>
 
                     <TextView
                             android:id="@+id/default_badge_text"
@@ -80,7 +80,7 @@
                         android:maxLines="1"
                         android:textColor="@color/weather_text_secondary"
                         android:textSize="13sp"
-                        tools:text="北京 · 中国"/>
+                        tools:text="Preview"/>
 
                 <TextView
                         android:id="@+id/city_summary_text"
@@ -91,7 +91,7 @@
                         android:maxLines="1"
                         android:textColor="@color/weather_text_secondary"
                         android:textSize="13sp"
-                        tools:text="晴 · 实时数据"/>
+                        tools:text="Preview"/>
             </LinearLayout>
 
             <LinearLayout
@@ -108,7 +108,7 @@
                         android:textColor="@color/weather_text_primary"
                         android:textSize="28sp"
                         android:textStyle="bold"
-                        tools:text="24°"/>
+                        tools:text="Preview"/>
 
                 <TextView
                         android:id="@+id/city_range_text"
@@ -117,7 +117,7 @@
                         android:layout_marginTop="2dp"
                         android:textColor="@color/weather_text_secondary"
                         android:textSize="12sp"
-                        tools:text="20° / 30°"/>
+                        tools:text="Preview"/>
             </LinearLayout>
         </LinearLayout>
 

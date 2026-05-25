@@ -16,12 +16,13 @@
             android:paddingStart="18dp"
             android:paddingTop="22dp"
             android:paddingEnd="18dp"
-            android:paddingBottom="92dp">
+            android:paddingBottom="28dp">
 
         <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="12dp"
+                app:cardBackgroundColor="@android:color/transparent"
+                app:cardCornerRadius="0dp"
                 app:cardElevation="0dp"
                 app:strokeWidth="0dp">
 
@@ -64,7 +65,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
                 app:cardBackgroundColor="@color/weather_surface"
-                app:cardCornerRadius="10dp"
+                app:cardCornerRadius="4dp"
                 app:cardElevation="0dp"
                 app:strokeColor="@color/weather_stroke"
                 app:strokeWidth="1dp">

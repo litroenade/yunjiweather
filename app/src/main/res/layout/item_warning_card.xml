@@ -6,7 +6,7 @@
                                                   android:layout_height="wrap_content"
                                                   android:layout_marginBottom="12dp"
                                                   app:cardBackgroundColor="@color/weather_surface"
-                                                  app:cardCornerRadius="10dp"
+                                                  app:cardCornerRadius="4dp"
                                                   app:cardElevation="0dp"
                                                   app:strokeColor="@color/weather_stroke"
                                                   app:strokeWidth="1dp">
@@ -46,7 +46,7 @@
                         android:paddingEnd="12dp"
                         android:textSize="12sp"
                         android:textStyle="bold"
-                        tools:text="红色预警"/>
+                        tools:text="Preview"/>
 
                 <TextView
                         android:id="@+id/read_state_text"
@@ -56,7 +56,7 @@
                         android:textColor="@color/weather_text_secondary"
                         android:textSize="12sp"
                         android:textStyle="bold"
-                        tools:text="未读"/>
+                        tools:text="Preview"/>
             </LinearLayout>
 
             <TextView
@@ -67,7 +67,7 @@
                     android:textColor="@color/weather_text_primary"
                     android:textSize="17sp"
                     android:textStyle="bold"
-                    tools:text="暴雨红色预警"/>
+                    tools:text="Preview"/>
 
             <TextView
                     android:id="@+id/warning_meta_text"
@@ -75,7 +75,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:textSize="13sp"
-                    tools:text="类型：暴雨"/>
+                    tools:text="Preview"/>
 
             <TextView
                     android:id="@+id/warning_time_text"
@@ -84,7 +84,7 @@
                     android:layout_marginTop="4dp"
                     android:textColor="@color/weather_text_secondary"
                     android:textSize="13sp"
-                    tools:text="发布时间：2026-05-20 09:30"/>
+                    tools:text="Preview"/>
 
             <TextView
                     android:id="@+id/warning_content_text"
@@ -94,7 +94,7 @@
                     android:lineSpacingExtra="2dp"
                     android:textColor="@color/weather_text_secondary"
                     android:textSize="14sp"
-                    tools:text="请注意防范强降雨带来的道路积水和出行风险。"/>
+                    tools:text="Preview"/>
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

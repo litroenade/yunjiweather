@@ -14,7 +14,7 @@
     </style>
 
     <style name="Widget.YunJi.Button" parent="Widget.MaterialComponents.Button">
-        <item name="cornerRadius">12dp</item>
+        <item name="cornerRadius">4dp</item>
         <item name="android:minHeight">46dp</item>
         <item name="android:textAllCaps">false</item>
     </style>

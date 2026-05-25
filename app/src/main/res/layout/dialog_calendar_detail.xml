@@ -36,7 +36,7 @@
                     android:layout_height="wrap_content"
                     android:textColor="@color/weather_text_secondary"
                     android:textSize="14sp"
-                    tools:text="2026年05月"/>
+                    tools:text="Preview"/>
 
             <TextView
                     android:id="@+id/calendar_detail_day_text"
@@ -46,7 +46,7 @@
                     android:textColor="@color/weather_text_primary"
                     android:textSize="58sp"
                     android:textStyle="bold"
-                    tools:text="21"/>
+                    tools:text="Preview"/>
         </LinearLayout>
 
         <LinearLayout
@@ -67,7 +67,7 @@
                     android:textColor="@color/weather_primary"
                     android:textSize="14sp"
                     android:textStyle="bold"
-                    tools:text="天气日历"/>
+                    tools:text="Preview"/>
 
             <TextView
                     android:id="@+id/calendar_detail_weekday_text"
@@ -76,7 +76,7 @@
                     android:layout_marginTop="10dp"
                     android:textColor="@color/weather_text_secondary"
                     android:textSize="15sp"
-                    tools:text="星期四"/>
+                    tools:text="Preview"/>
         </LinearLayout>
     </LinearLayout>
 
@@ -101,7 +101,7 @@
             <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="农历"
+            android:text="@android:string/ok"
                     android:textColor="@color/weather_text_secondary"
                     android:textSize="12sp"/>
 
@@ -113,7 +113,7 @@
                     android:textColor="@color/weather_text_primary"
                     android:textSize="18sp"
                     android:textStyle="bold"
-                    tools:text="四月初五"/>
+                    tools:text="Preview"/>
         </LinearLayout>
 
         <View
@@ -133,7 +133,7 @@
             <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="节日"
+            android:text="@android:string/ok"
                     android:textColor="@color/weather_text_secondary"
                     android:textSize="12sp"/>
 
@@ -148,7 +148,7 @@
                     android:textColor="@color/weather_primary"
                     android:textSize="18sp"
                     android:textStyle="bold"
-                    tools:text="暂无节日"/>
+                    tools:text="Preview"/>
         </LinearLayout>
     </LinearLayout>
 
@@ -168,7 +168,7 @@
         <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="天气"
+            android:text="@android:string/ok"
                 android:textColor="@color/weather_text_secondary"
                 android:textSize="13sp"/>
 
@@ -183,7 +183,7 @@
                 android:textColor="@color/weather_text_primary"
                 android:textSize="16sp"
                 android:textStyle="bold"
-                tools:text="多云"/>
+                tools:text="Preview"/>
 
         <TextView
                 android:id="@+id/calendar_detail_weather_temp_text"
@@ -192,7 +192,7 @@
                 android:textColor="@color/weather_primary"
                 android:textSize="16sp"
                 android:textStyle="bold"
-                tools:text="22° / 29°"/>
+                tools:text="Preview"/>
     </LinearLayout>
 
     <TextView
@@ -203,14 +203,14 @@
             android:lineSpacingExtra="4dp"
             android:textColor="@color/weather_text_secondary"
             android:textSize="14sp"
-            tools:text="可结合当天温度、天气和生活指数安排出行。"/>
+            tools:text="Preview"/>
 
     <com.google.android.material.button.MaterialButton
             android:id="@+id/calendar_detail_close_button"
             android:layout_width="match_parent"
             android:layout_height="52dp"
             android:layout_marginTop="18dp"
-            android:text="知道了"
+            android:text="@android:string/ok"
             android:textSize="15sp"
-            app:cornerRadius="8dp"/>
+            app:cornerRadius="2dp"/>
 </LinearLayout>

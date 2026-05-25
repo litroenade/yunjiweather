@@ -19,7 +19,7 @@
             android:gravity="center"
             android:textColor="@color/weather_text_secondary"
             android:textSize="12sp"
-            tools:text="14:00"/>
+            tools:text="Preview"/>
 
     <ImageView
             android:id="@+id/hourly_icon_image"
@@ -39,7 +39,7 @@
             android:maxLines="1"
             android:textColor="@color/weather_text_secondary"
             android:textSize="12sp"
-            tools:text="多云"/>
+            tools:text="Preview"/>
 
     <TextView
             android:id="@+id/hourly_temp_text"
@@ -50,5 +50,5 @@
             android:textColor="@color/weather_text_primary"
             android:textSize="16sp"
             android:textStyle="bold"
-            tools:text="24°"/>
+            tools:text="Preview"/>
 </LinearLayout>

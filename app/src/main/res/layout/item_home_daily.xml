@@ -19,7 +19,7 @@
             android:layout_weight="1"
             android:textColor="@color/weather_text_secondary"
             android:textSize="14sp"
-            tools:text="今天"/>
+            tools:text="Preview"/>
 
     <ImageView
             android:id="@+id/daily_icon_image"
@@ -38,7 +38,7 @@
             android:gravity="center"
             android:textColor="@color/weather_text_secondary"
             android:textSize="14sp"
-            tools:text="晴"/>
+            tools:text="Preview"/>
 
     <TextView
             android:id="@+id/daily_temp_text"
@@ -49,5 +49,5 @@
             android:textColor="@color/weather_text_primary"
             android:textSize="14sp"
             android:textStyle="bold"
-            tools:text="20° / 30°"/>
+            tools:text="Preview"/>
 </LinearLayout>
