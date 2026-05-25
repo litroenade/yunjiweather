@@ -2,11 +2,7 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape>
-            <gradient
-                    android:angle="270"
-                    android:startColor="#BFD7EA"
-                    android:centerColor="#7FA6C7"
-                    android:endColor="#47657E"/>
+            <solid android:color="#D7D2C7"/>
         </shape>
     </item>
     <item android:left="-26dp" android:top="112dp">
@@ -18,7 +14,7 @@
     <item android:gravity="top|end" android:right="-32dp" android:top="178dp">
         <shape android:shape="oval">
             <size android:width="210dp" android:height="88dp"/>
-            <solid android:color="#2EFFFFFF"/>
+            <solid android:color="#33FFFFFF"/>
         </shape>
     </item>
 </layer-list>

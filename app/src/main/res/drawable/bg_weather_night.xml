@@ -2,23 +2,19 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape>
-            <gradient
-                    android:angle="270"
-                    android:startColor="#172554"
-                    android:centerColor="#1E1B4B"
-                    android:endColor="#020617"/>
+            <solid android:color="#2E2935"/>
         </shape>
     </item>
     <item android:gravity="top|end" android:right="42dp" android:top="86dp">
         <shape android:shape="oval">
             <size android:width="76dp" android:height="76dp"/>
-            <solid android:color="#BFE0F2FE"/>
+            <solid android:color="#BFF4E7D0"/>
         </shape>
     </item>
     <item android:gravity="top|end" android:right="20dp" android:top="70dp">
         <shape android:shape="oval">
             <size android:width="76dp" android:height="76dp"/>
-            <solid android:color="#172554"/>
+            <solid android:color="#3B2E43"/>
         </shape>
     </item>
 </layer-list>

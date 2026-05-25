@@ -88,11 +88,11 @@ public class WeatherAnimationView extends View {
         float centerY = height * 0.46f;
         float radius = Math.min(width, height) * 0.24f;
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(Color.rgb(242, 247, 255));
+        paint.setColor(Color.rgb(244, 231, 208));
         canvas.drawCircle(centerX, centerY, radius, paint);
-        paint.setColor(Color.rgb(28, 48, 82));
+        paint.setColor(Color.rgb(59, 46, 67));
         canvas.drawCircle(centerX + radius * 0.42f, centerY - radius * 0.18f, radius * 0.88f, paint);
-        paint.setColor(Color.rgb(210, 230, 255));
+        paint.setColor(Color.rgb(255, 244, 227));
         for (int i = 0; i < 4; i++) {
             float starX = width * (0.22f + i * 0.15f);
             float starY = height * (0.24f + ((progress + i * 0.27f) % 1f) * 0.18f);
@@ -103,18 +103,18 @@ public class WeatherAnimationView extends View {
     private void drawCloudy(Canvas canvas, int width, int height) {
         float offset = (progress - 0.5f) * width * 0.08f;
         paint.setStyle(Paint.Style.FILL);
-        paint.setColor(Color.rgb(226, 238, 248));
+        paint.setColor(Color.rgb(232, 234, 224));
         canvas.drawCircle(width * 0.38f + offset, height * 0.55f, width * 0.18f, paint);
         canvas.drawCircle(width * 0.52f + offset, height * 0.45f, width * 0.23f, paint);
         canvas.drawCircle(width * 0.68f + offset, height * 0.56f, width * 0.16f, paint);
-        canvas.drawRoundRect(width * 0.25f + offset, height * 0.53f, width * 0.80f + offset, height * 0.72f, 24f, 24f, paint);
+        canvas.drawRoundRect(width * 0.25f + offset, height * 0.53f, width * 0.80f + offset, height * 0.72f, 10f, 10f, paint);
     }
 
     private void drawRain(Canvas canvas, int width, int height) {
         drawCloudy(canvas, width, height);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(4f);
-        paint.setColor(Color.rgb(64, 142, 236));
+        paint.setColor(Color.rgb(120, 144, 111));
         for (int i = 0; i < 5; i++) {
             float baseX = width * (0.28f + i * 0.12f);
             float y = height * 0.72f + ((progress + i * 0.18f) % 1f) * height * 0.20f;

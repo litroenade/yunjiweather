@@ -15,13 +15,13 @@ public final class VisualThemeCatalog {
                     "首页跟随晴雨雪动态变化，保留天气应用的清爽感。",
                     R.drawable.bg_app_soft,
                     R.color.weather_primary,
-                    R.color.weather_text_inverse,
-                    R.color.weather_text_inverse
+                    R.color.weather_text_primary,
+                    R.color.weather_text_secondary
             ),
             new VisualTheme(
                     VisualThemeUtils.THEME_FANTASY,
                     "幻想夜",
-                    "以深蓝夜色和鸟居剪影为主，适合暗色展示。",
+                    "以深绿灰夜色和鸟居剪影为主，适合暗色展示。",
                     R.drawable.bg_app_fantasy_night,
                     R.color.weather_primary,
                     R.color.weather_text_inverse,

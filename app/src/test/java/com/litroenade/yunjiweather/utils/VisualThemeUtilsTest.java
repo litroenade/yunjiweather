@@ -53,6 +53,74 @@ public class VisualThemeUtilsTest {
     }
 
     @Test
+    public void resolveHomeForeground_usesDarkTextForLightSkyWeatherBackgrounds() {
+        assertEquals(
+                R.color.weather_text_primary,
+                VisualThemeUtils.resolveHomePrimaryTextColor(VisualThemeUtils.THEME_SKY, "100")
+        );
+        assertEquals(
+                R.color.weather_text_secondary,
+                VisualThemeUtils.resolveHomeSecondaryTextColor(VisualThemeUtils.THEME_SKY, "100")
+        );
+        assertEquals(
+                R.color.weather_text_primary,
+                VisualThemeUtils.resolveHomePrimaryTextColor(VisualThemeUtils.THEME_SKY, "101")
+        );
+        assertEquals(
+                R.color.weather_text_secondary,
+                VisualThemeUtils.resolveHomeSecondaryTextColor(VisualThemeUtils.THEME_SKY, "101")
+        );
+        assertEquals(
+                R.color.weather_text_primary,
+                VisualThemeUtils.resolveHomePrimaryTextColor(VisualThemeUtils.THEME_SKY, "401")
+        );
+        assertEquals(
+                R.color.weather_text_secondary,
+                VisualThemeUtils.resolveHomeSecondaryTextColor(VisualThemeUtils.THEME_SKY, "401")
+        );
+        assertEquals(
+                R.color.weather_text_primary,
+                VisualThemeUtils.resolveHomePrimaryTextColor(VisualThemeUtils.THEME_SKY, "305")
+        );
+        assertEquals(
+                R.color.weather_text_secondary,
+                VisualThemeUtils.resolveHomeSecondaryTextColor(VisualThemeUtils.THEME_SKY, "305")
+        );
+    }
+
+    @Test
+    public void resolveHomeForeground_usesLightTextForDarkSkyWeatherBackgrounds() {
+        assertEquals(
+                R.color.weather_text_inverse,
+                VisualThemeUtils.resolveHomePrimaryTextColor(VisualThemeUtils.THEME_SKY, "150")
+        );
+        assertEquals(
+                R.color.weather_header_secondary,
+                VisualThemeUtils.resolveHomeSecondaryTextColor(VisualThemeUtils.THEME_SKY, "150")
+        );
+    }
+
+    @Test
+    public void resolveHomeForeground_usesThemeTextForFixedThemes() {
+        assertEquals(
+                R.color.weather_text_inverse,
+                VisualThemeUtils.resolveHomePrimaryTextColor(VisualThemeUtils.THEME_FANTASY, "100")
+        );
+        assertEquals(
+                R.color.weather_text_inverse,
+                VisualThemeUtils.resolveHomeSecondaryTextColor(VisualThemeUtils.THEME_FANTASY, "100")
+        );
+        assertEquals(
+                R.color.weather_text_primary,
+                VisualThemeUtils.resolveHomePrimaryTextColor(VisualThemeUtils.THEME_SAKURA, "305")
+        );
+        assertEquals(
+                R.color.weather_text_secondary,
+                VisualThemeUtils.resolveHomeSecondaryTextColor(VisualThemeUtils.THEME_SAKURA, "305")
+        );
+    }
+
+    @Test
     public void resolveAppBackground_fallsBackToDefaultThemeForUnsupportedTheme() {
         assertEquals(R.drawable.bg_app_soft, VisualThemeUtils.resolveAppBackground("official-touhou-image"));
     }
@@ -85,14 +153,14 @@ public class VisualThemeUtilsTest {
     }
 
     @Test
-    public void catalog_usesReadableLightTextForDarkHomeThemes() {
+    public void catalog_usesThemeDefaultHomeTextColors() {
         VisualTheme sky = VisualThemeCatalog.findByKey(VisualThemeUtils.THEME_SKY);
         VisualTheme fantasy = VisualThemeCatalog.findByKey(VisualThemeUtils.THEME_FANTASY);
 
         assertNotNull(sky);
         assertNotNull(fantasy);
-        assertEquals(R.color.weather_text_inverse, sky.getHomePrimaryTextColorRes());
-        assertEquals(R.color.weather_text_inverse, sky.getHomeSecondaryTextColorRes());
+        assertEquals(R.color.weather_text_primary, sky.getHomePrimaryTextColorRes());
+        assertEquals(R.color.weather_text_secondary, sky.getHomeSecondaryTextColorRes());
         assertEquals(R.color.weather_text_inverse, fantasy.getHomePrimaryTextColorRes());
         assertEquals(R.color.weather_text_inverse, fantasy.getHomeSecondaryTextColorRes());
     }

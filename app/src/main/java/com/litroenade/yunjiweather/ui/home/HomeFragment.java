@@ -33,7 +33,6 @@ import com.litroenade.yunjiweather.ui.calendar.CalendarDetailBottomSheet;
 import com.litroenade.yunjiweather.utils.DateTimeUtils;
 import com.litroenade.yunjiweather.utils.LunarCalendarUtils;
 import com.litroenade.yunjiweather.utils.PermissionUtils;
-import com.litroenade.yunjiweather.utils.VisualTheme;
 import com.litroenade.yunjiweather.utils.VisualThemeUtils;
 import com.litroenade.yunjiweather.utils.WeatherDisplayUtils;
 import com.litroenade.yunjiweather.utils.WeatherIconUtils;
@@ -248,7 +247,7 @@ public class HomeFragment extends Fragment {
                 themeKey,
                 data.getIconCode()
         ));
-        applyHomeForeground(themeKey);
+        applyHomeForeground(themeKey, data.getIconCode());
         binding.weatherIconImage.setImageResource(WeatherIconUtils.getWeatherIconRes(data.getIconCode()));
         renderWeatherIconAnimation(data.getIconCode());
         binding.cityNameText.setText(data.getCityName());
@@ -358,13 +357,18 @@ public class HomeFragment extends Fragment {
     private void applyIdleHomeTheme() {
         String themeKey = settingsManager.getVisualTheme();
         VisualThemeUtils.applyAppBackground(binding.getRoot(), themeKey);
-        applyHomeForeground(themeKey);
+        applyHomeForeground(themeKey, null);
     }
 
-    private void applyHomeForeground(String themeKey) {
-        VisualTheme theme = VisualThemeUtils.resolveTheme(themeKey);
-        int primaryColor = ContextCompat.getColor(requireContext(), theme.getHomePrimaryTextColorRes());
-        int secondaryColor = ContextCompat.getColor(requireContext(), theme.getHomeSecondaryTextColorRes());
+    private void applyHomeForeground(String themeKey, String iconCode) {
+        int primaryColor = ContextCompat.getColor(
+                requireContext(),
+                VisualThemeUtils.resolveHomePrimaryTextColor(themeKey, iconCode)
+        );
+        int secondaryColor = ContextCompat.getColor(
+                requireContext(),
+                VisualThemeUtils.resolveHomeSecondaryTextColor(themeKey, iconCode)
+        );
         ColorStateList primaryTint = ColorStateList.valueOf(primaryColor);
 
         binding.cityNameText.setTextColor(primaryColor);

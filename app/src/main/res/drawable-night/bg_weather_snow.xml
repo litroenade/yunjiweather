@@ -2,11 +2,7 @@
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item>
         <shape>
-            <gradient
-                    android:angle="270"
-                    android:startColor="#274060"
-                    android:centerColor="#16263D"
-                    android:endColor="#07111F"/>
+            <solid android:color="#34342F"/>
         </shape>
     </item>
     <item android:gravity="top|end" android:right="54dp" android:top="98dp">

@@ -212,5 +212,5 @@
             android:layout_marginTop="18dp"
             android:text="知道了"
             android:textSize="15sp"
-            app:cornerRadius="14dp"/>
+            app:cornerRadius="8dp"/>
 </LinearLayout>

@@ -4,6 +4,7 @@ import android.view.LayoutInflater;
 import android.view.ViewGroup;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.DiffUtil;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -100,7 +101,10 @@ public final class AlertAdapter extends RecyclerView.Adapter<AlertAdapter.AlertV
         }
 
         private void bind(WarningEntity warning, Listener listener) {
-            int warningColor = WarningStyleUtils.resolveColor(warning.level);
+            int warningColor = ContextCompat.getColor(
+                    binding.getRoot().getContext(),
+                    WarningStyleUtils.resolveColorRes(warning.level)
+            );
             binding.getRoot().setStrokeColor(warningColor);
             binding.warningLevelStrip.setBackgroundColor(warningColor);
             binding.getRoot().setCardBackgroundColor(binding.getRoot().getContext().getColor(

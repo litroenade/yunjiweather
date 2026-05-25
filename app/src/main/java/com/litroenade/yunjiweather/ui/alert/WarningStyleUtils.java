@@ -1,41 +1,64 @@
 package com.litroenade.yunjiweather.ui.alert;
 
-import android.graphics.Color;
+import androidx.annotation.ColorRes;
+
+import com.litroenade.yunjiweather.R;
 
 import java.util.Locale;
 
 public final class WarningStyleUtils {
 
-    private static final String BLUE = "#155EEF";
-    private static final String YELLOW = "#B54708";
-    private static final String ORANGE = "#C4320A";
-    private static final String RED = "#B42318";
-    private static final String NEUTRAL = "#667085";
+    private static final String BLUE_HEX = "#2F6DAE";
+    private static final String YELLOW_HEX = "#9A6A00";
+    private static final String ORANGE_HEX = "#B85C1E";
+    private static final String RED_HEX = "#B42318";
+    private static final String NEUTRAL_HEX = "#6B7280";
 
     private WarningStyleUtils() {
     }
 
-    public static int resolveColor(String level) {
-        return Color.parseColor(resolveColorHex(level));
+    @ColorRes
+    public static int resolveColorRes(String level) {
+        return resolveLevel(level).colorRes;
     }
 
     public static String resolveColorHex(String level) {
+        return resolveLevel(level).colorHex;
+    }
+
+    private static WarningLevel resolveLevel(String level) {
         if (level == null) {
-            return NEUTRAL;
+            return WarningLevel.NEUTRAL;
         }
         String normalizedLevel = level.toLowerCase(Locale.ROOT);
         if (normalizedLevel.contains("red") || normalizedLevel.contains("红")) {
-            return RED;
+            return WarningLevel.RED;
         }
         if (normalizedLevel.contains("orange") || normalizedLevel.contains("橙")) {
-            return ORANGE;
+            return WarningLevel.ORANGE;
         }
         if (normalizedLevel.contains("yellow") || normalizedLevel.contains("黄")) {
-            return YELLOW;
+            return WarningLevel.YELLOW;
         }
         if (normalizedLevel.contains("blue") || normalizedLevel.contains("蓝")) {
-            return BLUE;
+            return WarningLevel.BLUE;
         }
-        return NEUTRAL;
+        return WarningLevel.NEUTRAL;
+    }
+
+    private enum WarningLevel {
+        BLUE(BLUE_HEX, R.color.warning_blue),
+        YELLOW(YELLOW_HEX, R.color.warning_yellow),
+        ORANGE(ORANGE_HEX, R.color.warning_orange),
+        RED(RED_HEX, R.color.warning_red),
+        NEUTRAL(NEUTRAL_HEX, R.color.warning_neutral);
+
+        private final String colorHex;
+        private final int colorRes;
+
+        WarningLevel(String colorHex, @ColorRes int colorRes) {
+            this.colorHex = colorHex;
+            this.colorRes = colorRes;
+        }
     }
 }
