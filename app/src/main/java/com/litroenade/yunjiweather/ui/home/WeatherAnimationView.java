@@ -52,6 +52,8 @@ public class WeatherAnimationView extends View {
         }
         if (animationType == WeatherAnimationType.SUNNY) {
             drawSunny(canvas, width, height);
+        } else if (animationType == WeatherAnimationType.NIGHT) {
+            drawNight(canvas, width, height);
         } else if (animationType == WeatherAnimationType.RAIN) {
             drawRain(canvas, width, height);
         } else if (animationType == WeatherAnimationType.SNOW) {
@@ -79,6 +81,23 @@ public class WeatherAnimationView extends View {
         paint.setStyle(Paint.Style.FILL);
         paint.setColor(Color.rgb(255, 205, 82));
         canvas.drawCircle(centerX, centerY, radius, paint);
+    }
+
+    private void drawNight(Canvas canvas, int width, int height) {
+        float centerX = width * 0.48f;
+        float centerY = height * 0.46f;
+        float radius = Math.min(width, height) * 0.24f;
+        paint.setStyle(Paint.Style.FILL);
+        paint.setColor(Color.rgb(242, 247, 255));
+        canvas.drawCircle(centerX, centerY, radius, paint);
+        paint.setColor(Color.rgb(28, 48, 82));
+        canvas.drawCircle(centerX + radius * 0.42f, centerY - radius * 0.18f, radius * 0.88f, paint);
+        paint.setColor(Color.rgb(210, 230, 255));
+        for (int i = 0; i < 4; i++) {
+            float starX = width * (0.22f + i * 0.15f);
+            float starY = height * (0.24f + ((progress + i * 0.27f) % 1f) * 0.18f);
+            canvas.drawCircle(starX, starY, 2.4f + i % 2, paint);
+        }
     }
 
     private void drawCloudy(Canvas canvas, int width, int height) {

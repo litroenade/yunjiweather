@@ -143,24 +143,28 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout container = new LinearLayout(this);
         container.setOrientation(LinearLayout.VERTICAL);
         container.setGravity(Gravity.CENTER);
-        container.setPadding(32, 32, 32, 32);
+        container.setPadding(dp(32), dp(32), dp(32), dp(32));
         container.setBackgroundResource(R.drawable.bg_app_soft);
 
         ProgressBar progressBar = new ProgressBar(this);
         container.addView(progressBar);
 
         TextView textView = new TextView(this);
-        textView.setText("正在进入云迹天气…");
+        textView.setText(R.string.main_starting);
         textView.setTextSize(16f);
         textView.setTextColor(getColor(R.color.weather_text_primary));
         LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
         );
-        textParams.topMargin = 24;
+        textParams.topMargin = dp(18);
         container.addView(textView, textParams);
 
         setContentView(container);
+    }
+
+    private int dp(int value) {
+        return Math.round(value * getResources().getDisplayMetrics().density);
     }
 
     private void scheduleWeatherAlertWorker(long ownerUserId) {

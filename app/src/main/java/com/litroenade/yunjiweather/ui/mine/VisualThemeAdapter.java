@@ -80,8 +80,8 @@ public final class VisualThemeAdapter extends RecyclerView.Adapter<VisualThemeAd
             binding.themeDescriptionText.setText(theme.getShortDescription());
             binding.themePreviewPanel.setBackgroundResource(theme.getBackgroundRes());
             binding.themeCard.setStrokeColor(strokeColor);
-            binding.themeCard.setStrokeWidth(selected ? 3 : 1);
-            binding.themeCard.setAlpha(selected ? 1.0f : 0.78f);
+            binding.themeCard.setStrokeWidth(selected ? 2 : 1);
+            binding.themeCard.setAlpha(selected ? 1.0f : 0.88f);
             binding.themeSelectedText.setTextColor(accentColor);
             binding.themeSelectedText.setVisibility(selected ? View.VISIBLE : View.INVISIBLE);
             String selectedText = selected ? "，已选择" : "";

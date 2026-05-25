@@ -6,8 +6,9 @@
                                                   android:layout_height="wrap_content"
                                                   android:layout_marginBottom="12dp"
                                                   app:cardBackgroundColor="@color/weather_surface"
-                                                  app:cardCornerRadius="20dp"
-                                                  app:cardElevation="2dp"
+                                                  app:cardCornerRadius="16dp"
+                                                  app:cardElevation="0dp"
+                                                  app:strokeColor="@color/weather_stroke"
                                                   app:strokeWidth="1dp">
 
     <LinearLayout
@@ -17,7 +18,7 @@
 
         <View
                 android:id="@+id/warning_level_strip"
-                android:layout_width="7dp"
+                android:layout_width="5dp"
                 android:layout_height="match_parent"
                 tools:background="#B42318"/>
 
@@ -37,7 +38,7 @@
                 <TextView
                         android:id="@+id/warning_level_text"
                         android:layout_width="wrap_content"
-                        android:layout_height="28dp"
+                        android:layout_height="26dp"
                         android:background="@drawable/bg_warning_level_chip"
                         android:gravity="center"
                         android:minWidth="72dp"

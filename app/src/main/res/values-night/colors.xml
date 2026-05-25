@@ -1,21 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="weather_primary">#4BA3FF</color>
-    <color name="weather_primary_dark">#061A2F</color>
-    <color name="weather_accent">#44D7E8</color>
-    <color name="weather_background_top">#071524</color>
-    <color name="weather_background_bottom">#0B1220</color>
-    <color name="weather_surface">#111827</color>
-    <color name="weather_surface_tint">#172033</color>
-    <color name="weather_stroke">#253449</color>
-    <color name="weather_text_primary">#E5EEF8</color>
-    <color name="weather_text_secondary">#9AAFC4</color>
+    <color name="weather_primary">#60A5FA</color>
+    <color name="weather_primary_dark">#071524</color>
+    <color name="weather_accent">#2DD4BF</color>
+    <color name="weather_background_top">#08111B</color>
+    <color name="weather_background_bottom">#0D1520</color>
+    <color name="weather_surface">#151F2C</color>
+    <color name="weather_surface_tint">#1A2634</color>
+    <color name="weather_stroke">#2B3A4C</color>
+    <color name="weather_text_primary">#ECF4FA</color>
+    <color name="weather_text_secondary">#A8B8C8</color>
     <color name="weather_text_inverse">#FFFFFFFF</color>
-    <color name="weather_card">#E61B2738</color>
+    <color name="weather_card">#E61A2432</color>
     <color name="weather_error">#FFB4AB</color>
+    <color name="weather_header_start">#1D4ED8</color>
+    <color name="weather_header_end">#0F766E</color>
+    <color name="weather_header_secondary">#D7EEF9</color>
+    <color name="weather_chip_background">#1D2A38</color>
+    <color name="weather_nav_background">#F0141E2B</color>
     <color name="auth_hero_title">#EAFBFF</color>
-    <color name="auth_hero_subtitle">#B7D2EA</color>
+    <color name="auth_hero_subtitle">#B6C8D8</color>
     <color name="auth_chip_text">#CDEBFF</color>
-    <color name="auth_card_background">#F01B2738</color>
-    <color name="auth_card_stroke">#334762</color>
+    <color name="auth_card_background">#F01A2432</color>
+    <color name="auth_card_stroke">#2B3A4C</color>
 </resources>

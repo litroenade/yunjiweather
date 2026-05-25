@@ -10,7 +10,7 @@
                                                   android:focusable="true"
                                                   android:foreground="?attr/selectableItemBackground"
                                                   app:cardBackgroundColor="@color/weather_surface"
-                                                  app:cardCornerRadius="18dp"
+                                                  app:cardCornerRadius="16dp"
                                                   app:cardElevation="0dp"
                                                   app:strokeColor="@color/weather_stroke"
                                                   app:strokeWidth="1dp">
@@ -27,7 +27,7 @@
         <View
                 android:id="@+id/theme_preview_panel"
                 android:layout_width="match_parent"
-                android:layout_height="44dp"
+                android:layout_height="42dp"
                 android:background="@drawable/bg_app_soft"/>
 
         <LinearLayout

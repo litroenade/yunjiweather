@@ -21,8 +21,8 @@
         <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="24dp"
-                app:cardElevation="4dp"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="0dp"
                 app:strokeWidth="0dp">
 
             <LinearLayout
@@ -40,7 +40,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/index_title"
                         android:textColor="@color/weather_text_inverse"
-                        android:textSize="25sp"
+                        android:textSize="23sp"
                         android:textStyle="bold"/>
 
                 <TextView
@@ -49,7 +49,7 @@
                         android:layout_marginTop="6dp"
                         android:lineSpacingExtra="2dp"
                         android:text="@string/index_summary"
-                        android:textColor="#EAFBFF"
+                        android:textColor="@color/weather_header_secondary"
                         android:textSize="13sp"/>
 
                 <LinearLayout
@@ -91,7 +91,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="7dp"
-                                android:textColor="#EAFBFF"
+                                android:textColor="@color/weather_header_secondary"
                                 android:textSize="14sp"
                                 tools:text="农历四月初五"/>
 
@@ -119,7 +119,7 @@
                         android:layout_marginTop="16dp"
                         android:lineSpacingExtra="3dp"
                         android:text="@string/index_today_calendar_advice"
-                        android:textColor="#EAFBFF"
+                        android:textColor="@color/weather_header_secondary"
                         android:textSize="13sp"/>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -128,7 +128,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
-                app:cardCornerRadius="22dp"
+                app:cardCornerRadius="16dp"
                 app:cardElevation="0dp"
                 app:strokeWidth="0dp">
 

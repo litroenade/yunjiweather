@@ -17,6 +17,7 @@
     <string name="auth_password_hint">密码</string>
     <string name="auth_login_button">登录</string>
     <string name="auth_switch_to_register">没有账户？立即注册</string>
+    <string name="main_starting">正在进入云迹天气…</string>
     <string name="home_location">定位</string>
     <string name="home_refresh">刷新</string>
     <string name="home_weather_icon">天气图标</string>
@@ -62,6 +63,7 @@
     <string name="index_week_calendar">未来 7 日日历</string>
     <string name="index_week_calendar_summary">查看接下来一周的星期、农历和节日</string>
     <string name="mine_title">我的</string>
+    <string name="mine_subtitle">管理账户、提醒、主题和本地数据</string>
     <string name="mine_account_space">账户空间</string>
     <string name="mine_logout">退出登录</string>
     <string name="mine_weather_preference">天气偏好</string>

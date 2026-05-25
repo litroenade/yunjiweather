@@ -16,8 +16,8 @@
 
         <ImageView
                 android:id="@+id/splash_logo_image"
-                android:layout_width="112dp"
-                android:layout_height="112dp"
+                android:layout_width="104dp"
+                android:layout_height="104dp"
                 android:background="@drawable/bg_splash_logo"
                 android:contentDescription="@string/app_name"
                 android:padding="24dp"
@@ -31,7 +31,7 @@
                 android:gravity="center"
                 android:text="@string/splash_title"
                 android:textColor="@color/weather_text_inverse"
-                android:textSize="34sp"
+                android:textSize="32sp"
                 android:textStyle="bold"/>
 
         <TextView
@@ -41,7 +41,7 @@
                 android:layout_marginTop="10dp"
                 android:gravity="center"
                 android:text="@string/splash_subtitle"
-                android:textColor="#EAFBFF"
+                android:textColor="@color/weather_header_secondary"
                 android:textSize="15sp"/>
     </LinearLayout>
 </FrameLayout>

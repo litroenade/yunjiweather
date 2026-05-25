@@ -6,8 +6,8 @@
                                                   android:layout_height="wrap_content"
                                                   android:layout_marginBottom="12dp"
                                                   app:cardBackgroundColor="@color/weather_surface"
-                                                  app:cardCornerRadius="20dp"
-                                                  app:cardElevation="2dp"
+                                                  app:cardCornerRadius="16dp"
+                                                  app:cardElevation="0dp"
                                                   app:strokeColor="@color/weather_stroke"
                                                   app:strokeWidth="1dp">
 
@@ -25,8 +25,8 @@
 
             <ImageView
                     android:id="@+id/city_weather_icon_image"
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
                     android:background="@drawable/bg_chip_soft"
                     android:contentDescription="@string/home_weather_icon"
                     android:padding="10dp"
@@ -60,14 +60,14 @@
                     <TextView
                             android:id="@+id/default_badge_text"
                             android:layout_width="wrap_content"
-                            android:layout_height="26dp"
+                            android:layout_height="24dp"
                             android:background="@drawable/bg_default_badge"
                             android:gravity="center"
                             android:paddingStart="10dp"
                             android:paddingEnd="10dp"
                             android:text="@string/item_default_badge"
                             android:textColor="@color/weather_primary"
-                            android:textSize="12sp"
+                            android:textSize="11sp"
                             android:textStyle="bold"/>
                 </LinearLayout>
 

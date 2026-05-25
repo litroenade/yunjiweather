@@ -7,9 +7,13 @@ import static org.junit.Assert.assertEquals;
 public class WeatherAnimationTypeTest {
 
     @Test
-    public void fromIconCode_returnsSunnyForDayAndNightSunnyCodes() {
+    public void fromIconCode_returnsSunnyForDaySunnyCode() {
         assertEquals(WeatherAnimationType.SUNNY, WeatherAnimationType.fromIconCode("100"));
-        assertEquals(WeatherAnimationType.SUNNY, WeatherAnimationType.fromIconCode("150"));
+    }
+
+    @Test
+    public void fromIconCode_returnsNightForNightSunnyCode() {
+        assertEquals(WeatherAnimationType.NIGHT, WeatherAnimationType.fromIconCode("150"));
     }
 
     @Test

@@ -18,20 +18,44 @@
             android:paddingEnd="18dp"
             android:paddingBottom="28dp">
 
-        <TextView
+        <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/mine_title"
-                android:textColor="@color/weather_text_primary"
-                android:textSize="26sp"
-                android:textStyle="bold"/>
+                app:cardCornerRadius="18dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp">
+
+            <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_page_header"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+
+                <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/mine_title"
+                        android:textColor="@color/weather_text_inverse"
+                        android:textSize="23sp"
+                        android:textStyle="bold"/>
+
+                <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:text="@string/mine_subtitle"
+                        android:textColor="@color/weather_header_secondary"
+                        android:textSize="14sp"/>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                app:cardCornerRadius="22dp"
-                app:cardElevation="6dp"
+                android:layout_marginTop="14dp"
+                app:cardCornerRadius="18dp"
+                app:cardElevation="0dp"
                 app:strokeWidth="0dp">
 
             <LinearLayout
@@ -45,7 +69,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/mine_account_space"
-                        android:textColor="#DFF8FF"
+                        android:textColor="@color/weather_header_secondary"
                         android:textSize="13sp"/>
 
                 <TextView
@@ -63,7 +87,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="14dp"
-                        android:textColor="#EAFBFF"
+                        android:textColor="@color/weather_header_secondary"
                         android:textSize="15sp"
                         android:textStyle="bold"
                         tools:text="默认城市：北京"/>
@@ -73,7 +97,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:textColor="#D6F2FF"
+                        android:textColor="@color/weather_header_secondary"
                         android:textSize="13sp"
                         tools:text="数据更新时间：2026-05-19 20:30"/>
 
@@ -85,8 +109,8 @@
                         android:layout_marginTop="16dp"
                         android:text="@string/mine_logout"
                         android:textColor="@color/weather_text_inverse"
-                        app:cornerRadius="15dp"
-                        app:strokeColor="#A8F1FF"
+                        app:cornerRadius="14dp"
+                        app:strokeColor="@color/weather_header_secondary"
                         app:strokeWidth="1dp"/>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
