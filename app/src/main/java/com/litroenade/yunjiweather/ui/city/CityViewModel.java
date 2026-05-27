@@ -38,6 +38,8 @@ public class CityViewModel extends AndroidViewModel {
     private final MutableLiveData<String> defaultCity = new MutableLiveData<>();
     private final MutableLiveData<String> message = new MutableLiveData<>();
     private final MutableLiveData<Boolean> busy = new MutableLiveData<>(false);
+    private final MutableLiveData<Long> defaultCityChangeVersion = new MutableLiveData<>(0L);
+    private long defaultCityChangeCounter;
     private volatile boolean cleared;
 
     public CityViewModel(@NonNull Application application) {
@@ -47,7 +49,11 @@ public class CityViewModel extends AndroidViewModel {
         WeatherApiService apiService = WeatherGatewayFactory.createQWeatherServiceOrNull();
         cityLookupGateway = WeatherGatewayFactory.createCityLookupGateway(apiService);
         WeatherRepository weatherRepository = WeatherRepositoryFactory.createHomeRepository(database, apiService);
-        cityWeatherSummaryRepository = new CityWeatherSummaryRepository(weatherRepository);
+        cityWeatherSummaryRepository = new CityWeatherSummaryRepository(
+                weatherRepository,
+                weatherRepository,
+                false
+        );
         reload();
     }
 
@@ -69,6 +75,10 @@ public class CityViewModel extends AndroidViewModel {
 
     public LiveData<Boolean> getBusy() {
         return busy;
+    }
+
+    public LiveData<Long> getDefaultCityChangeVersion() {
+        return defaultCityChangeVersion;
     }
 
     public void addCity(String cityName) {
@@ -105,6 +115,9 @@ public class CityViewModel extends AndroidViewModel {
                 cityRepository.deleteCity(city, System.currentTimeMillis());
                 message.postValue("城市已删除");
                 reloadOnExecutor();
+                if (city.isDefault) {
+                    defaultCityChangeVersion.postValue(++defaultCityChangeCounter);
+                }
             } finally {
                 busy.postValue(false);
             }
@@ -118,6 +131,7 @@ public class CityViewModel extends AndroidViewModel {
                 cityRepository.setDefaultCity(city.locationId, System.currentTimeMillis());
                 message.postValue("默认城市已切换为 " + city.cityName);
                 reloadOnExecutor();
+                defaultCityChangeVersion.postValue(++defaultCityChangeCounter);
             } finally {
                 busy.postValue(false);
             }

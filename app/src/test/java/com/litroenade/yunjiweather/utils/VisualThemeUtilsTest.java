@@ -2,7 +2,6 @@ package com.litroenade.yunjiweather.utils;
 
 import android.content.SharedPreferences;
 
-import com.litroenade.yunjiweather.R;
 import com.litroenade.yunjiweather.settings.SettingsManager;
 
 import org.junit.Test;
@@ -17,113 +16,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 public class VisualThemeUtilsTest {
-
-    @Test
-    public void resolveAppBackground_returnsSkyBackground() {
-        assertEquals(R.drawable.bg_app_soft, VisualThemeUtils.resolveAppBackground(VisualThemeUtils.THEME_SKY));
-    }
-
-    @Test
-    public void resolveAppBackground_returnsFantasyBackground() {
-        assertEquals(R.drawable.bg_app_fantasy_night, VisualThemeUtils.resolveAppBackground(VisualThemeUtils.THEME_FANTASY));
-    }
-
-    @Test
-    public void resolveHomeBackground_usesWeatherBackgroundForSkyTheme() {
-        assertEquals(
-                R.drawable.bg_weather_rain,
-                VisualThemeUtils.resolveHomeBackground(VisualThemeUtils.THEME_SKY, R.drawable.bg_weather_rain)
-        );
-    }
-
-    @Test
-    public void resolveHomeBackground_usesThemeBackgroundForFantasyTheme() {
-        assertEquals(
-                R.drawable.bg_app_fantasy_night,
-                VisualThemeUtils.resolveHomeBackground(VisualThemeUtils.THEME_FANTASY, R.drawable.bg_weather_rain)
-        );
-    }
-
-    @Test
-    public void resolveHomeBackground_usesThemeBackgroundForSakuraTheme() {
-        assertEquals(
-                R.drawable.bg_app_sakura_rain,
-                VisualThemeUtils.resolveHomeBackground(VisualThemeUtils.THEME_SAKURA, R.drawable.bg_weather_snow)
-        );
-    }
-
-    @Test
-    public void resolveHomeForeground_usesDarkTextForLightSkyWeatherBackgrounds() {
-        assertEquals(
-                R.color.weather_text_primary,
-                VisualThemeUtils.resolveHomePrimaryTextColor(VisualThemeUtils.THEME_SKY, "100")
-        );
-        assertEquals(
-                R.color.weather_text_secondary,
-                VisualThemeUtils.resolveHomeSecondaryTextColor(VisualThemeUtils.THEME_SKY, "100")
-        );
-        assertEquals(
-                R.color.weather_text_primary,
-                VisualThemeUtils.resolveHomePrimaryTextColor(VisualThemeUtils.THEME_SKY, "101")
-        );
-        assertEquals(
-                R.color.weather_text_secondary,
-                VisualThemeUtils.resolveHomeSecondaryTextColor(VisualThemeUtils.THEME_SKY, "101")
-        );
-        assertEquals(
-                R.color.weather_text_primary,
-                VisualThemeUtils.resolveHomePrimaryTextColor(VisualThemeUtils.THEME_SKY, "401")
-        );
-        assertEquals(
-                R.color.weather_text_secondary,
-                VisualThemeUtils.resolveHomeSecondaryTextColor(VisualThemeUtils.THEME_SKY, "401")
-        );
-        assertEquals(
-                R.color.weather_text_primary,
-                VisualThemeUtils.resolveHomePrimaryTextColor(VisualThemeUtils.THEME_SKY, "305")
-        );
-        assertEquals(
-                R.color.weather_text_secondary,
-                VisualThemeUtils.resolveHomeSecondaryTextColor(VisualThemeUtils.THEME_SKY, "305")
-        );
-    }
-
-    @Test
-    public void resolveHomeForeground_usesLightTextForDarkSkyWeatherBackgrounds() {
-        assertEquals(
-                R.color.weather_text_inverse,
-                VisualThemeUtils.resolveHomePrimaryTextColor(VisualThemeUtils.THEME_SKY, "150")
-        );
-        assertEquals(
-                R.color.weather_header_secondary,
-                VisualThemeUtils.resolveHomeSecondaryTextColor(VisualThemeUtils.THEME_SKY, "150")
-        );
-    }
-
-    @Test
-    public void resolveHomeForeground_usesThemeTextForFixedThemes() {
-        assertEquals(
-                R.color.weather_text_inverse,
-                VisualThemeUtils.resolveHomePrimaryTextColor(VisualThemeUtils.THEME_FANTASY, "100")
-        );
-        assertEquals(
-                R.color.weather_text_inverse,
-                VisualThemeUtils.resolveHomeSecondaryTextColor(VisualThemeUtils.THEME_FANTASY, "100")
-        );
-        assertEquals(
-                R.color.weather_text_primary,
-                VisualThemeUtils.resolveHomePrimaryTextColor(VisualThemeUtils.THEME_SAKURA, "305")
-        );
-        assertEquals(
-                R.color.weather_text_secondary,
-                VisualThemeUtils.resolveHomeSecondaryTextColor(VisualThemeUtils.THEME_SAKURA, "305")
-        );
-    }
-
-    @Test
-    public void resolveAppBackground_fallsBackToDefaultThemeForUnsupportedTheme() {
-        assertEquals(R.drawable.bg_app_soft, VisualThemeUtils.resolveAppBackground("official-touhou-image"));
-    }
 
     @Test
     public void isSupportedTheme_returnsFalseForExternalImageKey() {
@@ -146,23 +38,7 @@ public class VisualThemeUtilsTest {
 
         assertNotNull(sakura);
         assertEquals("樱雨粉", sakura.getDisplayName());
-        assertEquals(R.drawable.bg_app_sakura_rain, sakura.getBackgroundRes());
-        assertEquals(R.color.weather_accent, sakura.getAccentColorRes());
-        assertEquals(R.color.weather_text_primary, sakura.getHomePrimaryTextColorRes());
-        assertEquals(R.color.weather_text_secondary, sakura.getHomeSecondaryTextColorRes());
-    }
-
-    @Test
-    public void catalog_usesThemeDefaultHomeTextColors() {
-        VisualTheme sky = VisualThemeCatalog.findByKey(VisualThemeUtils.THEME_SKY);
-        VisualTheme fantasy = VisualThemeCatalog.findByKey(VisualThemeUtils.THEME_FANTASY);
-
-        assertNotNull(sky);
-        assertNotNull(fantasy);
-        assertEquals(R.color.weather_text_primary, sky.getHomePrimaryTextColorRes());
-        assertEquals(R.color.weather_text_secondary, sky.getHomeSecondaryTextColorRes());
-        assertEquals(R.color.weather_text_inverse, fantasy.getHomePrimaryTextColorRes());
-        assertEquals(R.color.weather_text_inverse, fantasy.getHomeSecondaryTextColorRes());
+        assertEquals("使用樱色与雨纹层次，让设置页更柔和。", sakura.getShortDescription());
     }
 
     @Test

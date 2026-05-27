@@ -48,6 +48,7 @@ fun CityScreen(
     temperatureUnit: String = WeatherDisplayUtils.TEMPERATURE_CELSIUS,
     respectStatusBar: Boolean = true,
     autoFocusSearch: Boolean = false,
+    onDefaultCityChanged: () -> Unit = {},
     viewModel: CityViewModel = viewModel()
 ) {
     val cities by viewModel.getCities().observeAsState(emptyList())
@@ -55,7 +56,14 @@ fun CityScreen(
     val defaultCity by viewModel.getDefaultCity().observeAsState("未设置")
     val message by viewModel.getMessage().observeAsState("")
     val busy by viewModel.getBusy().observeAsState(false)
+    val defaultCityChangeVersion by viewModel.getDefaultCityChangeVersion().observeAsState(0L)
     var query by rememberSaveable { mutableStateOf("") }
+
+    LaunchedEffect(defaultCityChangeVersion) {
+        if (defaultCityChangeVersion > 0L) {
+            onDefaultCityChanged()
+        }
+    }
 
     val listModifier = if (respectStatusBar) {
         modifier.statusBarsPadding()

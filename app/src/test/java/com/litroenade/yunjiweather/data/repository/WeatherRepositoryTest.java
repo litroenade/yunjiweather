@@ -81,6 +81,97 @@ public class WeatherRepositoryTest {
         assertFalse(cacheGateway.saved);
     }
 
+    @Test
+    public void loadCachedHomeWeather_returnsCacheWithoutRemoteFetch() {
+        FakeRemoteGateway remoteGateway = new FakeRemoteGateway(homeWeather("北京", "24", "多云"));
+        FakeCacheGateway cacheGateway = new FakeCacheGateway(
+                new WeatherRepository.CacheRecord<>(homeWeather("北京", "19", "晴"), 500L, 1_800L)
+        );
+        WeatherRepository repository = new WeatherRepository(remoteGateway, cacheGateway, () -> 1_000L);
+
+        UiState<HomeWeatherData> result = repository.loadCachedHomeWeather("101010100");
+
+        assertEquals(UiState.Status.CACHE, result.getStatus());
+        assertEquals("19", result.getData().getTemperature());
+        assertEquals("已显示本地缓存，正在刷新天气。", result.getMessage());
+        assertEquals(500L, result.getUpdateTime());
+        assertEquals(0, remoteGateway.fetchCount);
+    }
+
+    @Test
+    public void loadCachedHomeWeather_marksExpiredCacheAsRefreshingReference() {
+        FakeCacheGateway cacheGateway = new FakeCacheGateway(
+                new WeatherRepository.CacheRecord<>(homeWeather("北京", "18", "阴"), 400L, 900L)
+        );
+        WeatherRepository repository = new WeatherRepository(
+                new FakeRemoteGateway(homeWeather("北京", "24", "多云")),
+                cacheGateway,
+                () -> 1_000L
+        );
+
+        UiState<HomeWeatherData> result = repository.loadCachedHomeWeather("101010100");
+
+        assertEquals(UiState.Status.CACHE, result.getStatus());
+        assertEquals("18", result.getData().getTemperature());
+        assertEquals("已显示过期本地缓存，正在刷新天气。", result.getMessage());
+    }
+
+    @Test
+    public void loadCachedHomeWeather_returnsNullWhenCacheMissing() {
+        WeatherRepository repository = new WeatherRepository(
+                new FakeRemoteGateway(homeWeather("北京", "24", "多云")),
+                new FakeCacheGateway(null),
+                () -> 1_000L
+        );
+
+        UiState<HomeWeatherData> result = repository.loadCachedHomeWeather("101010100");
+
+        assertEquals(null, result);
+    }
+
+    @Test
+    public void loadHomeWeatherPreferCache_returnsFreshCacheWithoutRemoteFetch() {
+        FakeRemoteGateway remoteGateway = new FakeRemoteGateway(homeWeather("Beijing", "24", "Cloudy"));
+        FakeCacheGateway cacheGateway = new FakeCacheGateway(
+                new WeatherRepository.CacheRecord<>(homeWeather("Shanghai", "22", "Rain"), 500L, 2_000L)
+        );
+        WeatherRepository repository = new WeatherRepository(remoteGateway, cacheGateway, () -> 1_000L);
+
+        UiState<HomeWeatherData> result = repository.loadHomeWeatherPreferCache(
+                "101020100",
+                "Shanghai",
+                31.2304,
+                121.4737
+        );
+
+        assertEquals(UiState.Status.CACHE, result.getStatus());
+        assertEquals("Shanghai", result.getData().getCityName());
+        assertEquals("22", result.getData().getTemperature());
+        assertEquals(0, remoteGateway.fetchCount);
+        assertFalse(cacheGateway.saved);
+    }
+
+    @Test
+    public void loadHomeWeatherPreferCache_refreshesExpiredCache() {
+        FakeRemoteGateway remoteGateway = new FakeRemoteGateway(homeWeather("Shanghai", "25", "Cloudy"));
+        FakeCacheGateway cacheGateway = new FakeCacheGateway(
+                new WeatherRepository.CacheRecord<>(homeWeather("Shanghai", "19", "Rain"), 500L, 900L)
+        );
+        WeatherRepository repository = new WeatherRepository(remoteGateway, cacheGateway, () -> 1_000L);
+
+        UiState<HomeWeatherData> result = repository.loadHomeWeatherPreferCache(
+                "101020100",
+                "Shanghai",
+                31.2304,
+                121.4737
+        );
+
+        assertEquals(UiState.Status.SUCCESS, result.getStatus());
+        assertEquals("25", result.getData().getTemperature());
+        assertEquals(1, remoteGateway.fetchCount);
+        assertTrue(cacheGateway.saved);
+    }
+
     @Test(expected = IllegalStateException.class)
     public void loadHomeWeather_propagatesRuntimeExceptionFromRemote() {
         WeatherRepository repository = new WeatherRepository(
@@ -148,6 +239,7 @@ public class WeatherRepositoryTest {
         private final IOException exception;
         private double latitude;
         private double longitude;
+        private int fetchCount;
 
         private FakeRemoteGateway(HomeWeatherData data) {
             this.data = data;
@@ -161,6 +253,7 @@ public class WeatherRepositoryTest {
 
         @Override
         public HomeWeatherData fetchHomeWeather(String locationId, String cityName, double latitude, double longitude) throws IOException {
+            fetchCount++;
             this.latitude = latitude;
             this.longitude = longitude;
             if (exception != null) {

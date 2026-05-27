@@ -1,14 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-    <color name="weather_primary">#2563EB</color>
-    <color name="weather_primary_dark">#1E3A8A</color>
     <color name="weather_accent">#0F766E</color>
-    <color name="weather_background_top">#F7F8FA</color>
-    <color name="weather_background_bottom">#EEF2F7</color>
-    <color name="weather_text_primary">#1F2937</color>
-    <color name="weather_text_secondary">#4B5563</color>
-    <color name="weather_text_inverse">#FFFFFFFF</color>
-    <color name="weather_header_secondary">#DBEAFE</color>
 </resources>

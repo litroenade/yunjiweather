@@ -26,6 +26,9 @@ public final class HomeWeatherData {
     private final String airQualityIndex;
     private final String airQualityCategory;
     private final String primaryPollutant;
+    private final String uvIndex;
+    private final String sunrise;
+    private final String sunset;
     private final List<WeatherHourlyData> hourlyForecasts;
     private final List<WeatherDailyData> dailyForecasts;
 
@@ -101,6 +104,62 @@ public final class HomeWeatherData {
             List<WeatherHourlyData> hourlyForecasts,
             List<WeatherDailyData> dailyForecasts
     ) {
+        this(
+                cityName,
+                locationId,
+                temperature,
+                condition,
+                feelsLike,
+                tempMax,
+                tempMin,
+                humidity,
+                windDir,
+                windScale,
+                windSpeed,
+                pressure,
+                visibility,
+                iconCode,
+                updateTime,
+                clothingAdvice,
+                travelAdvice,
+                airQualityIndex,
+                airQualityCategory,
+                primaryPollutant,
+                "",
+                "",
+                "",
+                hourlyForecasts,
+                dailyForecasts
+        );
+    }
+
+    public HomeWeatherData(
+            String cityName,
+            String locationId,
+            String temperature,
+            String condition,
+            String feelsLike,
+            String tempMax,
+            String tempMin,
+            String humidity,
+            String windDir,
+            String windScale,
+            String windSpeed,
+            String pressure,
+            String visibility,
+            String iconCode,
+            long updateTime,
+            String clothingAdvice,
+            String travelAdvice,
+            String airQualityIndex,
+            String airQualityCategory,
+            String primaryPollutant,
+            String uvIndex,
+            String sunrise,
+            String sunset,
+            List<WeatherHourlyData> hourlyForecasts,
+            List<WeatherDailyData> dailyForecasts
+    ) {
         this.cityName = requireText(cityName, "cityName");
         this.locationId = requireText(locationId, "locationId");
         this.temperature = requireText(temperature, "temperature");
@@ -121,6 +180,9 @@ public final class HomeWeatherData {
         this.airQualityIndex = requireText(airQualityIndex, "airQualityIndex");
         this.airQualityCategory = requireText(airQualityCategory, "airQualityCategory");
         this.primaryPollutant = requireText(primaryPollutant, "primaryPollutant");
+        this.uvIndex = optionalText(uvIndex);
+        this.sunrise = optionalText(sunrise);
+        this.sunset = optionalText(sunset);
         this.hourlyForecasts = Collections.unmodifiableList(Objects.requireNonNull(hourlyForecasts, "hourlyForecasts"));
         this.dailyForecasts = Collections.unmodifiableList(Objects.requireNonNull(dailyForecasts, "dailyForecasts"));
     }
@@ -131,6 +193,10 @@ public final class HomeWeatherData {
             throw new IllegalArgumentException(fieldName + " must not be empty");
         }
         return text;
+    }
+
+    private static String optionalText(String value) {
+        return value == null ? "" : value.trim();
     }
 
     public void validateForDisplay() {
@@ -235,6 +301,18 @@ public final class HomeWeatherData {
 
     public String getPrimaryPollutant() {
         return primaryPollutant;
+    }
+
+    public String getUvIndex() {
+        return optionalText(uvIndex);
+    }
+
+    public String getSunrise() {
+        return optionalText(sunrise);
+    }
+
+    public String getSunset() {
+        return optionalText(sunset);
     }
 
     public List<WeatherHourlyData> getHourlyForecasts() {

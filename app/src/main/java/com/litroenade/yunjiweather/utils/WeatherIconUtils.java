@@ -30,22 +30,6 @@ public final class WeatherIconUtils {
         }
     }
 
-    public static int getWeatherBackgroundRes(String iconCode) {
-        switch (getWeatherCategory(iconCode)) {
-            case RAIN:
-                return R.drawable.bg_weather_rain;
-            case SNOW:
-                return R.drawable.bg_weather_snow;
-            case NIGHT:
-                return R.drawable.bg_weather_night;
-            case SUNNY:
-                return R.drawable.bg_weather_sunny;
-            case CLOUDY:
-            default:
-                return R.drawable.bg_weather_cloudy;
-        }
-    }
-
     public static WeatherCategory getWeatherCategory(String iconCode) {
         if (iconCode == null || iconCode.trim().isEmpty()) {
             return WeatherCategory.CLOUDY;

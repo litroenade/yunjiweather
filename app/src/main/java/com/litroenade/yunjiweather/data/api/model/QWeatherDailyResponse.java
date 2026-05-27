@@ -11,6 +11,8 @@ public final class QWeatherDailyResponse {
         public String fxDate;
         public String tempMax;
         public String tempMin;
+        public String sunrise;
+        public String sunset;
         public String iconDay;
         public String textDay;
         public String windDirDay;

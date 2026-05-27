@@ -26,6 +26,17 @@ public class WindScaleUtilsTest {
         assertEquals(6, WindScaleUtils.toWindScale(39.0d));
     }
 
+    @Test
+    public void parseDisplayScale_returnsFirstLevelForQWeatherRange() {
+        assertEquals(1, WindScaleUtils.parseDisplayScale("1-3"));
+        assertEquals(5, WindScaleUtils.parseDisplayScale("5-6"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void parseDisplayScale_rejectsBlankText() {
+        WindScaleUtils.parseDisplayScale(" ");
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void toWindScale_rejectsNegativeSpeed() {
         WindScaleUtils.toWindScale(-0.1d);

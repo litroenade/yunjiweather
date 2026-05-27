@@ -7,8 +7,6 @@ import com.litroenade.yunjiweather.data.repository.WeatherRepository;
 
 public final class RoomWeatherCacheGateway implements WeatherRepository.CacheGateway {
 
-    private static final String WEATHER_TYPE_HOME = "HOME";
-
     private final WeatherCacheDao weatherCacheDao;
     private final Gson gson;
 
@@ -22,7 +20,7 @@ public final class RoomWeatherCacheGateway implements WeatherRepository.CacheGat
         WeatherCacheEntity entity = new WeatherCacheEntity(
                 locationId,
                 data.getCityName(),
-                WEATHER_TYPE_HOME,
+                WeatherCacheTypes.HOME,
                 gson.toJson(data),
                 updateTime,
                 expireTime
@@ -32,7 +30,7 @@ public final class RoomWeatherCacheGateway implements WeatherRepository.CacheGat
 
     @Override
     public WeatherRepository.CacheRecord<HomeWeatherData> readHomeWeather(String locationId) {
-        WeatherCacheEntity entity = weatherCacheDao.findByLocationAndType(locationId, WEATHER_TYPE_HOME);
+        WeatherCacheEntity entity = weatherCacheDao.findByLocationAndType(locationId, WeatherCacheTypes.HOME);
         if (entity == null) {
             return null;
         }

@@ -148,9 +148,9 @@ private val FantasyDarkColors = darkColorScheme(
 )
 
 private val YunJiShapes = Shapes(
-    small = RoundedCornerShape(10.dp),
-    medium = RoundedCornerShape(18.dp),
-    large = RoundedCornerShape(24.dp)
+    small = RoundedCornerShape(8.dp),
+    medium = RoundedCornerShape(14.dp),
+    large = RoundedCornerShape(18.dp)
 )
 
 private val YunJiTypography = Typography()
@@ -182,9 +182,9 @@ val LocalYunJiVisualTheme = staticCompositionLocalOf {
         key = VisualThemeUtils.THEME_SKY,
         displayName = "经典晴空",
         background = Color(0xFFF4F7F8),
-        cardContainer = Color.White.copy(alpha = 0.88f),
-        cardStroke = Color.White.copy(alpha = 0.58f),
-        navContainer = Color.White.copy(alpha = 0.90f),
+        cardContainer = Color.White.copy(alpha = 0.30f),
+        cardStroke = Color.White.copy(alpha = 0.28f),
+        navContainer = Color.White.copy(alpha = 0.68f),
         navSelectedContainer = Color(0xFFE5F1DA),
         headerAccent = Color(0xFF2F7D89),
         primaryWeatherText = Color(0xFF12343A),
@@ -224,15 +224,15 @@ private fun colorSchemeFor(themeKey: String, darkTheme: Boolean): ColorScheme {
 }
 
 private fun visualThemeFor(themeKey: String, colorScheme: ColorScheme, darkTheme: Boolean): YunJiVisualTheme {
-    val cardAlpha = if (darkTheme) 0.78f else 0.88f
-    val navAlpha = if (darkTheme) 0.82f else 0.90f
+    val cardAlpha = if (darkTheme) 0.48f else 0.30f
+    val navAlpha = if (darkTheme) 0.70f else 0.68f
     return when (themeKey) {
         VisualThemeUtils.THEME_SAKURA -> YunJiVisualTheme(
             key = themeKey,
             displayName = "樱雨粉",
             background = colorScheme.background,
             cardContainer = colorScheme.surface.copy(alpha = cardAlpha),
-            cardStroke = colorScheme.surfaceVariant.copy(alpha = 0.55f),
+            cardStroke = Color.White.copy(alpha = if (darkTheme) 0.16f else 0.28f),
             navContainer = colorScheme.surface.copy(alpha = navAlpha),
             navSelectedContainer = colorScheme.secondaryContainer,
             headerAccent = colorScheme.primary,
@@ -246,7 +246,7 @@ private fun visualThemeFor(themeKey: String, colorScheme: ColorScheme, darkTheme
             displayName = "幻想天",
             background = colorScheme.background,
             cardContainer = colorScheme.surface.copy(alpha = cardAlpha),
-            cardStroke = colorScheme.surfaceVariant.copy(alpha = 0.58f),
+            cardStroke = Color.White.copy(alpha = if (darkTheme) 0.16f else 0.28f),
             navContainer = colorScheme.surface.copy(alpha = navAlpha),
             navSelectedContainer = colorScheme.secondaryContainer,
             headerAccent = colorScheme.primary,
@@ -260,7 +260,7 @@ private fun visualThemeFor(themeKey: String, colorScheme: ColorScheme, darkTheme
             displayName = "经典晴空",
             background = colorScheme.background,
             cardContainer = colorScheme.surface.copy(alpha = cardAlpha),
-            cardStroke = colorScheme.surfaceVariant.copy(alpha = 0.55f),
+            cardStroke = Color.White.copy(alpha = if (darkTheme) 0.16f else 0.28f),
             navContainer = colorScheme.surface.copy(alpha = navAlpha),
             navSelectedContainer = colorScheme.secondaryContainer,
             headerAccent = colorScheme.primary,

@@ -93,6 +93,44 @@ public class CityWeatherSummaryRepositoryTest {
         assertTrue(summaries.isEmpty());
     }
 
+    @Test
+    public void loadSummaries_usesCachedStateWithoutRemoteFetchWhenCacheReaderIsProvided() {
+        CityEntity beijing = city("Beijing", "101010100", 39.9042, 116.4074);
+        FakeHomeWeatherSource remoteSource = new FakeHomeWeatherSource()
+                .withState("101010100", UiState.success(homeWeather("Beijing", "30", "Sunny")));
+        CityWeatherSummaryRepository repository = new CityWeatherSummaryRepository(
+                remoteSource,
+                locationId -> UiState.cache(homeWeather("Beijing", "21", "Cloudy"), "cached", 500L),
+                false
+        );
+
+        Map<String, CityWeatherSummary> summaries = repository.loadSummaries(Collections.singletonList(beijing));
+
+        assertEquals("21", summaries.get("101010100").getTemperature());
+        assertTrue(summaries.get("101010100").isFromCache());
+        assertEquals(0, remoteSource.loadCount);
+    }
+
+    @Test
+    public void loadSummaries_returnsUnavailableForMissingCacheWhenRemoteFetchIsDisabled() {
+        CityEntity beijing = city("Beijing", "101010100", 39.9042, 116.4074);
+        FakeHomeWeatherSource remoteSource = new FakeHomeWeatherSource()
+                .withState("101010100", UiState.success(homeWeather("Beijing", "30", "Sunny")));
+        CityWeatherSummaryRepository repository = new CityWeatherSummaryRepository(
+                remoteSource,
+                locationId -> null,
+                false
+        );
+
+        Map<String, CityWeatherSummary> summaries = repository.loadSummaries(Collections.singletonList(beijing));
+
+        assertEquals(
+                CityWeatherSummary.unavailable("101010100").getErrorMessage(),
+                summaries.get("101010100").getErrorMessage()
+        );
+        assertEquals(0, remoteSource.loadCount);
+    }
+
     @Test(expected = IllegalStateException.class)
     public void loadSummaries_propagatesSourceRuntimeException() {
         CityWeatherSummaryRepository repository = new CityWeatherSummaryRepository(
@@ -136,6 +174,7 @@ public class CityWeatherSummaryRepositoryTest {
     private static final class FakeHomeWeatherSource implements HomeWeatherSource {
 
         private final Map<String, UiState<HomeWeatherData>> states = new java.util.LinkedHashMap<>();
+        private int loadCount;
 
         FakeHomeWeatherSource withState(String locationId, UiState<HomeWeatherData> state) {
             states.put(locationId, state);
@@ -144,6 +183,7 @@ public class CityWeatherSummaryRepositoryTest {
 
         @Override
         public UiState<HomeWeatherData> loadHomeWeather(String locationId, String cityName, double latitude, double longitude) {
+            loadCount++;
             return states.get(locationId);
         }
     }

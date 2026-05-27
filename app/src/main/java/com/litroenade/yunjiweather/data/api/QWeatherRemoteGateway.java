@@ -8,8 +8,10 @@ import com.litroenade.yunjiweather.data.model.HomeWeatherData;
 import com.litroenade.yunjiweather.data.model.WeatherDailyData;
 import com.litroenade.yunjiweather.data.model.WeatherHourlyData;
 import com.litroenade.yunjiweather.data.repository.WeatherRepository;
+import com.litroenade.yunjiweather.utils.AirQualityUtils;
 import com.litroenade.yunjiweather.utils.DateTimeUtils;
 import com.litroenade.yunjiweather.utils.WeatherAdviceUtils;
+import com.litroenade.yunjiweather.utils.WindScaleUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -81,9 +83,12 @@ public final class QWeatherRemoteGateway implements WeatherRepository.RemoteGate
                 updateTime,
                 clothingAdvice,
                 travelAdvice,
-                requireText(airIndex.aqiDisplay, "air.indexes.aqiDisplay"),
+                String.valueOf(airQualityIndex),
                 requireText(airIndex.category, "air.indexes.category"),
                 resolvePrimaryPollutantName(airIndex),
+                requireText(today.uvIndex, "daily.uvIndex"),
+                requireText(today.sunrise, "daily.sunrise"),
+                requireText(today.sunset, "daily.sunset"),
                 mapHourlyForecasts(hourlyResponse.hourly),
                 mapDailyForecasts(dailyResponse.daily)
         );
@@ -146,7 +151,7 @@ public final class QWeatherRemoteGateway implements WeatherRepository.RemoteGate
 
     private List<WeatherHourlyData> mapHourlyForecasts(List<QWeatherHourlyResponse.Hourly> hourlyList) throws IOException {
         List<WeatherHourlyData> result = new ArrayList<>();
-        int maxCount = Math.min(hourlyList.size(), 8);
+        int maxCount = Math.min(hourlyList.size(), 12);
         for (int i = 0; i < maxCount; i++) {
             QWeatherHourlyResponse.Hourly hourly = requireNonNull(hourlyList.get(i), "hourly[" + i + "]");
             result.add(new WeatherHourlyData(
@@ -161,7 +166,7 @@ public final class QWeatherRemoteGateway implements WeatherRepository.RemoteGate
 
     private List<WeatherDailyData> mapDailyForecasts(List<QWeatherDailyResponse.Daily> dailyList) throws IOException {
         List<WeatherDailyData> result = new ArrayList<>();
-        int maxCount = Math.min(dailyList.size(), 3);
+        int maxCount = Math.min(dailyList.size(), 7);
         for (int i = 0; i < maxCount; i++) {
             QWeatherDailyResponse.Daily daily = requireNonNull(dailyList.get(i), "daily[" + i + "]");
             result.add(new WeatherDailyData(
@@ -217,18 +222,16 @@ public final class QWeatherRemoteGateway implements WeatherRepository.RemoteGate
 
     private static int parseAqiAsInt(String value, String fieldName) throws IOException {
         try {
-            return (int) Math.round(Double.parseDouble(requireText(value, fieldName)));
-        } catch (NumberFormatException exception) {
+            return AirQualityUtils.parseUsAqiDisplay(requireText(value, fieldName));
+        } catch (IllegalArgumentException exception) {
             throw new IOException("空气质量接口字段格式错误：" + fieldName, exception);
         }
     }
 
     private static int parseWindScale(String value) throws IOException {
-        String text = requireText(value, "now.windScale");
-        String[] parts = text.split("-");
         try {
-            return Integer.parseInt(parts[0]);
-        } catch (NumberFormatException exception) {
+            return WindScaleUtils.parseDisplayScale(requireText(value, "now.windScale"));
+        } catch (IllegalArgumentException exception) {
             throw new IOException("风力等级格式错误", exception);
         }
     }

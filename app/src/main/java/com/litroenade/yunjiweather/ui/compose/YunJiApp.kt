@@ -1,5 +1,12 @@
 package com.litroenade.yunjiweather.ui.compose
 
+import android.appwidget.AppWidgetManager
+import android.content.ActivityNotFoundException
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
@@ -21,8 +28,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.litroenade.yunjiweather.data.model.HomeWeatherData
 import com.litroenade.yunjiweather.ui.home.HomeViewModel
 import com.litroenade.yunjiweather.ui.compose.screens.AlertScreen
 import com.litroenade.yunjiweather.ui.compose.screens.CityScreen
@@ -30,6 +39,8 @@ import com.litroenade.yunjiweather.ui.compose.screens.HomeScreen
 import com.litroenade.yunjiweather.ui.compose.screens.LifeIndexScreen
 import com.litroenade.yunjiweather.ui.compose.screens.MineScreen
 import com.litroenade.yunjiweather.ui.compose.theme.LocalYunJiVisualTheme
+import com.litroenade.yunjiweather.utils.WeatherShareUtils
+import com.litroenade.yunjiweather.widget.WeatherAppWidgetProvider
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,12 +48,14 @@ fun YunJiApp(
     modifier: Modifier = Modifier,
     animationEnabled: Boolean = true,
     temperatureUnit: String,
-    windUnit: String
+    windUnit: String,
+    homeViewModel: HomeViewModel = viewModel(),
+    onUseCurrentLocation: () -> Unit = {}
 ) {
     var activeSheet by rememberSaveable { mutableStateOf<WeatherSheet?>(null) }
     var noticeText by rememberSaveable { mutableStateOf("") }
+    val context = LocalContext.current
     val visualTheme = LocalYunJiVisualTheme.current
-    val homeViewModel: HomeViewModel = viewModel()
 
     Scaffold(
         modifier = modifier
@@ -61,13 +74,23 @@ fun YunJiApp(
             viewModel = homeViewModel,
             onManageCities = { activeSheet = WeatherSheet.ManageCities },
             onSearchCity = { activeSheet = WeatherSheet.SearchCity },
+            onUseCurrentLocation = onUseCurrentLocation,
             onSettings = { activeSheet = WeatherSheet.Settings },
-            onDesktopWeather = { noticeText = "桌面天气需要系统小组件能力，当前先保留入口说明。" },
-            onPersonalize = { activeSheet = WeatherSheet.Settings },
+            onDesktopWeather = { noticeText = requestWeatherWidgetPin(context) },
             onOpenAlerts = { activeSheet = WeatherSheet.Alerts },
             onOpenLifeIndex = { activeSheet = WeatherSheet.LifeIndex },
-            onFeedbackWeather = { noticeText = "反馈当前天气需要后续接入反馈通道，当前天气数据不会被静默提交。" },
-            onShareWeather = { noticeText = "分享入口已保留，后续接入系统分享面板。" }
+            onFeedbackWeather = { data ->
+                val result = launchWeatherFeedback(context, data, temperatureUnit, windUnit)
+                if (result.isNotBlank()) {
+                    noticeText = result
+                }
+            },
+            onShareWeather = { data ->
+                val result = launchWeatherShare(context, data, temperatureUnit, windUnit)
+                if (result.isNotBlank()) {
+                    noticeText = result
+                }
+            }
         )
     }
 
@@ -88,7 +111,11 @@ fun YunJiApp(
                     CityScreen(
                         modifier = Modifier.fillMaxWidth(),
                         temperatureUnit = temperatureUnit,
-                        respectStatusBar = false
+                        respectStatusBar = false,
+                        onDefaultCityChanged = {
+                            activeSheet = null
+                            homeViewModel.refresh()
+                        }
                     )
                 }
             }
@@ -111,7 +138,11 @@ fun YunJiApp(
                         modifier = Modifier.fillMaxWidth(),
                         temperatureUnit = temperatureUnit,
                         respectStatusBar = false,
-                        autoFocusSearch = true
+                        autoFocusSearch = true,
+                        onDefaultCityChanged = {
+                            activeSheet = null
+                            homeViewModel.refresh()
+                        }
                     )
                 }
             }
@@ -184,6 +215,84 @@ fun YunJiApp(
                 }
             }
         )
+    }
+}
+
+private fun launchWeatherShare(
+    context: Context,
+    weatherData: HomeWeatherData?,
+    temperatureUnit: String,
+    windUnit: String
+): String {
+    if (weatherData == null) {
+        return "暂无可分享的天气数据。"
+    }
+    val shareText = WeatherShareUtils.buildShareText(weatherData, temperatureUnit, windUnit)
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_TEXT, shareText)
+    }
+    return if (startChooser(context, intent, "分享天气")) {
+        ""
+    } else {
+        "系统没有可用的分享应用。"
+    }
+}
+
+private fun launchWeatherFeedback(
+    context: Context,
+    weatherData: HomeWeatherData?,
+    temperatureUnit: String,
+    windUnit: String
+): String {
+    if (weatherData == null) {
+        return "暂无天气数据可反馈。"
+    }
+    val body = WeatherShareUtils.buildShareText(weatherData, temperatureUnit, windUnit) +
+        "\n\n请补充你看到的实际天气、位置和问题描述："
+    val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
+        setData(Uri.parse("mailto:"))
+        putExtra(Intent.EXTRA_SUBJECT, "云迹天气反馈 - ${weatherData.cityName}")
+        putExtra(Intent.EXTRA_TEXT, body)
+    }
+    if (startChooser(context, emailIntent, "反馈当前天气")) {
+        return ""
+    }
+    val fallbackIntent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_SUBJECT, "云迹天气反馈 - ${weatherData.cityName}")
+        putExtra(Intent.EXTRA_TEXT, body)
+    }
+    return if (startChooser(context, fallbackIntent, "反馈当前天气")) {
+        ""
+    } else {
+        "系统没有可用的反馈应用。"
+    }
+}
+
+private fun requestWeatherWidgetPin(context: Context): String {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val appWidgetManager = context.getSystemService(AppWidgetManager::class.java)
+        if (appWidgetManager?.isRequestPinAppWidgetSupported == true) {
+            val provider = ComponentName(context, WeatherAppWidgetProvider::class.java)
+            val requested = appWidgetManager.requestPinAppWidget(provider, null, null)
+            if (requested) {
+                return "已请求添加桌面天气，请在系统弹窗中确认。"
+            }
+        }
+    }
+    return "请长按桌面，在系统小组件列表中选择云迹天气。"
+}
+
+private fun startChooser(context: Context, intent: Intent, title: String): Boolean {
+    return try {
+        context.startActivity(
+            Intent.createChooser(intent, title)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        )
+        true
+    } catch (exception: ActivityNotFoundException) {
+        false
     }
 }
 

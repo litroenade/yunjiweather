@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.litroenade.yunjiweather.data.entity.WeatherCacheEntity;
 import com.litroenade.yunjiweather.data.model.LifeIndexItem;
+import com.litroenade.yunjiweather.data.repository.LifeIndexStore;
 import com.litroenade.yunjiweather.utils.DateTimeUtils;
 
 import java.lang.reflect.Type;
@@ -11,7 +12,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-public final class LifeIndexCacheGateway {
+public final class LifeIndexCacheGateway implements LifeIndexStore {
 
     public static final String WEATHER_TYPE_INDEX = "INDEX";
 
@@ -26,6 +27,7 @@ public final class LifeIndexCacheGateway {
         this.gson = gson;
     }
 
+    @Override
     public void save(String locationId, String cityName, List<LifeIndexItem> items, long updateTime, long expireTime) {
         Objects.requireNonNull(items, "items");
         WeatherCacheEntity entity = new WeatherCacheEntity(
@@ -39,6 +41,7 @@ public final class LifeIndexCacheGateway {
         weatherCacheDao.insert(entity);
     }
 
+    @Override
     public CacheRecord readValid(String locationId, long nowTime) {
         WeatherCacheEntity entity = weatherCacheDao.findByLocationAndType(locationId, WEATHER_TYPE_INDEX);
         if (entity == null || DateTimeUtils.isCacheExpired(nowTime, entity.expireTime)) {
@@ -63,21 +66,9 @@ public final class LifeIndexCacheGateway {
         return text;
     }
 
-    public static final class CacheRecord {
-        private final List<LifeIndexItem> items;
-        private final long updateTime;
-
+    public static final class CacheRecord extends LifeIndexStore.CacheRecord {
         private CacheRecord(List<LifeIndexItem> items, long updateTime) {
-            this.items = items;
-            this.updateTime = updateTime;
-        }
-
-        public List<LifeIndexItem> getItems() {
-            return items;
-        }
-
-        public long getUpdateTime() {
-            return updateTime;
+            super(items, updateTime);
         }
     }
 }

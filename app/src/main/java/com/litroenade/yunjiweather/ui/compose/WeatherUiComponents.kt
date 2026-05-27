@@ -82,13 +82,13 @@ internal fun InfoCard(
     val visualTheme = LocalYunJiVisualTheme.current
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = visualTheme.cardContainer),
         border = BorderStroke(1.dp, visualTheme.cardStroke),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
+            modifier = Modifier.padding(14.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
             content = { content() }
         )

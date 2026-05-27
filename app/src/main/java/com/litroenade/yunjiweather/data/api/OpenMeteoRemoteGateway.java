@@ -26,7 +26,7 @@ public final class OpenMeteoRemoteGateway implements WeatherRepository.RemoteGat
     private static final String WIND_SPEED_UNIT = "kmh";
     private static final String CURRENT_WEATHER_FIELDS = "temperature_2m,relative_humidity_2m,apparent_temperature,is_day,weather_code,pressure_msl,wind_speed_10m,wind_direction_10m,visibility";
     private static final String HOURLY_WEATHER_FIELDS = "temperature_2m,weather_code";
-    private static final String DAILY_WEATHER_FIELDS = "weather_code,temperature_2m_max,temperature_2m_min,uv_index_max";
+    private static final String DAILY_WEATHER_FIELDS = "weather_code,temperature_2m_max,temperature_2m_min,uv_index_max,sunrise,sunset";
     private static final String AIR_QUALITY_FIELDS = "us_aqi,us_aqi_pm2_5,us_aqi_pm10,us_aqi_nitrogen_dioxide,us_aqi_ozone,us_aqi_sulphur_dioxide,us_aqi_carbon_monoxide";
 
     private final OpenMeteoApiService forecastService;
@@ -96,6 +96,9 @@ public final class OpenMeteoRemoteGateway implements WeatherRepository.RemoteGat
                         airCurrent.us_aqi_sulphur_dioxide,
                         airCurrent.us_aqi_carbon_monoxide
                 ),
+                String.valueOf(uvIndex),
+                DateTimeUtils.formatOpenMeteoHour(firstRequiredText(daily.sunrise, "daily.sunrise")),
+                DateTimeUtils.formatOpenMeteoHour(firstRequiredText(daily.sunset, "daily.sunset")),
                 mapHourlyForecasts(requireNonNull(forecastResponse.hourly, "hourly")),
                 mapDailyForecasts(daily)
         );
@@ -110,7 +113,7 @@ public final class OpenMeteoRemoteGateway implements WeatherRepository.RemoteGat
                 DAILY_WEATHER_FIELDS,
                 TIMEZONE,
                 WIND_SPEED_UNIT,
-                3,
+                7,
                 24
         ).execute();
         OpenMeteoForecastResponse body = response.body();
@@ -138,7 +141,7 @@ public final class OpenMeteoRemoteGateway implements WeatherRepository.RemoteGat
     private List<WeatherHourlyData> mapHourlyForecasts(OpenMeteoForecastResponse.Hourly hourly) throws IOException {
         List<WeatherHourlyData> result = new ArrayList<>();
         int maxCount = minRequiredSize("hourly", hourly.time, hourly.temperature_2m, hourly.weather_code);
-        maxCount = Math.min(maxCount, 8);
+        maxCount = Math.min(maxCount, 12);
         for (int i = 0; i < maxCount; i++) {
             int code = requireInt(hourly.weather_code.get(i), "hourly.weather_code[" + i + "]");
             result.add(new WeatherHourlyData(
@@ -154,7 +157,7 @@ public final class OpenMeteoRemoteGateway implements WeatherRepository.RemoteGat
     private List<WeatherDailyData> mapDailyForecasts(OpenMeteoForecastResponse.Daily daily) throws IOException {
         List<WeatherDailyData> result = new ArrayList<>();
         int maxCount = minRequiredSize("daily", daily.time, daily.temperature_2m_max, daily.temperature_2m_min, daily.weather_code);
-        maxCount = Math.min(maxCount, 3);
+        maxCount = Math.min(maxCount, 7);
         for (int i = 0; i < maxCount; i++) {
             int code = requireInt(daily.weather_code.get(i), "daily.weather_code[" + i + "]");
             result.add(new WeatherDailyData(
@@ -214,6 +217,13 @@ public final class OpenMeteoRemoteGateway implements WeatherRepository.RemoteGat
             throw new IOException("Open-Meteo 接口缺少字段：" + fieldName);
         }
         return values.get(0);
+    }
+
+    private static String firstRequiredText(List<String> values, String fieldName) throws IOException {
+        if (values == null || values.isEmpty()) {
+            throw new IOException("Open-Meteo 接口缺少字段：" + fieldName);
+        }
+        return requireText(values.get(0), fieldName + "[0]");
     }
 
     private static int roundToInt(double value) {

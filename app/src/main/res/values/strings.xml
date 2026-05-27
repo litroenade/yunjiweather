@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">云迹天气</string>
+    <string name="widget_weather_name">云迹天气桌面天气</string>
+    <string name="widget_weather_temperature_placeholder">打开查看实时天气</string>
+    <string name="widget_weather_summary_placeholder">城市、预警、生活指数</string>
 </resources>

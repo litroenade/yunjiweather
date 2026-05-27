@@ -26,6 +26,23 @@ public final class WindScaleUtils {
         return String.valueOf(toWindScale(speedKmh));
     }
 
+    public static int parseDisplayScale(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new IllegalArgumentException("windScale must not be empty");
+        }
+        String text = value.trim();
+        String[] parts = text.split("-");
+        try {
+            int scale = Integer.parseInt(parts[0].trim());
+            if (scale < 0) {
+                throw new IllegalArgumentException("windScale must not be negative");
+            }
+            return scale;
+        } catch (NumberFormatException exception) {
+            throw new IllegalArgumentException("windScale format is invalid", exception);
+        }
+    }
+
     public static String toWindDirectionText(double degrees) {
         if (degrees < 0.0d || degrees > 360.0d) {
             throw new IllegalArgumentException("degrees must be between 0 and 360");

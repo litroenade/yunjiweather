@@ -30,7 +30,7 @@ public interface WeatherApiService {
             @Query("unit") String unit
     );
 
-    @GET("v7/weather/3d")
+    @GET("v7/weather/7d")
     Call<QWeatherDailyResponse> getDailyWeather(
             @Query("location") String locationId,
             @Query("lang") String language,

@@ -88,8 +88,15 @@ public class LifeIndexViewModel extends AndroidViewModel {
         if (result.getSource() == LifeIndexRepository.LoadSource.CACHE_NO_API) {
             return "未配置 QWeather API，已显示缓存生活指数。" + DateTimeUtils.formatCacheUpdateTime(result.getCacheUpdateTime());
         }
+        if (result.getSource() == LifeIndexRepository.LoadSource.CACHE_UNSUPPORTED_LOCATION) {
+            return "当前城市暂不支持 QWeather 实时生活指数，已显示缓存。"
+                    + DateTimeUtils.formatCacheUpdateTime(result.getCacheUpdateTime());
+        }
         if (result.getSource() == LifeIndexRepository.LoadSource.CACHE_ERROR) {
             return "生活指数刷新失败，已显示缓存生活指数。" + DateTimeUtils.formatCacheUpdateTime(result.getCacheUpdateTime());
+        }
+        if ("当前城市没有 QWeather 城市 ID".equals(result.getErrorMessage())) {
+            return "当前城市暂不支持 QWeather 实时生活指数，已显示本地建议。";
         }
         if (result.getErrorMessage() == null || result.getErrorMessage().trim().isEmpty()) {
             return "未配置 QWeather API，已显示本地生活建议。";

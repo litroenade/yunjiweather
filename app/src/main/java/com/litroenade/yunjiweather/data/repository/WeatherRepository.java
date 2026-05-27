@@ -6,7 +6,7 @@ import com.litroenade.yunjiweather.utils.DateTimeUtils;
 
 import java.io.IOException;
 
-public class WeatherRepository implements HomeWeatherSource {
+public class WeatherRepository implements HomeWeatherSource, HomeWeatherCacheSource {
 
     private static final long HOME_CACHE_TTL_MILLIS = 30L * 60L * 1000L;
 
@@ -43,11 +43,64 @@ public class WeatherRepository implements HomeWeatherSource {
         }
     }
 
+    @Override
+    public UiState<HomeWeatherData> loadCachedHomeWeather(String locationId) {
+        long nowTime = clock.now();
+        CacheRecord<HomeWeatherData> cacheRecord = cacheGateway.readHomeWeather(locationId);
+        if (cacheRecord == null || cacheRecord.getData() == null) {
+            return null;
+        }
+        return UiState.cache(
+                cacheRecord.getData(),
+                createCacheRefreshingMessage(nowTime, cacheRecord),
+                cacheRecord.getUpdateTime()
+        );
+    }
+
+    public UiState<HomeWeatherData> loadHomeWeatherPreferCache(
+            String locationId,
+            String cityName,
+            double latitude,
+            double longitude
+    ) {
+        long nowTime = clock.now();
+        CacheRecord<HomeWeatherData> cacheRecord = cacheGateway.readHomeWeather(locationId);
+        if (isFreshCache(nowTime, cacheRecord)) {
+            return createCacheState(nowTime, cacheRecord);
+        }
+        return loadHomeWeather(locationId, cityName, latitude, longitude);
+    }
+
+    public boolean hasFreshHomeWeatherCache(String locationId) {
+        return isFreshCache(clock.now(), cacheGateway.readHomeWeather(locationId));
+    }
+
     private String createCacheFallbackMessage(long nowTime, CacheRecord<HomeWeatherData> cacheRecord) {
         if (DateTimeUtils.isCacheExpired(nowTime, cacheRecord.getExpireTime())) {
             return "网络连接失败，当前缓存已过期，仅供参考。";
         }
         return "网络连接失败，已显示本地缓存。";
+    }
+
+    private String createCacheRefreshingMessage(long nowTime, CacheRecord<HomeWeatherData> cacheRecord) {
+        if (DateTimeUtils.isCacheExpired(nowTime, cacheRecord.getExpireTime())) {
+            return "已显示过期本地缓存，正在刷新天气。";
+        }
+        return "已显示本地缓存，正在刷新天气。";
+    }
+
+    private boolean isFreshCache(long nowTime, CacheRecord<HomeWeatherData> cacheRecord) {
+        return cacheRecord != null
+                && cacheRecord.getData() != null
+                && !DateTimeUtils.isCacheExpired(nowTime, cacheRecord.getExpireTime());
+    }
+
+    private UiState<HomeWeatherData> createCacheState(long nowTime, CacheRecord<HomeWeatherData> cacheRecord) {
+        return UiState.cache(
+                cacheRecord.getData(),
+                createCacheRefreshingMessage(nowTime, cacheRecord),
+                cacheRecord.getUpdateTime()
+        );
     }
 
     public interface RemoteGateway {

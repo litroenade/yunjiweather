@@ -1,38 +1,37 @@
 package com.litroenade.yunjiweather.utils;
 
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
 
 public class AirQualityUtilsTest {
 
     @Test
-    public void toUsAqiCategory_returnsGoodAtUpperBoundary() {
-        assertEquals("优", AirQualityUtils.toUsAqiCategory(50));
+    public void activityAdviceMatchesAqiHealthRange() {
+        assertEquals("空气很好，适合户外活动。", AirQualityUtils.activityAdviceForUsAqi(42));
+        assertEquals("建议减少长时间户外活动。", AirQualityUtils.activityAdviceForUsAqi(180));
+        assertEquals("尽量留在室内并关闭门窗。", AirQualityUtils.activityAdviceForUsAqi(320));
     }
 
     @Test
-    public void toUsAqiCategory_returnsModerateAfterGoodBoundary() {
-        assertEquals("良", AirQualityUtils.toUsAqiCategory(51));
+    public void sensitiveGroupAdviceMatchesAqiHealthRange() {
+        assertEquals("敏感人群可正常安排日常活动。", AirQualityUtils.sensitiveGroupAdviceForUsAqi(42));
+        assertEquals("老人、儿童和心肺敏感人群建议减少户外停留。", AirQualityUtils.sensitiveGroupAdviceForUsAqi(180));
     }
 
     @Test
-    public void toUsAqiCategory_returnsSensitiveGroupTextAtBoundary() {
-        assertEquals("对敏感人群不健康", AirQualityUtils.toUsAqiCategory(101));
-    }
-
-    @Test
-    public void toUsAqiCategory_returnsHazardousAboveThreeHundred() {
-        assertEquals("危险", AirQualityUtils.toUsAqiCategory(301));
-    }
-
-    @Test
-    public void findPrimaryPollutant_returnsNameOfLargestSubIndex() {
-        assertEquals("PM2.5", AirQualityUtils.findPrimaryPollutant(86.0d, 40.0d, 18.0d, 55.0d, 10.0d, 6.0d));
+    public void parseUsAqiDisplayRoundsDecimalDisplayValue() {
+        assertEquals(42, AirQualityUtils.parseUsAqiDisplay("42.0"));
+        assertEquals(181, AirQualityUtils.parseUsAqiDisplay("180.6"));
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void toUsAqiCategory_rejectsNegativeValue() {
-        AirQualityUtils.toUsAqiCategory(-1);
+    public void parseUsAqiDisplayRejectsBlankValue() {
+        AirQualityUtils.parseUsAqiDisplay(" ");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void activityAdviceRejectsNegativeAqi() {
+        AirQualityUtils.activityAdviceForUsAqi(-1);
     }
 }

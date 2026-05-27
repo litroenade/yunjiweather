@@ -12,7 +12,6 @@ import androidx.core.content.ContextCompat;
 public final class PermissionUtils {
 
     public static final int REQUEST_NOTIFICATION_PERMISSION = 2001;
-    public static final int REQUEST_LOCATION_PERMISSION = 2002;
 
     private PermissionUtils() {
     }
@@ -40,16 +39,4 @@ public final class PermissionUtils {
                 || ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED;
     }
 
-    public static void requestLocationPermission(Activity activity) {
-        if (!hasLocationPermission(activity)) {
-            ActivityCompat.requestPermissions(
-                    activity,
-                    new String[]{
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.ACCESS_COARSE_LOCATION
-                    },
-                    REQUEST_LOCATION_PERMISSION
-            );
-        }
-    }
 }

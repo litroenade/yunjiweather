@@ -35,5 +35,7 @@ public final class OpenMeteoForecastResponse {
         public List<Double> temperature_2m_max;
         public List<Double> temperature_2m_min;
         public List<Double> uv_index_max;
+        public List<String> sunrise;
+        public List<String> sunset;
     }
 }

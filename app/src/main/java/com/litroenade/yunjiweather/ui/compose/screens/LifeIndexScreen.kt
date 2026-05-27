@@ -1,6 +1,7 @@
 package com.litroenade.yunjiweather.ui.compose.screens
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -26,6 +28,7 @@ import com.litroenade.yunjiweather.ui.compose.InfoCard
 import com.litroenade.yunjiweather.ui.compose.MessageCard
 import com.litroenade.yunjiweather.ui.compose.ScreenHeader
 import com.litroenade.yunjiweather.ui.index.LifeIndexViewModel
+import com.litroenade.yunjiweather.utils.LunarCalendarUtils
 
 @Composable
 fun LifeIndexScreen(
@@ -35,6 +38,7 @@ fun LifeIndexScreen(
 ) {
     val indexItems by viewModel.getIndexItems().observeAsState(emptyList())
     val stateText by viewModel.getStateText().observeAsState("正在读取生活指数")
+    val todayCalendar = remember { LunarCalendarUtils.today() }
 
     LazyColumn(
         modifier = modifier
@@ -54,6 +58,9 @@ fun LifeIndexScreen(
                 }
             )
         }
+        item {
+            TodayCalendarCard(todayCalendar)
+        }
         if (indexItems.isEmpty()) {
             item {
                 MessageCard("暂无指数", "当前没有可展示的生活建议。", "刷新", viewModel::refresh)
@@ -61,6 +68,50 @@ fun LifeIndexScreen(
         } else {
             items(indexItems) { item ->
                 LifeIndexCard(item)
+            }
+        }
+    }
+}
+
+@Composable
+private fun TodayCalendarCard(todayCalendar: LunarCalendarUtils.LunarDayInfo) {
+    InfoCard {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = todayCalendar.gregorianText,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "${todayCalendar.weekdayText} · ${todayCalendar.lunarText}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                shape = MaterialTheme.shapes.small
+            ) {
+                Text(
+                    text = todayCalendar.festivalOrDefaultText,
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }
