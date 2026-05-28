@@ -26,10 +26,14 @@ public class VisualThemeUtilsTest {
     public void catalog_returnsThemesInStableOrder() {
         List<VisualTheme> themes = VisualThemeCatalog.getThemes();
 
-        assertEquals(3, themes.size());
+        assertEquals(5, themes.size());
         assertEquals(VisualThemeUtils.THEME_SKY, themes.get(0).getKey());
         assertEquals(VisualThemeUtils.THEME_FANTASY, themes.get(1).getKey());
         assertEquals(VisualThemeUtils.THEME_SAKURA, themes.get(2).getKey());
+        assertEquals(VisualThemeUtils.THEME_CUSTOM_1, themes.get(3).getKey());
+        assertEquals(VisualThemeUtils.THEME_CUSTOM_2, themes.get(4).getKey());
+        assertEquals(true, themes.get(3).isCustomSlot());
+        assertEquals(true, themes.get(4).isCustomSlot());
     }
 
     @Test
@@ -93,6 +97,53 @@ public class VisualThemeUtilsTest {
         assertEquals(WeatherDisplayUtils.TEMPERATURE_CELSIUS, preferences.getString("temperature_unit", ""));
         assertEquals(WeatherDisplayUtils.WIND_SCALE, settingsManager.getWindUnit());
         assertEquals(WeatherDisplayUtils.WIND_SCALE, preferences.getString("wind_unit", ""));
+    }
+
+    @Test
+    public void settingsManager_persistsDeveloperToolsEnabled() {
+        SettingsManager settingsManager = new SettingsManager(new MemorySharedPreferences());
+
+        assertEquals(false, settingsManager.isDeveloperToolsEnabled());
+
+        settingsManager.setDeveloperToolsEnabled(true);
+        assertEquals(true, settingsManager.isDeveloperToolsEnabled());
+
+        settingsManager.setDeveloperToolsEnabled(false);
+        assertEquals(false, settingsManager.isDeveloperToolsEnabled());
+    }
+
+    @Test
+    public void settingsManager_persistsHomeBlockLayoutPerTheme() {
+        SettingsManager settingsManager = new SettingsManager(new MemorySharedPreferences());
+
+        List<HomeBlock> defaultOrder = settingsManager.getHomeBlockOrder(VisualThemeUtils.THEME_SKY);
+        assertEquals(7, defaultOrder.size());
+        assertEquals(HomeBlock.WEATHER_METRICS, defaultOrder.get(0));
+        assertEquals(HomeBlock.DAILY_FORECAST, defaultOrder.get(6));
+        assertEquals(true, settingsManager.isHomeBlockEnabled(VisualThemeUtils.THEME_SKY, HomeBlock.HOURLY_FORECAST));
+
+        settingsManager.setHomeBlockEnabled(VisualThemeUtils.THEME_SKY, HomeBlock.HOURLY_FORECAST, false);
+        settingsManager.moveHomeBlock(VisualThemeUtils.THEME_SKY, HomeBlock.DAILY_FORECAST, -1);
+
+        List<HomeBlock> updatedSkyOrder = settingsManager.getHomeBlockOrder(VisualThemeUtils.THEME_SKY);
+        assertEquals(HomeBlock.DAILY_FORECAST, updatedSkyOrder.get(5));
+        assertEquals(HomeBlock.HOURLY_FORECAST, updatedSkyOrder.get(6));
+        assertEquals(false, settingsManager.isHomeBlockEnabled(VisualThemeUtils.THEME_SKY, HomeBlock.HOURLY_FORECAST));
+        assertEquals(true, settingsManager.isHomeBlockEnabled(VisualThemeUtils.THEME_FANTASY, HomeBlock.HOURLY_FORECAST));
+    }
+
+    @Test
+    public void settingsManager_resetsHomeBlockLayoutForTheme() {
+        SettingsManager settingsManager = new SettingsManager(new MemorySharedPreferences());
+        settingsManager.setHomeBlockEnabled(VisualThemeUtils.THEME_SKY, HomeBlock.WEATHER_INSIGHT, false);
+        settingsManager.moveHomeBlock(VisualThemeUtils.THEME_SKY, HomeBlock.DAILY_FORECAST, -1);
+
+        settingsManager.resetHomeBlockLayout(VisualThemeUtils.THEME_SKY);
+
+        List<HomeBlock> resetOrder = settingsManager.getHomeBlockOrder(VisualThemeUtils.THEME_SKY);
+        assertEquals(HomeBlock.WEATHER_METRICS, resetOrder.get(0));
+        assertEquals(HomeBlock.DAILY_FORECAST, resetOrder.get(6));
+        assertEquals(true, settingsManager.isHomeBlockEnabled(VisualThemeUtils.THEME_SKY, HomeBlock.WEATHER_INSIGHT));
     }
 
     @Test(expected = IllegalArgumentException.class)

@@ -21,6 +21,18 @@ public final class VisualThemeCatalog {
                     VisualThemeUtils.THEME_SAKURA,
                     "樱雨粉",
                     "使用樱色与雨纹层次，让设置页更柔和。"
+            ),
+            new VisualTheme(
+                    VisualThemeUtils.THEME_CUSTOM_1,
+                    "自建主题 1",
+                    "空位：可保存自己的首页模块顺序。",
+                    true
+            ),
+            new VisualTheme(
+                    VisualThemeUtils.THEME_CUSTOM_2,
+                    "自建主题 2",
+                    "空位：可保存另一套首页布局。",
+                    true
             )
     ));
 

@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
@@ -36,6 +37,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -44,6 +46,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
@@ -91,6 +94,7 @@ import com.litroenade.yunjiweather.ui.compose.formatWeatherTime
 import com.litroenade.yunjiweather.ui.compose.theme.LocalYunJiVisualTheme
 import com.litroenade.yunjiweather.ui.home.HomeViewModel
 import com.litroenade.yunjiweather.utils.AirQualityUtils
+import com.litroenade.yunjiweather.utils.HomeBlock
 import com.litroenade.yunjiweather.utils.LunarCalendarUtils
 import com.litroenade.yunjiweather.utils.SunProgressState
 import com.litroenade.yunjiweather.utils.SunriseSunsetProgress
@@ -107,8 +111,11 @@ import kotlin.math.abs
 fun HomeScreen(
     modifier: Modifier = Modifier,
     animationEnabled: Boolean = true,
+    developerToolsEnabled: Boolean = false,
     temperatureUnit: String = WeatherDisplayUtils.TEMPERATURE_CELSIUS,
     windUnit: String = WeatherDisplayUtils.WIND_SCALE,
+    homeBlockOrder: List<HomeBlock> = HomeBlock.defaultOrder(),
+    homeBlockEnabled: Map<HomeBlock, Boolean> = emptyMap(),
     onManageCities: () -> Unit = {},
     onSearchCity: () -> Unit = {},
     onUseCurrentLocation: () -> Unit = {},
@@ -118,6 +125,7 @@ fun HomeScreen(
     onOpenLifeIndex: () -> Unit = {},
     onFeedbackWeather: (HomeWeatherData?) -> Unit = {},
     onShareWeather: (HomeWeatherData?) -> Unit = {},
+    onDisplayedWeatherIconCodeChanged: (String?) -> Unit = {},
     viewModel: HomeViewModel = viewModel()
 ) {
     val uiState by viewModel.getUiState().observeAsState()
@@ -127,6 +135,9 @@ fun HomeScreen(
     val activeWarnings by viewModel.getActiveWarnings().observeAsState(emptyList())
     val isRefreshing by viewModel.getRefreshing().observeAsState(false)
     val pullToRefreshState = rememberPullToRefreshState()
+    var debugWeatherScenario by remember { mutableStateOf<DebugWeatherScenario?>(null) }
+    var showDebugWeatherDialog by remember { mutableStateOf(false) }
+    var debugWeatherTapCount by remember { mutableStateOf(0) }
     val swipeThresholdPx = with(LocalDensity.current) { 72.dp.toPx() }
     var horizontalSwipeDistance by remember { mutableStateOf(0f) }
     var isCityDragging by remember { mutableStateOf(false) }
@@ -150,6 +161,19 @@ fun HomeScreen(
     }
 
     val weatherData = uiState?.data
+    val displayedWeatherData = remember(weatherData, debugWeatherScenario) {
+        weatherData?.let { data -> debugWeatherScenario?.applyTo(data) ?: data }
+    }
+    LaunchedEffect(weatherData?.locationId, developerToolsEnabled) {
+        if (!developerToolsEnabled) {
+            debugWeatherScenario = null
+        }
+        debugWeatherTapCount = 0
+        showDebugWeatherDialog = false
+    }
+    LaunchedEffect(displayedWeatherData?.iconCode) {
+        onDisplayedWeatherIconCodeChanged(displayedWeatherData?.iconCode)
+    }
     val lastUpdateText = remember(uiState, weatherData) {
         lastWeatherUpdateLabel(uiState, weatherData)
     }
@@ -188,16 +212,28 @@ fun HomeScreen(
         Modifier
     }
 
-    val headerCityName = weatherData?.cityName ?: "云迹天气"
+    val headerCityName = displayedWeatherData?.cityName ?: "云迹天气"
     val headerNoticeText = message
-    val weatherSceneSpec = remember(weatherData?.iconCode) {
-        WeatherSceneSpec.fromIconCode(weatherData?.iconCode)
+    val visualTheme = LocalYunJiVisualTheme.current
+    val weatherSceneSpec = remember(displayedWeatherData?.iconCode) {
+        WeatherSceneSpec.fromIconCode(displayedWeatherData?.iconCode ?: "100")
+    }
+    val backgroundBrush = if (displayedWeatherData?.iconCode.isNullOrBlank()) {
+        Brush.verticalGradient(
+            listOf(
+                visualTheme.defaultWeatherGradient.top,
+                visualTheme.defaultWeatherGradient.middle,
+                visualTheme.defaultWeatherGradient.bottom
+            )
+        )
+    } else {
+        weatherBackground(weatherSceneSpec)
     }
     Box(
         modifier = modifier
             .fillMaxSize()
             .then(citySwipeModifier)
-            .background(weatherBackground(weatherSceneSpec))
+            .background(backgroundBrush)
     ) {
         if (animationEnabled) {
             WeatherAtmosphere(
@@ -238,7 +274,7 @@ fun HomeScreen(
                     .statusBarsPadding()
                     .navigationBarsPadding()
                     .padding(horizontal = 20.dp),
-                contentPadding = PaddingValues(top = 18.dp, bottom = 18.dp),
+                contentPadding = PaddingValues(top = 18.dp, bottom = 64.dp),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
             item {
@@ -281,9 +317,10 @@ fun HomeScreen(
                                 MessageCard("天气加载失败", "天气数据为空。", "重试", viewModel::refresh)
                             }
                         } else {
+                            val displayData = debugWeatherScenario?.applyTo(data) ?: data
                             item {
                                 AnimatedContent(
-                                    targetState = data.locationId,
+                                    targetState = "${displayData.locationId}:${displayData.iconCode}",
                                     transitionSpec = {
                                         val direction = citySwitchDirection
                                         val enter = slideInHorizontally(
@@ -305,25 +342,31 @@ fun HomeScreen(
                                         verticalArrangement = Arrangement.spacedBy(14.dp)
                                     ) {
                                         CurrentWeatherSection(
-                                            data = data,
+                                            data = displayData,
                                             state = state,
                                             animationEnabled = animationEnabled,
+                                            developerToolsEnabled = developerToolsEnabled,
                                             temperatureUnit = temperatureUnit,
-                                            sceneSpec = weatherSceneSpec
+                                            sceneSpec = weatherSceneSpec,
+                                            onDeveloperWeatherTap = {
+                                                debugWeatherTapCount += 1
+                                                if (debugWeatherTapCount >= 5) {
+                                                    debugWeatherTapCount = 0
+                                                    showDebugWeatherDialog = true
+                                                }
+                                            }
                                         )
-                                        if (cityPages.size > 1) {
-                                            CityPageDots(
-                                                pageCount = cityPages.size,
-                                                currentPage = selectedCityPage
-                                            )
-                                        }
-                                        WeatherMetricPanel(data, temperatureUnit, windUnit)
-                                        WindDetailPanel(data, windUnit)
-                                        SunAndAirPanel(data)
-                                        AdvicePanel(data)
-                                        WeatherInsightPanel(data, activeWarnings, onOpenAlerts, onOpenLifeIndex)
-                                        HourlyForecast(data.hourlyForecasts, temperatureUnit)
-                                        DailyForecast(data.dailyForecasts, temperatureUnit, data.updateTime)
+                                        HomeContentBlocks(
+                                            data = displayData,
+                                            warnings = activeWarnings,
+                                            temperatureUnit = temperatureUnit,
+                                            windUnit = windUnit,
+                                            blocks = homeBlockOrder,
+                                            enabledBlocks = homeBlockEnabled,
+                                            onOpenAlerts = onOpenAlerts,
+                                            onOpenLifeIndex = onOpenLifeIndex,
+                                            onSettings = onSettings
+                                        )
                                     }
                                 }
                             }
@@ -333,7 +376,28 @@ fun HomeScreen(
             }
         }
     }
-}
+        if (cityPages.size > 1) {
+            CityPageDots(
+                pageCount = cityPages.size,
+                currentPage = selectedCityPage,
+                sceneSpec = weatherSceneSpec,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .navigationBarsPadding()
+                    .padding(bottom = 20.dp)
+            )
+        }
+    }
+    if (showDebugWeatherDialog && developerToolsEnabled && weatherData != null) {
+        DebugWeatherDialog(
+            selectedScenario = debugWeatherScenario,
+            onScenarioSelected = { scenario ->
+                debugWeatherScenario = scenario
+                showDebugWeatherDialog = false
+            },
+            onDismiss = { showDebugWeatherDialog = false }
+        )
+    }
 }
 
 @Composable
@@ -353,11 +417,13 @@ private fun PullRefreshStatus(
         else -> "下拉更新 · $lastUpdateText"
     }
     val textColor = weatherScenePrimaryTextColor(sceneSpec, MaterialTheme.colorScheme.onSurface)
+    val containerColor = weatherSceneFloatingSurfaceColor(sceneSpec, MaterialTheme.colorScheme.surface)
+    val borderColor = weatherSceneStrokeColor(sceneSpec, textColor)
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(99.dp),
-        color = Color.White.copy(alpha = 0.24f),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.22f))
+        color = containerColor,
+        border = BorderStroke(1.dp, borderColor)
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -405,8 +471,10 @@ private fun CurrentWeatherSection(
     data: HomeWeatherData,
     state: UiState<HomeWeatherData>,
     animationEnabled: Boolean,
+    developerToolsEnabled: Boolean,
     temperatureUnit: String,
-    sceneSpec: WeatherSceneSpec
+    sceneSpec: WeatherSceneSpec,
+    onDeveloperWeatherTap: () -> Unit
 ) {
     val visualTheme = LocalYunJiVisualTheme.current
     val primaryTextColor = weatherScenePrimaryTextColor(sceneSpec, visualTheme.primaryWeatherText)
@@ -461,7 +529,15 @@ private fun CurrentWeatherSection(
                     lineHeight = temperatureLineHeight,
                     fontWeight = FontWeight.Light,
                     color = primaryTextColor,
-                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .then(
+                            if (developerToolsEnabled) {
+                                Modifier.clickable(onClick = onDeveloperWeatherTap)
+                            } else {
+                                Modifier
+                            }
+                        ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -514,17 +590,27 @@ private fun WeatherTopActions(
     val visualTheme = LocalYunJiVisualTheme.current
     val primaryTextColor = weatherScenePrimaryTextColor(sceneSpec, visualTheme.primaryWeatherText)
     val secondaryTextColor = weatherSceneSecondaryTextColor(sceneSpec, visualTheme.secondaryWeatherText)
+    val iconContainerColor = weatherSceneFloatingSurfaceColor(sceneSpec, MaterialTheme.colorScheme.surface)
+    val iconBorderColor = weatherSceneStrokeColor(sceneSpec, primaryTextColor)
     var expanded by remember { mutableStateOf(false) }
+    val actionSideWidth = 132.dp
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        WeatherTopIcon(
-            iconRes = R.drawable.ic_city_black_24dp,
-            contentDescription = "管理城市",
-            onClick = onManageCities
-        )
+        Box(
+            modifier = Modifier.width(actionSideWidth),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            WeatherTopIcon(
+                iconRes = R.drawable.ic_city_black_24dp,
+                contentDescription = "管理城市",
+                tint = primaryTextColor,
+                containerColor = iconContainerColor,
+                borderColor = iconBorderColor,
+                onClick = onManageCities
+            )
+        }
         Column(
             modifier = Modifier.weight(1f),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -548,16 +634,33 @@ private fun WeatherTopActions(
                 )
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(
+            modifier = Modifier.width(actionSideWidth),
+            horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End)
+        ) {
             WeatherTopIcon(
                 iconRes = R.drawable.ic_search_24,
                 contentDescription = "搜索城市",
+                tint = primaryTextColor,
+                containerColor = iconContainerColor,
+                borderColor = iconBorderColor,
                 onClick = onSearchCity
+            )
+            WeatherTopIcon(
+                iconRes = R.drawable.ic_my_location_24,
+                contentDescription = "定位到当前位置",
+                tint = primaryTextColor,
+                containerColor = iconContainerColor,
+                borderColor = iconBorderColor,
+                onClick = onUseCurrentLocation
             )
             Box {
                 WeatherTopIcon(
                     iconRes = R.drawable.ic_more_vertical_24,
                     contentDescription = "更多",
+                    tint = primaryTextColor,
+                    containerColor = iconContainerColor,
+                    borderColor = iconBorderColor,
                     onClick = { expanded = true }
                 )
                 DropdownMenu(
@@ -570,13 +673,6 @@ private fun WeatherTopActions(
                         onClick = {
                             expanded = false
                             onDesktopWeather()
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("定位到当前位置") },
-                        onClick = {
-                            expanded = false
-                            onUseCurrentLocation()
                         }
                     )
                     DropdownMenuItem(
@@ -613,12 +709,13 @@ private fun FeatureEntryTile(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val visualTheme = LocalYunJiVisualTheme.current
     Surface(
         onClick = onClick,
         modifier = modifier,
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.24f),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.22f))
+        border = BorderStroke(1.dp, visualTheme.cardStroke)
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
@@ -647,19 +744,25 @@ private fun FeatureEntryTile(
 private fun WeatherTopIcon(
     iconRes: Int,
     contentDescription: String,
+    tint: Color,
+    containerColor: Color,
+    borderColor: Color,
     onClick: () -> Unit
 ) {
-    val visualTheme = LocalYunJiVisualTheme.current
     Surface(
+        modifier = Modifier.size(40.dp),
         shape = CircleShape,
-        color = Color.White.copy(alpha = 0.18f),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.18f))
+        color = containerColor,
+        border = BorderStroke(1.dp, borderColor)
     ) {
-        IconButton(onClick = onClick) {
+        IconButton(
+            onClick = onClick,
+            modifier = Modifier.fillMaxSize()
+        ) {
             Icon(
                 painter = painterResource(iconRes),
                 contentDescription = contentDescription,
-                tint = visualTheme.primaryWeatherText,
+                tint = tint,
                 modifier = Modifier.size(22.dp)
             )
         }
@@ -667,9 +770,16 @@ private fun WeatherTopIcon(
 }
 
 @Composable
-private fun CityPageDots(pageCount: Int, currentPage: Int) {
+private fun CityPageDots(
+    pageCount: Int,
+    currentPage: Int,
+    sceneSpec: WeatherSceneSpec,
+    modifier: Modifier = Modifier
+) {
+    val visualTheme = LocalYunJiVisualTheme.current
+    val dotColor = weatherScenePrimaryTextColor(sceneSpec, visualTheme.primaryWeatherText)
     Row(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(top = 2.dp, bottom = 4.dp),
         horizontalArrangement = Arrangement.Center,
@@ -693,7 +803,7 @@ private fun CityPageDots(pageCount: Int, currentPage: Int) {
                     .width(dotWidth)
                     .height(if (selected) 6.dp else 5.dp)
                     .background(
-                        color = Color.White.copy(alpha = dotAlpha),
+                        color = dotColor.copy(alpha = dotAlpha),
                         shape = RoundedCornerShape(99.dp)
                     )
             )
@@ -714,6 +824,41 @@ private fun WeatherMetricPanel(data: HomeWeatherData, temperatureUnit: String, w
             MetricTile("能见度", "${data.visibility} km", Modifier.weight(1f))
         }
         AirQualitySummary(data)
+    }
+}
+
+@Composable
+private fun HomeContentBlocks(
+    data: HomeWeatherData,
+    warnings: List<WarningEntity>,
+    temperatureUnit: String,
+    windUnit: String,
+    blocks: List<HomeBlock>,
+    enabledBlocks: Map<HomeBlock, Boolean>,
+    onOpenAlerts: () -> Unit,
+    onOpenLifeIndex: () -> Unit,
+    onSettings: () -> Unit
+) {
+    val visibleBlocks = blocks.filter { block -> enabledBlocks[block] ?: true }
+    if (visibleBlocks.isEmpty()) {
+        MessageCard(
+            title = "首页模块已全部隐藏",
+            message = "可在我的页的首页模块中恢复默认布局。",
+            buttonText = "打开设置",
+            onButtonClick = onSettings
+        )
+        return
+    }
+    visibleBlocks.forEach { block ->
+        when (block) {
+            HomeBlock.WEATHER_METRICS -> WeatherMetricPanel(data, temperatureUnit, windUnit)
+            HomeBlock.WIND_DETAIL -> WindDetailPanel(data, windUnit)
+            HomeBlock.AIR_SUN -> SunAndAirPanel(data)
+            HomeBlock.ADVICE -> AdvicePanel(data)
+            HomeBlock.WEATHER_INSIGHT -> WeatherInsightPanel(data, warnings, onOpenAlerts, onOpenLifeIndex)
+            HomeBlock.HOURLY_FORECAST -> HourlyForecast(data.hourlyForecasts, temperatureUnit)
+            HomeBlock.DAILY_FORECAST -> DailyForecast(data.dailyForecasts, temperatureUnit, data.updateTime)
+        }
     }
 }
 
@@ -830,11 +975,14 @@ private fun SunriseSunsetArc(sunrise: String, sunset: String) {
     val progressState = remember(sunrise, sunset, currentMinute) {
         SunriseSunsetProgress.calculate(sunrise, sunset, currentMinute)
     }
+    val visualTheme = LocalYunJiVisualTheme.current
+    val arcColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.76f)
+    val trackColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.34f)
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 0.26f),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.16f))
+        border = BorderStroke(1.dp, visualTheme.cardStroke)
     ) {
         Column(
             modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
@@ -858,11 +1006,11 @@ private fun SunriseSunsetArc(sunrise: String, sunset: String) {
                 }
                 drawPath(
                     path = path,
-                    color = Color.White.copy(alpha = 0.72f),
+                    color = arcColor,
                     style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
                 )
                 drawLine(
-                    color = Color.White.copy(alpha = 0.34f),
+                    color = trackColor,
                     start = Offset(0f, baseline),
                     end = Offset(size.width, baseline),
                     strokeWidth = 1.dp.toPx()
@@ -1195,6 +1343,250 @@ private fun forecastCalendarText(dateText: String, referenceTimeMillis: Long): S
     return lunarInfo.festivalText?.takeIf { text -> text.isNotBlank() } ?: lunarInfo.lunarText
 }
 
+private data class DebugWeatherScenario(
+    val title: String,
+    val subtitle: String,
+    val temperature: String,
+    val feelsLike: String,
+    val tempMax: String,
+    val tempMin: String,
+    val condition: String,
+    val iconCode: String,
+    val windDir: String,
+    val windScale: String,
+    val windSpeed: String,
+    val visibility: String,
+    val airQualityIndex: String,
+    val airQualityCategory: String,
+    val primaryPollutant: String,
+    val uvIndex: String,
+    val clothingAdvice: String,
+    val travelAdvice: String
+) {
+    fun applyTo(data: HomeWeatherData): HomeWeatherData {
+        return HomeWeatherData(
+            data.cityName,
+            data.locationId,
+            temperature,
+            condition,
+            feelsLike,
+            tempMax,
+            tempMin,
+            data.humidity,
+            windDir,
+            windScale,
+            windSpeed,
+            data.pressure,
+            visibility,
+            iconCode,
+            data.updateTime,
+            clothingAdvice,
+            travelAdvice,
+            airQualityIndex,
+            airQualityCategory,
+            primaryPollutant,
+            uvIndex,
+            data.sunrise,
+            data.sunset,
+            data.hourlyForecasts.map { item ->
+                item.copy(condition = condition, iconCode = iconCode)
+            },
+            data.dailyForecasts.map { item ->
+                item.copy(condition = condition, iconCode = iconCode)
+            }
+        )
+    }
+}
+
+private val debugWeatherScenarios = listOf(
+    DebugWeatherScenario(
+        title = "晴天",
+        subtitle = "强光、低云量、空气较好",
+        temperature = "29",
+        feelsLike = "31",
+        tempMax = "32",
+        tempMin = "23",
+        condition = "晴",
+        iconCode = "100",
+        windDir = "东南风",
+        windScale = "2",
+        windSpeed = "10",
+        visibility = "18",
+        airQualityIndex = "42",
+        airQualityCategory = "优",
+        primaryPollutant = "无",
+        uvIndex = "8",
+        clothingAdvice = "白天气温偏高，建议穿轻薄透气衣物。",
+        travelAdvice = "天气晴朗，适合出行，注意防晒补水。"
+    ),
+    DebugWeatherScenario(
+        title = "多云",
+        subtitle = "弱光、云层、常规首页状态",
+        temperature = "24",
+        feelsLike = "25",
+        tempMax = "28",
+        tempMin = "21",
+        condition = "多云",
+        iconCode = "101",
+        windDir = "东北风",
+        windScale = "2",
+        windSpeed = "12",
+        visibility = "14",
+        airQualityIndex = "58",
+        airQualityCategory = "良",
+        primaryPollutant = "PM2.5",
+        uvIndex = "4",
+        clothingAdvice = "体感舒适，早晚可加一件薄外套。",
+        travelAdvice = "云量较多，整体适宜通勤和户外活动。"
+    ),
+    DebugWeatherScenario(
+        title = "小雨",
+        subtitle = "雨层动效、湿度场景",
+        temperature = "19",
+        feelsLike = "18",
+        tempMax = "21",
+        tempMin = "17",
+        condition = "小雨",
+        iconCode = "305",
+        windDir = "北风",
+        windScale = "3",
+        windSpeed = "18",
+        visibility = "8",
+        airQualityIndex = "35",
+        airQualityCategory = "优",
+        primaryPollutant = "无",
+        uvIndex = "1",
+        clothingAdvice = "雨天体感偏凉，建议携带雨具并加外套。",
+        travelAdvice = "道路湿滑，出行请预留时间。"
+    ),
+    DebugWeatherScenario(
+        title = "大雪",
+        subtitle = "雪粒动效、低温场景",
+        temperature = "-4",
+        feelsLike = "-8",
+        tempMax = "-1",
+        tempMin = "-7",
+        condition = "大雪",
+        iconCode = "402",
+        windDir = "西北风",
+        windScale = "4",
+        windSpeed = "24",
+        visibility = "4",
+        airQualityIndex = "66",
+        airQualityCategory = "良",
+        primaryPollutant = "PM10",
+        uvIndex = "1",
+        clothingAdvice = "低温降雪，建议穿厚羽绒服并注意防滑。",
+        travelAdvice = "积雪可能影响交通，减少不必要外出。"
+    ),
+    DebugWeatherScenario(
+        title = "夜间晴",
+        subtitle = "深色天空、夜间图标",
+        temperature = "18",
+        feelsLike = "17",
+        tempMax = "23",
+        tempMin = "16",
+        condition = "晴",
+        iconCode = "150",
+        windDir = "南风",
+        windScale = "1",
+        windSpeed = "6",
+        visibility = "20",
+        airQualityIndex = "48",
+        airQualityCategory = "优",
+        primaryPollutant = "无",
+        uvIndex = "0",
+        clothingAdvice = "夜间气温下降，外出可加薄外套。",
+        travelAdvice = "夜间能见度较好，注意温差。"
+    )
+)
+
+@Composable
+private fun DebugWeatherDialog(
+    selectedScenario: DebugWeatherScenario?,
+    onScenarioSelected: (DebugWeatherScenario?) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("调试天气") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = "只改变当前页面显示，不写入缓存，也不会影响真实刷新结果。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                DebugWeatherOption(
+                    title = "恢复真实天气",
+                    subtitle = "回到缓存或接口返回的数据",
+                    selected = selectedScenario == null,
+                    onClick = { onScenarioSelected(null) }
+                )
+                debugWeatherScenarios.forEach { scenario ->
+                    DebugWeatherOption(
+                        title = scenario.title,
+                        subtitle = scenario.subtitle,
+                        selected = selectedScenario == scenario,
+                        onClick = { onScenarioSelected(scenario) }
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text("关闭")
+            }
+        }
+    )
+}
+
+@Composable
+private fun DebugWeatherOption(
+    title: String,
+    subtitle: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    val borderColor = if (selected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.outline.copy(alpha = 0.28f)
+    }
+    val containerColor = if (selected) {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.42f)
+    } else {
+        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.38f)
+    }
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        color = containerColor,
+        border = BorderStroke(1.dp, borderColor)
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
 private fun formatTemperatureDisplay(value: String, unit: String): String {
     return WeatherDisplayUtils.formatTemperature(value, unit)
 }
@@ -1239,5 +1631,21 @@ private fun weatherSceneSecondaryTextColor(sceneSpec: WeatherSceneSpec, fallback
         Color.White.copy(alpha = 0.78f)
     } else {
         fallback
+    }
+}
+
+private fun weatherSceneFloatingSurfaceColor(sceneSpec: WeatherSceneSpec, fallback: Color): Color {
+    return if (sceneSpec.usesLightForeground()) {
+        Color.White.copy(alpha = 0.18f)
+    } else {
+        fallback.copy(alpha = 0.34f)
+    }
+}
+
+private fun weatherSceneStrokeColor(sceneSpec: WeatherSceneSpec, foreground: Color): Color {
+    return if (sceneSpec.usesLightForeground()) {
+        Color.White.copy(alpha = 0.20f)
+    } else {
+        foreground.copy(alpha = 0.18f)
     }
 }

@@ -224,21 +224,30 @@ private fun colorSchemeFor(themeKey: String, darkTheme: Boolean): ColorScheme {
 }
 
 private fun visualThemeFor(themeKey: String, colorScheme: ColorScheme, darkTheme: Boolean): YunJiVisualTheme {
-    val cardAlpha = if (darkTheme) 0.48f else 0.30f
+    val cardAlpha = if (darkTheme) 0.42f else 0.30f
     val navAlpha = if (darkTheme) 0.70f else 0.68f
+    val cardStroke = if (darkTheme) {
+        Color.White.copy(alpha = 0.14f)
+    } else {
+        colorScheme.onSurface.copy(alpha = 0.10f)
+    }
     return when (themeKey) {
         VisualThemeUtils.THEME_SAKURA -> YunJiVisualTheme(
             key = themeKey,
             displayName = "樱雨粉",
             background = colorScheme.background,
             cardContainer = colorScheme.surface.copy(alpha = cardAlpha),
-            cardStroke = Color.White.copy(alpha = if (darkTheme) 0.16f else 0.28f),
+            cardStroke = cardStroke,
             navContainer = colorScheme.surface.copy(alpha = navAlpha),
             navSelectedContainer = colorScheme.secondaryContainer,
             headerAccent = colorScheme.primary,
             primaryWeatherText = colorScheme.onBackground,
             secondaryWeatherText = colorScheme.onSurfaceVariant,
-            defaultWeatherGradient = WeatherGradient(Color(0xFFF3C8D6), Color(0xFFF7E7EC), colorScheme.background)
+            defaultWeatherGradient = if (darkTheme) {
+                WeatherGradient(Color(0xFF31212A), Color(0xFF2A2228), colorScheme.background)
+            } else {
+                WeatherGradient(Color(0xFFF3C8D6), Color(0xFFF7E7EC), colorScheme.background)
+            }
         )
 
         VisualThemeUtils.THEME_FANTASY -> YunJiVisualTheme(
@@ -246,27 +255,39 @@ private fun visualThemeFor(themeKey: String, colorScheme: ColorScheme, darkTheme
             displayName = "幻想天",
             background = colorScheme.background,
             cardContainer = colorScheme.surface.copy(alpha = cardAlpha),
-            cardStroke = Color.White.copy(alpha = if (darkTheme) 0.16f else 0.28f),
+            cardStroke = cardStroke,
             navContainer = colorScheme.surface.copy(alpha = navAlpha),
             navSelectedContainer = colorScheme.secondaryContainer,
             headerAccent = colorScheme.primary,
             primaryWeatherText = colorScheme.onBackground,
             secondaryWeatherText = colorScheme.onSurfaceVariant,
-            defaultWeatherGradient = WeatherGradient(Color(0xFFD6E7E9), Color(0xFFF0E4D0), colorScheme.background)
+            defaultWeatherGradient = if (darkTheme) {
+                WeatherGradient(Color(0xFF26343A), Color(0xFF2C2D31), colorScheme.background)
+            } else {
+                WeatherGradient(Color(0xFFD6E7E9), Color(0xFFF0E4D0), colorScheme.background)
+            }
         )
 
         else -> YunJiVisualTheme(
-            key = VisualThemeUtils.THEME_SKY,
-            displayName = "经典晴空",
+            key = themeKey,
+            displayName = when (themeKey) {
+                VisualThemeUtils.THEME_CUSTOM_1 -> "自建主题 1"
+                VisualThemeUtils.THEME_CUSTOM_2 -> "自建主题 2"
+                else -> "经典晴空"
+            },
             background = colorScheme.background,
             cardContainer = colorScheme.surface.copy(alpha = cardAlpha),
-            cardStroke = Color.White.copy(alpha = if (darkTheme) 0.16f else 0.28f),
+            cardStroke = cardStroke,
             navContainer = colorScheme.surface.copy(alpha = navAlpha),
             navSelectedContainer = colorScheme.secondaryContainer,
             headerAccent = colorScheme.primary,
             primaryWeatherText = colorScheme.onBackground,
             secondaryWeatherText = colorScheme.onSurfaceVariant,
-            defaultWeatherGradient = WeatherGradient(Color(0xFFA9D8F5), Color(0xFFD9EEF3), colorScheme.background)
+            defaultWeatherGradient = if (darkTheme) {
+                WeatherGradient(Color(0xFF172C3A), Color(0xFF18272C), colorScheme.background)
+            } else {
+                WeatherGradient(Color(0xFFA9D8F5), Color(0xFFD9EEF3), colorScheme.background)
+            }
         )
     }
 }

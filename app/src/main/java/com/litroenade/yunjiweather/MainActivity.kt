@@ -16,7 +16,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.work.Constraints
@@ -27,9 +29,11 @@ import androidx.work.WorkManager
 import com.litroenade.yunjiweather.notification.NotificationHelper
 import com.litroenade.yunjiweather.settings.SettingsManager
 import com.litroenade.yunjiweather.ui.compose.YunJiApp
+import com.litroenade.yunjiweather.ui.compose.WeatherSceneSpec
 import com.litroenade.yunjiweather.ui.compose.theme.YunJiTheme
 import com.litroenade.yunjiweather.ui.home.HomeViewModel
 import com.litroenade.yunjiweather.ui.mine.MineViewModel
+import com.litroenade.yunjiweather.utils.HomeBlock
 import com.litroenade.yunjiweather.utils.PermissionUtils
 import com.litroenade.yunjiweather.worker.DailyWeatherWorker
 import com.litroenade.yunjiweather.worker.WeatherAlertWorker
@@ -78,10 +82,25 @@ class MainActivity : ComponentActivity() {
             val windUnit by mineViewModel.getWindUnit().observeAsState(
                 settingsManager.getWindUnit()
             )
+            val developerToolsEnabled by mineViewModel.getDeveloperToolsEnabled().observeAsState(
+                settingsManager.isDeveloperToolsEnabled()
+            )
+            val homeBlockOrder by mineViewModel.getHomeBlockOrder().observeAsState(HomeBlock.defaultOrder())
+            val homeBlockEnabled by mineViewModel.getHomeBlockEnabled().observeAsState(emptyMap())
+            var displayedWeatherIconCode by remember { mutableStateOf<String?>(null) }
+            val homeUiState by homeViewModel.getUiState().observeAsState()
+            val weatherIconCode = displayedWeatherIconCode ?: homeUiState?.data?.iconCode
+            val useLightSystemBarIcons = remember(weatherIconCode, darkModeEnabled) {
+                if (weatherIconCode.isNullOrBlank()) {
+                    darkModeEnabled
+                } else {
+                    WeatherSceneSpec.fromIconCode(weatherIconCode).usesLightForeground()
+                }
+            }
             SideEffect {
                 enableEdgeToEdge(
-                    statusBarStyle = transparentSystemBarStyle(darkModeEnabled),
-                    navigationBarStyle = transparentSystemBarStyle(darkModeEnabled)
+                    statusBarStyle = transparentSystemBarStyle(useLightSystemBarIcons),
+                    navigationBarStyle = transparentSystemBarStyle(useLightSystemBarIcons)
                 )
             }
             YunJiTheme(
@@ -90,9 +109,15 @@ class MainActivity : ComponentActivity() {
             ) {
                 YunJiApp(
                     animationEnabled = animationEnabled,
+                    developerToolsEnabled = developerToolsEnabled,
                     temperatureUnit = temperatureUnit,
                     windUnit = windUnit,
+                    homeBlockOrder = homeBlockOrder,
+                    homeBlockEnabled = homeBlockEnabled,
                     homeViewModel = homeViewModel,
+                    onDisplayedWeatherIconCodeChanged = { iconCode ->
+                        displayedWeatherIconCode = iconCode
+                    },
                     onUseCurrentLocation = { requestCurrentLocation(homeViewModel) }
                 )
             }
@@ -275,8 +300,8 @@ class MainActivity : ComponentActivity() {
         )
     }
 
-    private fun transparentSystemBarStyle(darkModeEnabled: Boolean): SystemBarStyle {
-        return if (darkModeEnabled) {
+    private fun transparentSystemBarStyle(useLightIcons: Boolean): SystemBarStyle {
+        return if (useLightIcons) {
             SystemBarStyle.dark(android.graphics.Color.TRANSPARENT)
         } else {
             SystemBarStyle.light(

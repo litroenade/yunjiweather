@@ -39,6 +39,7 @@ import com.litroenade.yunjiweather.ui.compose.screens.HomeScreen
 import com.litroenade.yunjiweather.ui.compose.screens.LifeIndexScreen
 import com.litroenade.yunjiweather.ui.compose.screens.MineScreen
 import com.litroenade.yunjiweather.ui.compose.theme.LocalYunJiVisualTheme
+import com.litroenade.yunjiweather.utils.HomeBlock
 import com.litroenade.yunjiweather.utils.WeatherShareUtils
 import com.litroenade.yunjiweather.widget.WeatherAppWidgetProvider
 
@@ -47,9 +48,13 @@ import com.litroenade.yunjiweather.widget.WeatherAppWidgetProvider
 fun YunJiApp(
     modifier: Modifier = Modifier,
     animationEnabled: Boolean = true,
+    developerToolsEnabled: Boolean = false,
     temperatureUnit: String,
     windUnit: String,
+    homeBlockOrder: List<HomeBlock> = HomeBlock.defaultOrder(),
+    homeBlockEnabled: Map<HomeBlock, Boolean> = emptyMap(),
     homeViewModel: HomeViewModel = viewModel(),
+    onDisplayedWeatherIconCodeChanged: (String?) -> Unit = {},
     onUseCurrentLocation: () -> Unit = {}
 ) {
     var activeSheet by rememberSaveable { mutableStateOf<WeatherSheet?>(null) }
@@ -69,9 +74,13 @@ fun YunJiApp(
                 .fillMaxSize()
                 .padding(innerPadding),
             animationEnabled = animationEnabled,
+            developerToolsEnabled = developerToolsEnabled,
             temperatureUnit = temperatureUnit,
             windUnit = windUnit,
+            homeBlockOrder = homeBlockOrder,
+            homeBlockEnabled = homeBlockEnabled,
             viewModel = homeViewModel,
+            onDisplayedWeatherIconCodeChanged = onDisplayedWeatherIconCodeChanged,
             onManageCities = { activeSheet = WeatherSheet.ManageCities },
             onSearchCity = { activeSheet = WeatherSheet.SearchCity },
             onUseCurrentLocation = onUseCurrentLocation,

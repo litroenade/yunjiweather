@@ -12,12 +12,15 @@ import com.litroenade.yunjiweather.data.local.AppDatabase;
 import com.litroenade.yunjiweather.data.repository.CityRepository;
 import com.litroenade.yunjiweather.settings.SettingsManager;
 import com.litroenade.yunjiweather.utils.DefaultCityUtils;
+import com.litroenade.yunjiweather.utils.HomeBlock;
 import com.litroenade.yunjiweather.utils.LocalStorageSummaryUtils;
 import com.litroenade.yunjiweather.utils.MineCacheStatusUtils;
 import com.litroenade.yunjiweather.utils.VisualTheme;
 import com.litroenade.yunjiweather.utils.VisualThemeCatalog;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -32,10 +35,13 @@ public class MineViewModel extends AndroidViewModel {
     private final MutableLiveData<Boolean> warningEnabled = new MutableLiveData<>();
     private final MutableLiveData<Boolean> animationEnabled = new MutableLiveData<>();
     private final MutableLiveData<Boolean> darkModeEnabled = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> developerToolsEnabled = new MutableLiveData<>();
     private final MutableLiveData<String> temperatureUnit = new MutableLiveData<>();
     private final MutableLiveData<String> windUnit = new MutableLiveData<>();
     private final MutableLiveData<Boolean> dailyReminderEnabled = new MutableLiveData<>();
     private final MutableLiveData<String> visualTheme = new MutableLiveData<>();
+    private final MutableLiveData<List<HomeBlock>> homeBlockOrder = new MutableLiveData<>();
+    private final MutableLiveData<Map<HomeBlock, Boolean>> homeBlockEnabled = new MutableLiveData<>();
     private final MutableLiveData<String> dataUpdateTime = new MutableLiveData<>();
     private final MutableLiveData<String> localStorageSummary = new MutableLiveData<>();
     private final MutableLiveData<String> message = new MutableLiveData<>();
@@ -68,6 +74,10 @@ public class MineViewModel extends AndroidViewModel {
         return darkModeEnabled;
     }
 
+    public LiveData<Boolean> getDeveloperToolsEnabled() {
+        return developerToolsEnabled;
+    }
+
     public LiveData<String> getTemperatureUnit() {
         return temperatureUnit;
     }
@@ -90,6 +100,14 @@ public class MineViewModel extends AndroidViewModel {
 
     public List<VisualTheme> getVisualThemes() {
         return VisualThemeCatalog.getThemes();
+    }
+
+    public LiveData<List<HomeBlock>> getHomeBlockOrder() {
+        return homeBlockOrder;
+    }
+
+    public LiveData<Map<HomeBlock, Boolean>> getHomeBlockEnabled() {
+        return homeBlockEnabled;
     }
 
     public LiveData<String> getDataUpdateTime() {
@@ -130,6 +148,12 @@ public class MineViewModel extends AndroidViewModel {
         message.setValue(enabled ? "深色模式已开启" : "深色模式已关闭");
     }
 
+    public void setDeveloperToolsEnabled(boolean enabled) {
+        settingsManager.setDeveloperToolsEnabled(enabled);
+        reloadSettings();
+        message.setValue(enabled ? "开发者工具已允许" : "开发者工具已关闭");
+    }
+
     public void setTemperatureUnit(String unit) {
         settingsManager.setTemperatureUnit(unit);
         reloadSettings();
@@ -155,6 +179,30 @@ public class MineViewModel extends AndroidViewModel {
         message.setValue("视觉主题已应用：" + theme.getDisplayName());
     }
 
+    public void setHomeBlockEnabled(HomeBlock block, boolean enabled) {
+        settingsManager.setHomeBlockEnabled(settingsManager.getVisualTheme(), block, enabled);
+        reloadHomeBlockLayout();
+        message.setValue(enabled ? "首页模块已显示：" + block.getDisplayName() : "首页模块已隐藏：" + block.getDisplayName());
+    }
+
+    public void moveHomeBlockUp(HomeBlock block) {
+        settingsManager.moveHomeBlock(settingsManager.getVisualTheme(), block, -1);
+        reloadHomeBlockLayout();
+        message.setValue("首页模块已上移：" + block.getDisplayName());
+    }
+
+    public void moveHomeBlockDown(HomeBlock block) {
+        settingsManager.moveHomeBlock(settingsManager.getVisualTheme(), block, 1);
+        reloadHomeBlockLayout();
+        message.setValue("首页模块已下移：" + block.getDisplayName());
+    }
+
+    public void resetHomeBlockLayout() {
+        settingsManager.resetHomeBlockLayout(settingsManager.getVisualTheme());
+        reloadHomeBlockLayout();
+        message.setValue("首页模块布局已恢复默认");
+    }
+
     public void clearCache() {
         diskExecutor.execute(() -> {
             database.weatherCacheDao().clearAll();
@@ -172,10 +220,23 @@ public class MineViewModel extends AndroidViewModel {
         warningEnabled.setValue(settingsManager.isWarningEnabled());
         animationEnabled.setValue(settingsManager.isAnimationEnabled());
         darkModeEnabled.setValue(settingsManager.isDarkModeEnabled());
+        developerToolsEnabled.setValue(settingsManager.isDeveloperToolsEnabled());
         temperatureUnit.setValue(settingsManager.getTemperatureUnit());
         windUnit.setValue(settingsManager.getWindUnit());
         dailyReminderEnabled.setValue(settingsManager.isDailyReminderEnabled());
         visualTheme.setValue(settingsManager.getVisualTheme());
+        reloadHomeBlockLayout();
+    }
+
+    private void reloadHomeBlockLayout() {
+        String themeKey = settingsManager.getVisualTheme();
+        List<HomeBlock> order = settingsManager.getHomeBlockOrder(themeKey);
+        Map<HomeBlock, Boolean> enabled = new EnumMap<>(HomeBlock.class);
+        for (HomeBlock block : order) {
+            enabled.put(block, settingsManager.isHomeBlockEnabled(themeKey, block));
+        }
+        homeBlockOrder.setValue(order);
+        homeBlockEnabled.setValue(enabled);
     }
 
     private void refreshDefaultCity() {

@@ -5,6 +5,8 @@ public final class VisualThemeUtils {
     public static final String THEME_SKY = "sky";
     public static final String THEME_FANTASY = "fantasy";
     public static final String THEME_SAKURA = "sakura";
+    public static final String THEME_CUSTOM_1 = "custom_1";
+    public static final String THEME_CUSTOM_2 = "custom_2";
 
     private VisualThemeUtils() {
     }

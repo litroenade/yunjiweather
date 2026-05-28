@@ -38,6 +38,7 @@ import com.litroenade.yunjiweather.ui.compose.InfoCard
 import com.litroenade.yunjiweather.ui.compose.ScreenHeader
 import com.litroenade.yunjiweather.ui.compose.SectionTitle
 import com.litroenade.yunjiweather.ui.mine.MineViewModel
+import com.litroenade.yunjiweather.utils.HomeBlock
 import com.litroenade.yunjiweather.utils.PermissionUtils
 import com.litroenade.yunjiweather.utils.VisualTheme
 import com.litroenade.yunjiweather.utils.WeatherDisplayUtils
@@ -55,9 +56,12 @@ fun MineScreen(
     val dailyReminderEnabled by viewModel.getDailyReminderEnabled().observeAsState(false)
     val animationEnabled by viewModel.getAnimationEnabled().observeAsState(true)
     val darkModeEnabled by viewModel.getDarkModeEnabled().observeAsState(false)
+    val developerToolsEnabled by viewModel.getDeveloperToolsEnabled().observeAsState(false)
     val temperatureUnit by viewModel.getTemperatureUnit().observeAsState(WeatherDisplayUtils.TEMPERATURE_CELSIUS)
     val windUnit by viewModel.getWindUnit().observeAsState(WeatherDisplayUtils.WIND_SCALE)
     val selectedTheme by viewModel.getVisualTheme().observeAsState(viewModel.getCurrentVisualTheme())
+    val homeBlockOrder by viewModel.getHomeBlockOrder().observeAsState(HomeBlock.defaultOrder())
+    val homeBlockEnabled by viewModel.getHomeBlockEnabled().observeAsState(emptyMap())
     val dataUpdateTime by viewModel.getDataUpdateTime().observeAsState("暂无更新")
     val localStorageSummary by viewModel.getLocalStorageSummary().observeAsState("")
     val message by viewModel.getMessage().observeAsState("")
@@ -133,6 +137,7 @@ fun MineScreen(
                 )
                 SettingSwitch("天气动画", animationEnabled, viewModel::setAnimationEnabled)
                 SettingSwitch("深色模式", darkModeEnabled, viewModel::setDarkModeEnabled)
+                SettingSwitch("允许开发者工具", developerToolsEnabled, viewModel::setDeveloperToolsEnabled)
             }
         }
         item {
@@ -174,6 +179,14 @@ fun MineScreen(
                     themes = themes,
                     selectedTheme = selectedTheme,
                     onThemeSelected = viewModel::setVisualTheme
+                )
+                HomeBlockEditor(
+                    blocks = homeBlockOrder,
+                    enabledBlocks = homeBlockEnabled,
+                    onEnabledChange = viewModel::setHomeBlockEnabled,
+                    onMoveUp = viewModel::moveHomeBlockUp,
+                    onMoveDown = viewModel::moveHomeBlockDown,
+                    onReset = viewModel::resetHomeBlockLayout
                 )
             }
         }
@@ -287,7 +300,11 @@ private fun ThemeChooser(
                         }
                     } else {
                         OutlinedButton(onClick = { onThemeSelected(theme.key) }) {
-                            Text(theme.displayName, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text(
+                                if (theme.isCustomSlot) "新建 ${theme.displayName}" else theme.displayName,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
                         }
                     }
                     Text(
@@ -296,6 +313,103 @@ private fun ThemeChooser(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HomeBlockEditor(
+    blocks: List<HomeBlock>,
+    enabledBlocks: Map<HomeBlock, Boolean>,
+    onEnabledChange: (HomeBlock, Boolean) -> Unit,
+    onMoveUp: (HomeBlock) -> Unit,
+    onMoveDown: (HomeBlock) -> Unit,
+    onReset: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            text = "首页模块",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+        Text(
+            text = "每个主题单独保存下方模块的显示和顺序。",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        blocks.forEachIndexed { index, block ->
+            HomeBlockRow(
+                block = block,
+                enabled = enabledBlocks[block] ?: true,
+                canMoveUp = index > 0,
+                canMoveDown = index < blocks.lastIndex,
+                onEnabledChange = { enabled -> onEnabledChange(block, enabled) },
+                onMoveUp = { onMoveUp(block) },
+                onMoveDown = { onMoveDown(block) }
+            )
+        }
+        OutlinedButton(
+            modifier = Modifier.fillMaxWidth(),
+            onClick = onReset
+        ) {
+            Text("恢复默认模块布局")
+        }
+    }
+}
+
+@Composable
+private fun HomeBlockRow(
+    block: HomeBlock,
+    enabled: Boolean,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    onEnabledChange: (Boolean) -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = block.displayName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = block.shortDescription,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            Switch(checked = enabled, onCheckedChange = onEnabledChange)
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+        ) {
+            TextButton(
+                enabled = canMoveUp,
+                onClick = onMoveUp
+            ) {
+                Text("上移")
+            }
+            TextButton(
+                enabled = canMoveDown,
+                onClick = onMoveDown
+            ) {
+                Text("下移")
             }
         }
     }

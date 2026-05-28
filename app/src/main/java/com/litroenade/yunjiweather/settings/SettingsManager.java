@@ -3,8 +3,14 @@ package com.litroenade.yunjiweather.settings;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.litroenade.yunjiweather.utils.HomeBlock;
 import com.litroenade.yunjiweather.utils.VisualThemeUtils;
 import com.litroenade.yunjiweather.utils.WeatherDisplayUtils;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public final class SettingsManager {
 
@@ -16,6 +22,9 @@ public final class SettingsManager {
     private static final String KEY_WIND_UNIT = "wind_unit";
     private static final String KEY_DAILY_REMINDER_ENABLED = "daily_reminder_enabled";
     private static final String KEY_VISUAL_THEME = "visual_theme";
+    private static final String KEY_DEVELOPER_TOOLS_ENABLED = "developer_tools_enabled";
+    private static final String KEY_HOME_BLOCK_ORDER_PREFIX = "home_block_order_";
+    private static final String KEY_HOME_BLOCK_DISABLED_PREFIX = "home_block_disabled_";
 
     private final SharedPreferences preferences;
 
@@ -51,6 +60,14 @@ public final class SettingsManager {
 
     public void setDarkModeEnabled(boolean enabled) {
         preferences.edit().putBoolean(KEY_DARK_MODE_ENABLED, enabled).apply();
+    }
+
+    public boolean isDeveloperToolsEnabled() {
+        return preferences.getBoolean(KEY_DEVELOPER_TOOLS_ENABLED, false);
+    }
+
+    public void setDeveloperToolsEnabled(boolean enabled) {
+        preferences.edit().putBoolean(KEY_DEVELOPER_TOOLS_ENABLED, enabled).apply();
     }
 
     public String getTemperatureUnit() {
@@ -97,6 +114,62 @@ public final class SettingsManager {
         preferences.edit().putString(KEY_VISUAL_THEME, themeKey).apply();
     }
 
+    public List<HomeBlock> getHomeBlockOrder(String themeKey) {
+        String normalizedThemeKey = VisualThemeUtils.normalizeThemeKey(themeKey);
+        String preferenceKey = homeBlockOrderKey(normalizedThemeKey);
+        String encodedOrder = getStringSetting(preferenceKey, "");
+        List<HomeBlock> decodedOrder = decodeHomeBlockOrder(encodedOrder);
+        String repairedOrder = encodeHomeBlockOrder(decodedOrder);
+        repairStringIfNeeded(preferenceKey, encodedOrder, repairedOrder);
+        return decodedOrder;
+    }
+
+    public boolean isHomeBlockEnabled(String themeKey, HomeBlock block) {
+        return !getDisabledHomeBlocks(themeKey).contains(block);
+    }
+
+    public void setHomeBlockEnabled(String themeKey, HomeBlock block, boolean enabled) {
+        String normalizedThemeKey = VisualThemeUtils.normalizeThemeKey(themeKey);
+        Set<HomeBlock> disabledBlocks = getDisabledHomeBlocks(normalizedThemeKey);
+        if (enabled) {
+            disabledBlocks.remove(block);
+        } else {
+            disabledBlocks.add(block);
+        }
+        preferences.edit()
+                .putString(homeBlockDisabledKey(normalizedThemeKey), encodeHomeBlockSet(disabledBlocks))
+                .apply();
+    }
+
+    public void moveHomeBlock(String themeKey, HomeBlock block, int direction) {
+        if (direction == 0) {
+            return;
+        }
+        String normalizedThemeKey = VisualThemeUtils.normalizeThemeKey(themeKey);
+        List<HomeBlock> order = new ArrayList<>(getHomeBlockOrder(normalizedThemeKey));
+        int currentIndex = order.indexOf(block);
+        if (currentIndex < 0) {
+            return;
+        }
+        int targetIndex = Math.max(0, Math.min(order.size() - 1, currentIndex + direction));
+        if (targetIndex == currentIndex) {
+            return;
+        }
+        order.remove(currentIndex);
+        order.add(targetIndex, block);
+        preferences.edit()
+                .putString(homeBlockOrderKey(normalizedThemeKey), encodeHomeBlockOrder(order))
+                .apply();
+    }
+
+    public void resetHomeBlockLayout(String themeKey) {
+        String normalizedThemeKey = VisualThemeUtils.normalizeThemeKey(themeKey);
+        preferences.edit()
+                .remove(homeBlockOrderKey(normalizedThemeKey))
+                .remove(homeBlockDisabledKey(normalizedThemeKey))
+                .apply();
+    }
+
     private void ensureDefaultSettings() {
         SharedPreferences.Editor editor = preferences.edit();
         boolean changed = false;
@@ -126,6 +199,10 @@ public final class SettingsManager {
         }
         if (!preferences.contains(KEY_VISUAL_THEME)) {
             editor.putString(KEY_VISUAL_THEME, VisualThemeUtils.THEME_SKY);
+            changed = true;
+        }
+        if (!preferences.contains(KEY_DEVELOPER_TOOLS_ENABLED)) {
+            editor.putBoolean(KEY_DEVELOPER_TOOLS_ENABLED, false);
             changed = true;
         }
         if (changed) {
@@ -160,5 +237,82 @@ public final class SettingsManager {
         if (!normalizedValue.equals(currentValue)) {
             preferences.edit().putString(key, normalizedValue).apply();
         }
+    }
+
+    private static String homeBlockOrderKey(String themeKey) {
+        return KEY_HOME_BLOCK_ORDER_PREFIX + themeKey;
+    }
+
+    private static String homeBlockDisabledKey(String themeKey) {
+        return KEY_HOME_BLOCK_DISABLED_PREFIX + themeKey;
+    }
+
+    private Set<HomeBlock> getDisabledHomeBlocks(String themeKey) {
+        String normalizedThemeKey = VisualThemeUtils.normalizeThemeKey(themeKey);
+        String preferenceKey = homeBlockDisabledKey(normalizedThemeKey);
+        String encodedBlocks = getStringSetting(preferenceKey, "");
+        Set<HomeBlock> disabledBlocks = decodeHomeBlockSet(encodedBlocks);
+        String repairedBlocks = encodeHomeBlockSet(disabledBlocks);
+        repairStringIfNeeded(preferenceKey, encodedBlocks, repairedBlocks);
+        return disabledBlocks;
+    }
+
+    private static List<HomeBlock> decodeHomeBlockOrder(String encodedOrder) {
+        List<HomeBlock> result = new ArrayList<>();
+        Set<HomeBlock> seen = new HashSet<>();
+        if (encodedOrder != null && !encodedOrder.trim().isEmpty()) {
+            String[] keys = encodedOrder.split(",");
+            for (String rawKey : keys) {
+                HomeBlock block = HomeBlock.fromKey(rawKey.trim());
+                if (block != null && seen.add(block)) {
+                    result.add(block);
+                }
+            }
+        }
+        for (HomeBlock block : HomeBlock.defaultOrder()) {
+            if (seen.add(block)) {
+                result.add(block);
+            }
+        }
+        return result;
+    }
+
+    private static Set<HomeBlock> decodeHomeBlockSet(String encodedBlocks) {
+        Set<HomeBlock> result = new HashSet<>();
+        if (encodedBlocks == null || encodedBlocks.trim().isEmpty()) {
+            return result;
+        }
+        String[] keys = encodedBlocks.split(",");
+        for (String rawKey : keys) {
+            HomeBlock block = HomeBlock.fromKey(rawKey.trim());
+            if (block != null) {
+                result.add(block);
+            }
+        }
+        return result;
+    }
+
+    private static String encodeHomeBlockOrder(List<HomeBlock> order) {
+        StringBuilder builder = new StringBuilder();
+        for (HomeBlock block : order) {
+            if (builder.length() > 0) {
+                builder.append(',');
+            }
+            builder.append(block.getKey());
+        }
+        return builder.toString();
+    }
+
+    private static String encodeHomeBlockSet(Set<HomeBlock> blocks) {
+        StringBuilder builder = new StringBuilder();
+        for (HomeBlock block : HomeBlock.defaultOrder()) {
+            if (blocks.contains(block)) {
+                if (builder.length() > 0) {
+                    builder.append(',');
+                }
+                builder.append(block.getKey());
+            }
+        }
+        return builder.toString();
     }
 }
