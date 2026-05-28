@@ -46,6 +46,17 @@ public class VisualThemeUtilsTest {
     }
 
     @Test
+    public void styleCatalog_returnsVisualThemeStylesInStableOrder() {
+        List<VisualThemeStyle> styles = VisualThemeStyleCatalog.getStyles();
+
+        assertEquals(4, styles.size());
+        assertEquals(VisualThemeStyleCatalog.STYLE_DEFAULT, styles.get(0).getKey());
+        assertEquals(VisualThemeStyleCatalog.STYLE_SOFT_MIST, styles.get(1).getKey());
+        assertEquals(VisualThemeStyleCatalog.STYLE_SUNSET, styles.get(2).getKey());
+        assertEquals(VisualThemeStyleCatalog.STYLE_DEEP_SEA, styles.get(3).getKey());
+    }
+
+    @Test
     public void settingsManager_repairsUnsupportedVisualThemeToDefault() {
         MemorySharedPreferences preferences = new MemorySharedPreferences();
         preferences.edit().putString("visual_theme", "external-fanart").apply();
@@ -144,6 +155,35 @@ public class VisualThemeUtilsTest {
         assertEquals(HomeBlock.WEATHER_METRICS, resetOrder.get(0));
         assertEquals(HomeBlock.DAILY_FORECAST, resetOrder.get(6));
         assertEquals(true, settingsManager.isHomeBlockEnabled(VisualThemeUtils.THEME_SKY, HomeBlock.WEATHER_INSIGHT));
+    }
+
+    @Test
+    public void settingsManager_persistsVisualThemeStylePerTheme() {
+        SettingsManager settingsManager = new SettingsManager(new MemorySharedPreferences());
+
+        assertEquals(VisualThemeStyleCatalog.STYLE_DEFAULT, settingsManager.getVisualThemeStyle(VisualThemeUtils.THEME_SKY));
+
+        settingsManager.setVisualThemeStyle(VisualThemeUtils.THEME_SKY, VisualThemeStyleCatalog.STYLE_SOFT_MIST);
+
+        assertEquals(VisualThemeStyleCatalog.STYLE_SOFT_MIST, settingsManager.getVisualThemeStyle(VisualThemeUtils.THEME_SKY));
+        assertEquals(VisualThemeStyleCatalog.STYLE_DEFAULT, settingsManager.getVisualThemeStyle(VisualThemeUtils.THEME_FANTASY));
+    }
+
+    @Test
+    public void settingsManager_repairsUnsupportedVisualThemeStyleToDefault() {
+        MemorySharedPreferences preferences = new MemorySharedPreferences();
+        preferences.edit().putString("visual_theme_style_sky", "external").apply();
+
+        SettingsManager settingsManager = new SettingsManager(preferences);
+
+        assertEquals(VisualThemeStyleCatalog.STYLE_DEFAULT, settingsManager.getVisualThemeStyle(VisualThemeUtils.THEME_SKY));
+        assertEquals(VisualThemeStyleCatalog.STYLE_DEFAULT, preferences.getString("visual_theme_style_sky", ""));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setVisualThemeStyle_rejectsUnsupportedStyle() {
+        new SettingsManager(new MemorySharedPreferences())
+                .setVisualThemeStyle(VisualThemeUtils.THEME_SKY, "external");
     }
 
     @Test(expected = IllegalArgumentException.class)

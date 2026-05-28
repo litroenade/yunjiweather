@@ -36,9 +36,11 @@ class SplashActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             val settingsManager = remember { SettingsManager(this) }
+            val visualThemeKey = settingsManager.getVisualTheme()
             YunJiTheme(
                 darkTheme = settingsManager.isDarkModeEnabled(),
-                visualThemeKey = settingsManager.getVisualTheme()
+                visualThemeKey = visualThemeKey,
+                visualThemeStyleKey = settingsManager.getVisualThemeStyle(visualThemeKey)
             ) {
                 SplashRoute(
                     onFinished = {

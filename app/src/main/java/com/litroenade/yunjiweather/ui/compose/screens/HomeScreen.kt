@@ -118,13 +118,11 @@ fun HomeScreen(
     homeBlockEnabled: Map<HomeBlock, Boolean> = emptyMap(),
     onManageCities: () -> Unit = {},
     onSearchCity: () -> Unit = {},
-    onUseCurrentLocation: () -> Unit = {},
     onSettings: () -> Unit = {},
+    onPersonalization: () -> Unit = {},
     onDesktopWeather: () -> Unit = {},
     onOpenAlerts: () -> Unit = {},
     onOpenLifeIndex: () -> Unit = {},
-    onFeedbackWeather: (HomeWeatherData?) -> Unit = {},
-    onShareWeather: (HomeWeatherData?) -> Unit = {},
     onDisplayedWeatherIconCodeChanged: (String?) -> Unit = {},
     viewModel: HomeViewModel = viewModel()
 ) {
@@ -284,11 +282,9 @@ fun HomeScreen(
                     sceneSpec = weatherSceneSpec,
                     onManageCities = onManageCities,
                     onSearchCity = onSearchCity,
-                    onUseCurrentLocation = onUseCurrentLocation,
                     onSettings = onSettings,
-                    onDesktopWeather = onDesktopWeather,
-                    onFeedbackWeather = { onFeedbackWeather(weatherData) },
-                    onShareWeather = { onShareWeather(weatherData) }
+                    onPersonalization = onPersonalization,
+                    onDesktopWeather = onDesktopWeather
                 )
             }
             when (val state = uiState) {
@@ -581,11 +577,9 @@ private fun WeatherTopActions(
     sceneSpec: WeatherSceneSpec,
     onManageCities: () -> Unit,
     onSearchCity: () -> Unit,
-    onUseCurrentLocation: () -> Unit,
     onSettings: () -> Unit,
-    onDesktopWeather: () -> Unit,
-    onFeedbackWeather: () -> Unit,
-    onShareWeather: () -> Unit
+    onPersonalization: () -> Unit,
+    onDesktopWeather: () -> Unit
 ) {
     val visualTheme = LocalYunJiVisualTheme.current
     val primaryTextColor = weatherScenePrimaryTextColor(sceneSpec, visualTheme.primaryWeatherText)
@@ -593,24 +587,12 @@ private fun WeatherTopActions(
     val iconContainerColor = weatherSceneFloatingSurfaceColor(sceneSpec, MaterialTheme.colorScheme.surface)
     val iconBorderColor = weatherSceneStrokeColor(sceneSpec, primaryTextColor)
     var expanded by remember { mutableStateOf(false) }
-    val actionSideWidth = 132.dp
+    val actionSideWidth = 88.dp
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier.width(actionSideWidth),
-            contentAlignment = Alignment.CenterStart
-        ) {
-            WeatherTopIcon(
-                iconRes = R.drawable.ic_city_black_24dp,
-                contentDescription = "管理城市",
-                tint = primaryTextColor,
-                containerColor = iconContainerColor,
-                borderColor = iconBorderColor,
-                onClick = onManageCities
-            )
-        }
+        Spacer(modifier = Modifier.width(actionSideWidth))
         Column(
             modifier = Modifier.weight(1f),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -646,14 +628,6 @@ private fun WeatherTopActions(
                 borderColor = iconBorderColor,
                 onClick = onSearchCity
             )
-            WeatherTopIcon(
-                iconRes = R.drawable.ic_my_location_24,
-                contentDescription = "定位到当前位置",
-                tint = primaryTextColor,
-                containerColor = iconContainerColor,
-                borderColor = iconBorderColor,
-                onClick = onUseCurrentLocation
-            )
             Box {
                 WeatherTopIcon(
                     iconRes = R.drawable.ic_more_vertical_24,
@@ -669,6 +643,13 @@ private fun WeatherTopActions(
                     containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
                 ) {
                     DropdownMenuItem(
+                        text = { Text("管理城市") },
+                        onClick = {
+                            expanded = false
+                            onManageCities()
+                        }
+                    )
+                    DropdownMenuItem(
                         text = { Text("桌面天气") },
                         onClick = {
                             expanded = false
@@ -676,17 +657,10 @@ private fun WeatherTopActions(
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("反馈当前天气") },
+                        text = { Text("个性化") },
                         onClick = {
                             expanded = false
-                            onFeedbackWeather()
-                        }
-                    )
-                    DropdownMenuItem(
-                        text = { Text("分享") },
-                        onClick = {
-                            expanded = false
-                            onShareWeather()
+                            onPersonalization()
                         }
                     )
                     DropdownMenuItem(

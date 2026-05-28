@@ -9,10 +9,7 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -40,13 +37,13 @@ import com.litroenade.yunjiweather.ui.compose.SectionTitle
 import com.litroenade.yunjiweather.ui.mine.MineViewModel
 import com.litroenade.yunjiweather.utils.HomeBlock
 import com.litroenade.yunjiweather.utils.PermissionUtils
-import com.litroenade.yunjiweather.utils.VisualTheme
 import com.litroenade.yunjiweather.utils.WeatherDisplayUtils
 
 @Composable
 fun MineScreen(
     modifier: Modifier = Modifier,
     respectStatusBar: Boolean = true,
+    showHeader: Boolean = true,
     viewModel: MineViewModel = viewModel()
 ) {
     val context = LocalContext.current
@@ -60,12 +57,14 @@ fun MineScreen(
     val temperatureUnit by viewModel.getTemperatureUnit().observeAsState(WeatherDisplayUtils.TEMPERATURE_CELSIUS)
     val windUnit by viewModel.getWindUnit().observeAsState(WeatherDisplayUtils.WIND_SCALE)
     val selectedTheme by viewModel.getVisualTheme().observeAsState(viewModel.getCurrentVisualTheme())
+    val selectedThemeStyle by viewModel.getVisualThemeStyle().observeAsState(viewModel.getCurrentVisualThemeStyle())
     val homeBlockOrder by viewModel.getHomeBlockOrder().observeAsState(HomeBlock.defaultOrder())
     val homeBlockEnabled by viewModel.getHomeBlockEnabled().observeAsState(emptyMap())
     val dataUpdateTime by viewModel.getDataUpdateTime().observeAsState("暂无更新")
     val localStorageSummary by viewModel.getLocalStorageSummary().observeAsState("")
     val message by viewModel.getMessage().observeAsState("")
     val themes = remember(viewModel) { viewModel.getVisualThemes() }
+    val themeStyles = remember(viewModel) { viewModel.getVisualThemeStyles() }
     var infoDialog by remember { mutableStateOf<MineInfoDialog?>(null) }
 
     LaunchedEffect(Unit) {
@@ -83,11 +82,13 @@ fun MineScreen(
         contentPadding = PaddingValues(top = 18.dp, bottom = 18.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        item {
-            ScreenHeader(
-                title = "我的",
-                subtitle = localSpaceText
-            )
+        if (showHeader) {
+            item {
+                ScreenHeader(
+                    title = "我的",
+                    subtitle = localSpaceText
+                )
+            }
         }
         item {
             InfoCard {
@@ -175,18 +176,19 @@ fun MineScreen(
         }
         item {
             InfoCard {
-                ThemeChooser(
+                PersonalizationPanel(
                     themes = themes,
+                    themeStyles = themeStyles,
                     selectedTheme = selectedTheme,
-                    onThemeSelected = viewModel::setVisualTheme
-                )
-                HomeBlockEditor(
-                    blocks = homeBlockOrder,
-                    enabledBlocks = homeBlockEnabled,
-                    onEnabledChange = viewModel::setHomeBlockEnabled,
-                    onMoveUp = viewModel::moveHomeBlockUp,
-                    onMoveDown = viewModel::moveHomeBlockDown,
-                    onReset = viewModel::resetHomeBlockLayout
+                    selectedThemeStyle = selectedThemeStyle,
+                    homeBlockOrder = homeBlockOrder,
+                    homeBlockEnabled = homeBlockEnabled,
+                    onThemeSelected = viewModel::setVisualTheme,
+                    onStyleSelected = viewModel::setVisualThemeStyle,
+                    onHomeBlockEnabledChange = viewModel::setHomeBlockEnabled,
+                    onMoveHomeBlockUp = viewModel::moveHomeBlockUp,
+                    onMoveHomeBlockDown = viewModel::moveHomeBlockDown,
+                    onResetHomeBlocks = viewModel::resetHomeBlockLayout
                 )
             }
         }
@@ -277,145 +279,6 @@ private fun RowScope.UnitButton(
 }
 
 @Composable
-private fun ThemeChooser(
-    themes: List<VisualTheme>,
-    selectedTheme: String,
-    onThemeSelected: (String) -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(
-            text = "视觉主题",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold
-        )
-        LazyRow(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            items(themes, key = { theme -> theme.key }) { theme ->
-                Column(
-                    modifier = Modifier.width(178.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    if (theme.key == selectedTheme) {
-                        Button(onClick = { onThemeSelected(theme.key) }) {
-                            Text("${theme.displayName} · 已应用", maxLines = 1, overflow = TextOverflow.Ellipsis)
-                        }
-                    } else {
-                        OutlinedButton(onClick = { onThemeSelected(theme.key) }) {
-                            Text(
-                                if (theme.isCustomSlot) "新建 ${theme.displayName}" else theme.displayName,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                    Text(
-                        text = theme.shortDescription,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun HomeBlockEditor(
-    blocks: List<HomeBlock>,
-    enabledBlocks: Map<HomeBlock, Boolean>,
-    onEnabledChange: (HomeBlock, Boolean) -> Unit,
-    onMoveUp: (HomeBlock) -> Unit,
-    onMoveDown: (HomeBlock) -> Unit,
-    onReset: () -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(
-            text = "首页模块",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.SemiBold
-        )
-        Text(
-            text = "每个主题单独保存下方模块的显示和顺序。",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        blocks.forEachIndexed { index, block ->
-            HomeBlockRow(
-                block = block,
-                enabled = enabledBlocks[block] ?: true,
-                canMoveUp = index > 0,
-                canMoveDown = index < blocks.lastIndex,
-                onEnabledChange = { enabled -> onEnabledChange(block, enabled) },
-                onMoveUp = { onMoveUp(block) },
-                onMoveDown = { onMoveDown(block) }
-            )
-        }
-        OutlinedButton(
-            modifier = Modifier.fillMaxWidth(),
-            onClick = onReset
-        ) {
-            Text("恢复默认模块布局")
-        }
-    }
-}
-
-@Composable
-private fun HomeBlockRow(
-    block: HomeBlock,
-    enabled: Boolean,
-    canMoveUp: Boolean,
-    canMoveDown: Boolean,
-    onEnabledChange: (Boolean) -> Unit,
-    onMoveUp: () -> Unit,
-    onMoveDown: () -> Unit
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(
-                    text = block.displayName,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = block.shortDescription,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-            Switch(checked = enabled, onCheckedChange = onEnabledChange)
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
-        ) {
-            TextButton(
-                enabled = canMoveUp,
-                onClick = onMoveUp
-            ) {
-                Text("上移")
-            }
-            TextButton(
-                enabled = canMoveDown,
-                onClick = onMoveDown
-            ) {
-                Text("下移")
-            }
-        }
-    }
-}
-
-@Composable
 private fun AppInfoPanel(
     localStorageSummary: String,
     onClearCache: () -> Unit,
@@ -501,7 +364,7 @@ private enum class MineInfoDialog(
     ),
     Help(
         "使用帮助",
-        "首页查看默认城市天气；顶部搜索和管理入口维护城市；今日资讯进入预警和生活指数，更多菜单保留定位、分享、反馈、桌面天气和设置。我的页可开启通知、每日提醒、天气动画、深色模式，并切换单位和视觉主题。通知和定位权限只在功能需要时申请；清理缓存不会删除已关注城市。"
+        "首页查看默认城市天气；顶部搜索入口用于添加城市，更多菜单保留管理城市、桌面天气、个性化和设置。我的页可开启通知、每日提醒、天气动画、深色模式，并切换单位和视觉主题。通知权限只在功能需要时申请；清理缓存不会删除已关注城市。"
     ),
     About(
         "关于云迹天气",

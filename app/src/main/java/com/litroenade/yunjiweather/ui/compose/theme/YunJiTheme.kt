@@ -13,6 +13,8 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.litroenade.yunjiweather.utils.VisualThemeCatalog
+import com.litroenade.yunjiweather.utils.VisualThemeStyleCatalog
 import com.litroenade.yunjiweather.utils.VisualThemeUtils
 
 private val LightColors = lightColorScheme(
@@ -147,6 +149,138 @@ private val FantasyDarkColors = darkColorScheme(
     error = Color(0xFFFFB4AB)
 )
 
+private val SoftMistLightColors = lightColorScheme(
+    primary = Color(0xFF5F7F8A),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFDCECEF),
+    onPrimaryContainer = Color(0xFF243D43),
+    secondary = Color(0xFF687A62),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFE7EFE1),
+    onSecondaryContainer = Color(0xFF2A3727),
+    tertiary = Color(0xFF8A7359),
+    onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFF0E5D9),
+    onTertiaryContainer = Color(0xFF3A2D22),
+    background = Color(0xFFF6F8F8),
+    onBackground = Color(0xFF253033),
+    surface = Color(0xFFFFFEFC),
+    onSurface = Color(0xFF253033),
+    surfaceVariant = Color(0xFFE5EAEB),
+    onSurfaceVariant = Color(0xFF606C70),
+    error = Color(0xFFB42318)
+)
+
+private val SoftMistDarkColors = darkColorScheme(
+    primary = Color(0xFFADCED6),
+    onPrimary = Color(0xFF203A40),
+    primaryContainer = Color(0xFF38545B),
+    onPrimaryContainer = Color(0xFFD9F1F5),
+    secondary = Color(0xFFC1D4B8),
+    onSecondary = Color(0xFF2B3927),
+    secondaryContainer = Color(0xFF44533E),
+    onSecondaryContainer = Color(0xFFE6F4DF),
+    tertiary = Color(0xFFE1C8AD),
+    onTertiary = Color(0xFF3D2E20),
+    tertiaryContainer = Color(0xFF584735),
+    onTertiaryContainer = Color(0xFFFFE7CF),
+    background = Color(0xFF171F22),
+    onBackground = Color(0xFFE7ECEE),
+    surface = Color(0xFF202A2D),
+    onSurface = Color(0xFFE7ECEE),
+    surfaceVariant = Color(0xFF374246),
+    onSurfaceVariant = Color(0xFFCAD4D8),
+    error = Color(0xFFFFB4AB)
+)
+
+private val SunsetLightColors = lightColorScheme(
+    primary = Color(0xFFB8643A),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFFFDDCC),
+    onPrimaryContainer = Color(0xFF4A1F0E),
+    secondary = Color(0xFF82652E),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFF2E4C5),
+    onSecondaryContainer = Color(0xFF3A2E13),
+    tertiary = Color(0xFF9A5871),
+    onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFF8D8E4),
+    onTertiaryContainer = Color(0xFF3F1B29),
+    background = Color(0xFFFFF6EF),
+    onBackground = Color(0xFF332824),
+    surface = Color(0xFFFFFBF8),
+    onSurface = Color(0xFF332824),
+    surfaceVariant = Color(0xFFF2E1D8),
+    onSurfaceVariant = Color(0xFF6A5A51),
+    error = Color(0xFFB42318)
+)
+
+private val SunsetDarkColors = darkColorScheme(
+    primary = Color(0xFFFFB68E),
+    onPrimary = Color(0xFF4A1F0E),
+    primaryContainer = Color(0xFF7B3F22),
+    onPrimaryContainer = Color(0xFFFFDDCC),
+    secondary = Color(0xFFE8CB83),
+    onSecondary = Color(0xFF3D2E08),
+    secondaryContainer = Color(0xFF5A4514),
+    onSecondaryContainer = Color(0xFFFFE9AF),
+    tertiary = Color(0xFFE9AFC4),
+    onTertiary = Color(0xFF421B2B),
+    tertiaryContainer = Color(0xFF6B374C),
+    onTertiaryContainer = Color(0xFFFFD8E6),
+    background = Color(0xFF251B18),
+    onBackground = Color(0xFFF7E7DE),
+    surface = Color(0xFF30231F),
+    onSurface = Color(0xFFF7E7DE),
+    surfaceVariant = Color(0xFF4A3932),
+    onSurfaceVariant = Color(0xFFDCC7BB),
+    error = Color(0xFFFFB4AB)
+)
+
+private val DeepSeaLightColors = lightColorScheme(
+    primary = Color(0xFF286D79),
+    onPrimary = Color.White,
+    primaryContainer = Color(0xFFCDEEF3),
+    onPrimaryContainer = Color(0xFF08363D),
+    secondary = Color(0xFF405F7A),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFDCEBFA),
+    onSecondaryContainer = Color(0xFF162F45),
+    tertiary = Color(0xFF625B97),
+    onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFE6E1FF),
+    onTertiaryContainer = Color(0xFF28234B),
+    background = Color(0xFFEFF7FA),
+    onBackground = Color(0xFF17282E),
+    surface = Color(0xFFF9FEFF),
+    onSurface = Color(0xFF17282E),
+    surfaceVariant = Color(0xFFD8E9EF),
+    onSurfaceVariant = Color(0xFF4E6570),
+    error = Color(0xFFB42318)
+)
+
+private val DeepSeaDarkColors = darkColorScheme(
+    primary = Color(0xFF87D7E6),
+    onPrimary = Color(0xFF05353F),
+    primaryContainer = Color(0xFF155562),
+    onPrimaryContainer = Color(0xFFC8F4FA),
+    secondary = Color(0xFFA7CBE8),
+    onSecondary = Color(0xFF173449),
+    secondaryContainer = Color(0xFF2C4D67),
+    onSecondaryContainer = Color(0xFFD7EBFA),
+    tertiary = Color(0xFFC9C2FF),
+    onTertiary = Color(0xFF302A5E),
+    tertiaryContainer = Color(0xFF48417A),
+    onTertiaryContainer = Color(0xFFE7E1FF),
+    background = Color(0xFF0F1B22),
+    onBackground = Color(0xFFE5F1F5),
+    surface = Color(0xFF16242C),
+    onSurface = Color(0xFFE5F1F5),
+    surfaceVariant = Color(0xFF2D424D),
+    onSurfaceVariant = Color(0xFFC5D8DF),
+    error = Color(0xFFFFB4AB)
+)
+
 private val YunJiShapes = Shapes(
     small = RoundedCornerShape(8.dp),
     medium = RoundedCornerShape(14.dp),
@@ -197,17 +331,24 @@ val LocalYunJiVisualTheme = staticCompositionLocalOf {
 fun YunJiTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     visualThemeKey: String = VisualThemeUtils.THEME_SKY,
+    visualThemeStyleKey: String = VisualThemeStyleCatalog.STYLE_DEFAULT,
     content: @Composable () -> Unit
 ) {
     val normalizedThemeKey = VisualThemeUtils.normalizeThemeKey(visualThemeKey)
-    val colorScheme = colorSchemeFor(normalizedThemeKey, darkTheme)
+    val normalizedStyleKey = VisualThemeStyleCatalog.getStyleOrDefault(visualThemeStyleKey).key
+    val colorScheme = colorSchemeFor(normalizedThemeKey, normalizedStyleKey, darkTheme)
     MaterialTheme(
         colorScheme = colorScheme,
         shapes = YunJiShapes,
         typography = YunJiTypography,
         content = {
             androidx.compose.runtime.CompositionLocalProvider(
-                LocalYunJiVisualTheme provides visualThemeFor(normalizedThemeKey, colorScheme, darkTheme)
+                LocalYunJiVisualTheme provides visualThemeFor(
+                    normalizedThemeKey,
+                    normalizedStyleKey,
+                    colorScheme,
+                    darkTheme
+                )
             ) {
                 content()
             }
@@ -215,15 +356,25 @@ fun YunJiTheme(
     )
 }
 
-private fun colorSchemeFor(themeKey: String, darkTheme: Boolean): ColorScheme {
-    return when (themeKey) {
-        VisualThemeUtils.THEME_SAKURA -> if (darkTheme) SakuraDarkColors else SakuraLightColors
-        VisualThemeUtils.THEME_FANTASY -> if (darkTheme) FantasyDarkColors else FantasyLightColors
-        else -> if (darkTheme) DarkColors else LightColors
+private fun colorSchemeFor(themeKey: String, styleKey: String, darkTheme: Boolean): ColorScheme {
+    return when (styleKey) {
+        VisualThemeStyleCatalog.STYLE_SOFT_MIST -> if (darkTheme) SoftMistDarkColors else SoftMistLightColors
+        VisualThemeStyleCatalog.STYLE_SUNSET -> if (darkTheme) SunsetDarkColors else SunsetLightColors
+        VisualThemeStyleCatalog.STYLE_DEEP_SEA -> if (darkTheme) DeepSeaDarkColors else DeepSeaLightColors
+        else -> when (themeKey) {
+            VisualThemeUtils.THEME_SAKURA -> if (darkTheme) SakuraDarkColors else SakuraLightColors
+            VisualThemeUtils.THEME_FANTASY -> if (darkTheme) FantasyDarkColors else FantasyLightColors
+            else -> if (darkTheme) DarkColors else LightColors
+        }
     }
 }
 
-private fun visualThemeFor(themeKey: String, colorScheme: ColorScheme, darkTheme: Boolean): YunJiVisualTheme {
+private fun visualThemeFor(
+    themeKey: String,
+    styleKey: String,
+    colorScheme: ColorScheme,
+    darkTheme: Boolean
+): YunJiVisualTheme {
     val cardAlpha = if (darkTheme) 0.42f else 0.30f
     val navAlpha = if (darkTheme) 0.70f else 0.68f
     val cardStroke = if (darkTheme) {
@@ -234,7 +385,7 @@ private fun visualThemeFor(themeKey: String, colorScheme: ColorScheme, darkTheme
     return when (themeKey) {
         VisualThemeUtils.THEME_SAKURA -> YunJiVisualTheme(
             key = themeKey,
-            displayName = "樱雨粉",
+            displayName = VisualThemeCatalog.getThemeOrDefault(themeKey).displayName,
             background = colorScheme.background,
             cardContainer = colorScheme.surface.copy(alpha = cardAlpha),
             cardStroke = cardStroke,
@@ -243,16 +394,12 @@ private fun visualThemeFor(themeKey: String, colorScheme: ColorScheme, darkTheme
             headerAccent = colorScheme.primary,
             primaryWeatherText = colorScheme.onBackground,
             secondaryWeatherText = colorScheme.onSurfaceVariant,
-            defaultWeatherGradient = if (darkTheme) {
-                WeatherGradient(Color(0xFF31212A), Color(0xFF2A2228), colorScheme.background)
-            } else {
-                WeatherGradient(Color(0xFFF3C8D6), Color(0xFFF7E7EC), colorScheme.background)
-            }
+            defaultWeatherGradient = defaultWeatherGradient(themeKey, styleKey, darkTheme, colorScheme)
         )
 
         VisualThemeUtils.THEME_FANTASY -> YunJiVisualTheme(
             key = themeKey,
-            displayName = "幻想天",
+            displayName = VisualThemeCatalog.getThemeOrDefault(themeKey).displayName,
             background = colorScheme.background,
             cardContainer = colorScheme.surface.copy(alpha = cardAlpha),
             cardStroke = cardStroke,
@@ -261,20 +408,12 @@ private fun visualThemeFor(themeKey: String, colorScheme: ColorScheme, darkTheme
             headerAccent = colorScheme.primary,
             primaryWeatherText = colorScheme.onBackground,
             secondaryWeatherText = colorScheme.onSurfaceVariant,
-            defaultWeatherGradient = if (darkTheme) {
-                WeatherGradient(Color(0xFF26343A), Color(0xFF2C2D31), colorScheme.background)
-            } else {
-                WeatherGradient(Color(0xFFD6E7E9), Color(0xFFF0E4D0), colorScheme.background)
-            }
+            defaultWeatherGradient = defaultWeatherGradient(themeKey, styleKey, darkTheme, colorScheme)
         )
 
         else -> YunJiVisualTheme(
             key = themeKey,
-            displayName = when (themeKey) {
-                VisualThemeUtils.THEME_CUSTOM_1 -> "自建主题 1"
-                VisualThemeUtils.THEME_CUSTOM_2 -> "自建主题 2"
-                else -> "经典晴空"
-            },
+            displayName = VisualThemeCatalog.getThemeOrDefault(themeKey).displayName,
             background = colorScheme.background,
             cardContainer = colorScheme.surface.copy(alpha = cardAlpha),
             cardStroke = cardStroke,
@@ -283,11 +422,54 @@ private fun visualThemeFor(themeKey: String, colorScheme: ColorScheme, darkTheme
             headerAccent = colorScheme.primary,
             primaryWeatherText = colorScheme.onBackground,
             secondaryWeatherText = colorScheme.onSurfaceVariant,
-            defaultWeatherGradient = if (darkTheme) {
+            defaultWeatherGradient = defaultWeatherGradient(themeKey, styleKey, darkTheme, colorScheme)
+        )
+    }
+}
+
+private fun defaultWeatherGradient(
+    themeKey: String,
+    styleKey: String,
+    darkTheme: Boolean,
+    colorScheme: ColorScheme
+): WeatherGradient {
+    return when (styleKey) {
+        VisualThemeStyleCatalog.STYLE_SOFT_MIST -> if (darkTheme) {
+            WeatherGradient(Color(0xFF1D2A2F), Color(0xFF203136), colorScheme.background)
+        } else {
+            WeatherGradient(Color(0xFFD8E8ED), Color(0xFFF0F5F6), colorScheme.background)
+        }
+
+        VisualThemeStyleCatalog.STYLE_SUNSET -> if (darkTheme) {
+            WeatherGradient(Color(0xFF3B241D), Color(0xFF2D2021), colorScheme.background)
+        } else {
+            WeatherGradient(Color(0xFFFFC7A6), Color(0xFFFFE7D7), colorScheme.background)
+        }
+
+        VisualThemeStyleCatalog.STYLE_DEEP_SEA -> if (darkTheme) {
+            WeatherGradient(Color(0xFF0F3441), Color(0xFF102933), colorScheme.background)
+        } else {
+            WeatherGradient(Color(0xFF8CCFE0), Color(0xFFD5EEF5), colorScheme.background)
+        }
+
+        else -> when (themeKey) {
+            VisualThemeUtils.THEME_SAKURA -> if (darkTheme) {
+                WeatherGradient(Color(0xFF31212A), Color(0xFF2A2228), colorScheme.background)
+            } else {
+                WeatherGradient(Color(0xFFF3C8D6), Color(0xFFF7E7EC), colorScheme.background)
+            }
+
+            VisualThemeUtils.THEME_FANTASY -> if (darkTheme) {
+                WeatherGradient(Color(0xFF26343A), Color(0xFF2C2D31), colorScheme.background)
+            } else {
+                WeatherGradient(Color(0xFFD6E7E9), Color(0xFFF0E4D0), colorScheme.background)
+            }
+
+            else -> if (darkTheme) {
                 WeatherGradient(Color(0xFF172C3A), Color(0xFF18272C), colorScheme.background)
             } else {
                 WeatherGradient(Color(0xFFA9D8F5), Color(0xFFD9EEF3), colorScheme.background)
             }
-        )
+        }
     }
 }

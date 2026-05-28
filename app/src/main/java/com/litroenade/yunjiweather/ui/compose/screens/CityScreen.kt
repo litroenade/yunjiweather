@@ -1,5 +1,8 @@
 package com.litroenade.yunjiweather.ui.compose.screens
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -12,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -28,6 +32,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -37,7 +43,6 @@ import com.litroenade.yunjiweather.data.entity.CityEntity
 import com.litroenade.yunjiweather.data.model.CityWeatherSummary
 import com.litroenade.yunjiweather.ui.city.CityViewModel
 import com.litroenade.yunjiweather.ui.compose.InfoCard
-import com.litroenade.yunjiweather.ui.compose.MetricTile
 import com.litroenade.yunjiweather.ui.compose.ScreenHeader
 import com.litroenade.yunjiweather.ui.compose.formatWeatherTime
 import com.litroenade.yunjiweather.utils.WeatherDisplayUtils
@@ -48,6 +53,7 @@ fun CityScreen(
     temperatureUnit: String = WeatherDisplayUtils.TEMPERATURE_CELSIUS,
     respectStatusBar: Boolean = true,
     autoFocusSearch: Boolean = false,
+    showHeader: Boolean = true,
     onDefaultCityChanged: () -> Unit = {},
     viewModel: CityViewModel = viewModel()
 ) {
@@ -76,11 +82,13 @@ fun CityScreen(
         contentPadding = PaddingValues(top = 18.dp, bottom = 18.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        item {
-            ScreenHeader(
-                title = "城市",
-                subtitle = "默认城市：$defaultCity"
-            )
+        if (showHeader) {
+            item {
+                ScreenHeader(
+                    title = "城市",
+                    subtitle = "默认城市：$defaultCity"
+                )
+            }
         }
         item {
             CitySearchCard(
@@ -201,7 +209,18 @@ private fun CityCard(
     onSetDefault: () -> Unit,
     onDelete: () -> Unit
 ) {
-    InfoCard {
+    val cardShape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)
+    val gradient = cityWeatherCardGradient(summary)
+    val primaryText = Color.White
+    val secondaryText = Color.White.copy(alpha = 0.78f)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(gradient, cardShape)
+            .border(BorderStroke(1.dp, Color.White.copy(alpha = 0.16f)), cardShape)
+            .padding(18.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -213,6 +232,7 @@ private fun CityCard(
                     modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold,
+                    color = primaryText,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -220,14 +240,14 @@ private fun CityCard(
                     Text(
                         text = "默认",
                         style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.primary
+                        color = primaryText
                     )
                 }
             }
             Text(
                 text = "${city.province} · ${city.country}",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = secondaryText,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
@@ -239,14 +259,21 @@ private fun CityCard(
             OutlinedButton(
                 modifier = Modifier.weight(1f),
                 enabled = actionsEnabled && !city.isDefault,
-                onClick = onSetDefault
+                onClick = onSetDefault,
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = primaryText,
+                    disabledContentColor = secondaryText
+                ),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = if (city.isDefault) 0.22f else 0.54f))
             ) {
                 Text("设为默认", maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             OutlinedButton(
                 modifier = Modifier.weight(1f),
                 enabled = actionsEnabled,
-                onClick = onDelete
+                onClick = onDelete,
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = primaryText),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.54f))
             ) {
                 Text("删除", maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
@@ -255,26 +282,26 @@ private fun CityCard(
             Text(
                 text = summary?.errorMessage ?: "正在读取天气摘要",
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = secondaryText
             )
         } else {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                MetricTile("天气", summary.condition, Modifier.weight(1f))
-                MetricTile("温度", WeatherDisplayUtils.formatTemperature(summary.temperature, temperatureUnit), Modifier.weight(1f))
+                CityMetricTile("天气", summary.condition, Modifier.weight(1f))
+                CityMetricTile("温度", WeatherDisplayUtils.formatTemperature(summary.temperature, temperatureUnit), Modifier.weight(1f))
             }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-                MetricTile(
+                CityMetricTile(
                     "范围",
                     "${WeatherDisplayUtils.formatTemperature(summary.tempMin, temperatureUnit)}/${WeatherDisplayUtils.formatTemperature(summary.tempMax, temperatureUnit)}",
                     Modifier.weight(1f)
                 )
-                MetricTile("更新", formatWeatherTime(summary.updateTime), Modifier.weight(1f))
+                CityMetricTile("更新", formatWeatherTime(summary.updateTime), Modifier.weight(1f))
             }
             Text(
                 text = if (summary.isFromCache) {
@@ -283,8 +310,50 @@ private fun CityCard(
                     "实时更新"
                 },
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                color = secondaryText
             )
         }
+    }
+}
+
+@Composable
+private fun CityMetricTile(label: String, value: String, modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = Color.White.copy(alpha = 0.72f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = Color.White,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+private fun cityWeatherCardGradient(summary: CityWeatherSummary?): Brush {
+    if (summary == null || summary.errorMessage.isNotBlank()) {
+        return Brush.linearGradient(
+            listOf(
+                Color(0xFF728096),
+                Color(0xFF435062)
+            )
+        )
+    }
+    val condition = summary.condition
+    return when {
+        "雨" in condition -> Brush.linearGradient(listOf(Color(0xFF6F93AE), Color(0xFF40576F)))
+        "雪" in condition -> Brush.linearGradient(listOf(Color(0xFF9BB5C7), Color(0xFF60788C)))
+        "晴" in condition -> Brush.linearGradient(listOf(Color(0xFF77B5E6), Color(0xFF497EAF)))
+        else -> Brush.linearGradient(listOf(Color(0xFF89B7D9), Color(0xFF537C9E)))
     }
 }

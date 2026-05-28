@@ -83,7 +83,10 @@ internal fun InfoCard(
     Card(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = visualTheme.cardContainer),
+        colors = CardDefaults.cardColors(
+            containerColor = visualTheme.cardContainer,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
         border = BorderStroke(1.dp, visualTheme.cardStroke),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {

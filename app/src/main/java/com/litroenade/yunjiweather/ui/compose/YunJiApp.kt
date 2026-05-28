@@ -1,12 +1,10 @@
 package com.litroenade.yunjiweather.ui.compose
 
 import android.appwidget.AppWidgetManager
-import android.content.ActivityNotFoundException
 import android.content.ComponentName
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.os.Build
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
@@ -22,6 +20,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -31,16 +30,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.litroenade.yunjiweather.data.model.HomeWeatherData
-import com.litroenade.yunjiweather.ui.home.HomeViewModel
 import com.litroenade.yunjiweather.ui.compose.screens.AlertScreen
 import com.litroenade.yunjiweather.ui.compose.screens.CityScreen
+import com.litroenade.yunjiweather.ui.compose.screens.DesktopWeatherScreen
 import com.litroenade.yunjiweather.ui.compose.screens.HomeScreen
 import com.litroenade.yunjiweather.ui.compose.screens.LifeIndexScreen
 import com.litroenade.yunjiweather.ui.compose.screens.MineScreen
+import com.litroenade.yunjiweather.ui.compose.screens.PersonalizationScreen
 import com.litroenade.yunjiweather.ui.compose.theme.LocalYunJiVisualTheme
+import com.litroenade.yunjiweather.ui.home.HomeViewModel
 import com.litroenade.yunjiweather.utils.HomeBlock
-import com.litroenade.yunjiweather.utils.WeatherShareUtils
 import com.litroenade.yunjiweather.widget.WeatherAppWidgetProvider
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -54,86 +53,109 @@ fun YunJiApp(
     homeBlockOrder: List<HomeBlock> = HomeBlock.defaultOrder(),
     homeBlockEnabled: Map<HomeBlock, Boolean> = emptyMap(),
     homeViewModel: HomeViewModel = viewModel(),
-    onDisplayedWeatherIconCodeChanged: (String?) -> Unit = {},
-    onUseCurrentLocation: () -> Unit = {}
+    onDisplayedWeatherIconCodeChanged: (String?) -> Unit = {}
 ) {
-    var activeSheet by rememberSaveable { mutableStateOf<WeatherSheet?>(null) }
+    var activeTarget by rememberSaveable { mutableStateOf<WeatherNavigationTarget?>(null) }
     var noticeText by rememberSaveable { mutableStateOf("") }
     val context = LocalContext.current
     val visualTheme = LocalYunJiVisualTheme.current
+    val activePage = activeTarget?.takeIf { it.isFullPage }
+    val activeSheet = activeTarget?.takeIf { it.isSheet }
+    val closePageAndRefresh = {
+        activeTarget = null
+        homeViewModel.refresh()
+    }
 
-    Scaffold(
-        modifier = modifier
-            .fillMaxSize()
-            .background(visualTheme.background),
-        containerColor = Color.Transparent,
-        contentWindowInsets = WindowInsets(0.dp)
-    ) { innerPadding ->
-        HomeScreen(
-            modifier = Modifier
+    LaunchedEffect(activePage) {
+        if (activePage != null) {
+            onDisplayedWeatherIconCodeChanged("")
+        }
+    }
+
+    BackHandler(enabled = activeTarget != null) {
+        closePageAndRefresh()
+    }
+
+    if (activePage == null) {
+        Scaffold(
+            modifier = modifier
                 .fillMaxSize()
-                .padding(innerPadding),
-            animationEnabled = animationEnabled,
-            developerToolsEnabled = developerToolsEnabled,
-            temperatureUnit = temperatureUnit,
-            windUnit = windUnit,
-            homeBlockOrder = homeBlockOrder,
-            homeBlockEnabled = homeBlockEnabled,
-            viewModel = homeViewModel,
-            onDisplayedWeatherIconCodeChanged = onDisplayedWeatherIconCodeChanged,
-            onManageCities = { activeSheet = WeatherSheet.ManageCities },
-            onSearchCity = { activeSheet = WeatherSheet.SearchCity },
-            onUseCurrentLocation = onUseCurrentLocation,
-            onSettings = { activeSheet = WeatherSheet.Settings },
-            onDesktopWeather = { noticeText = requestWeatherWidgetPin(context) },
-            onOpenAlerts = { activeSheet = WeatherSheet.Alerts },
-            onOpenLifeIndex = { activeSheet = WeatherSheet.LifeIndex },
-            onFeedbackWeather = { data ->
-                val result = launchWeatherFeedback(context, data, temperatureUnit, windUnit)
-                if (result.isNotBlank()) {
-                    noticeText = result
-                }
-            },
-            onShareWeather = { data ->
-                val result = launchWeatherShare(context, data, temperatureUnit, windUnit)
-                if (result.isNotBlank()) {
-                    noticeText = result
-                }
+                .background(visualTheme.background),
+            containerColor = Color.Transparent,
+            contentWindowInsets = WindowInsets(0.dp)
+        ) { innerPadding ->
+            HomeScreen(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                animationEnabled = animationEnabled,
+                developerToolsEnabled = developerToolsEnabled,
+                temperatureUnit = temperatureUnit,
+                windUnit = windUnit,
+                homeBlockOrder = homeBlockOrder,
+                homeBlockEnabled = homeBlockEnabled,
+                viewModel = homeViewModel,
+                onDisplayedWeatherIconCodeChanged = onDisplayedWeatherIconCodeChanged,
+                onManageCities = { activeTarget = WeatherNavigationTarget.MANAGE_CITIES },
+                onSearchCity = { activeTarget = WeatherNavigationTarget.SEARCH_CITY },
+                onSettings = { activeTarget = WeatherNavigationTarget.SETTINGS },
+                onPersonalization = { activeTarget = WeatherNavigationTarget.PERSONALIZATION },
+                onDesktopWeather = { activeTarget = WeatherNavigationTarget.DESKTOP_WEATHER },
+                onOpenAlerts = { activeTarget = WeatherNavigationTarget.ALERTS },
+                onOpenLifeIndex = { activeTarget = WeatherNavigationTarget.LIFE_INDEX }
+            )
+        }
+    } else {
+        WeatherPageScaffold(
+            title = activePageTitle(activePage),
+            subtitle = activePageSubtitle(activePage),
+            onBack = closePageAndRefresh,
+            modifier = modifier
+        ) { pageModifier ->
+            when (activePage) {
+                WeatherNavigationTarget.MANAGE_CITIES -> CityScreen(
+                    modifier = pageModifier,
+                    temperatureUnit = temperatureUnit,
+                    respectStatusBar = false,
+                    showHeader = false,
+                    onDefaultCityChanged = homeViewModel::refresh
+                )
+
+                WeatherNavigationTarget.DESKTOP_WEATHER -> DesktopWeatherScreen(
+                    modifier = pageModifier,
+                    onRequestWidget = { noticeText = requestWeatherWidgetPin(context) }
+                )
+
+                WeatherNavigationTarget.PERSONALIZATION -> PersonalizationScreen(
+                    modifier = pageModifier
+                )
+
+                WeatherNavigationTarget.SETTINGS -> MineScreen(
+                    modifier = pageModifier,
+                    respectStatusBar = false,
+                    showHeader = false
+                )
+
+                WeatherNavigationTarget.ALERTS -> AlertScreen(
+                    modifier = pageModifier,
+                    respectStatusBar = false
+                )
+
+                WeatherNavigationTarget.LIFE_INDEX -> LifeIndexScreen(
+                    modifier = pageModifier,
+                    respectStatusBar = false
+                )
+
+                WeatherNavigationTarget.SEARCH_CITY -> Unit
             }
-        )
+        }
     }
 
     when (activeSheet) {
-        WeatherSheet.ManageCities -> {
+        WeatherNavigationTarget.SEARCH_CITY -> {
             ModalBottomSheet(
                 onDismissRequest = {
-                    activeSheet = null
-                    homeViewModel.refresh()
-                },
-                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 420.dp)
-                ) {
-                    CityScreen(
-                        modifier = Modifier.fillMaxWidth(),
-                        temperatureUnit = temperatureUnit,
-                        respectStatusBar = false,
-                        onDefaultCityChanged = {
-                            activeSheet = null
-                            homeViewModel.refresh()
-                        }
-                    )
-                }
-            }
-        }
-
-        WeatherSheet.SearchCity -> {
-            ModalBottomSheet(
-                onDismissRequest = {
-                    activeSheet = null
+                    activeTarget = null
                     homeViewModel.refresh()
                 },
                 containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
@@ -149,7 +171,7 @@ fun YunJiApp(
                         respectStatusBar = false,
                         autoFocusSearch = true,
                         onDefaultCityChanged = {
-                            activeSheet = null
+                            activeTarget = null
                             homeViewModel.refresh()
                         }
                     )
@@ -157,61 +179,8 @@ fun YunJiApp(
             }
         }
 
-        WeatherSheet.Settings -> {
-            ModalBottomSheet(
-                onDismissRequest = { activeSheet = null },
-                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 420.dp)
-                ) {
-                    MineScreen(
-                        modifier = Modifier.fillMaxWidth(),
-                        respectStatusBar = false
-                    )
-                }
-            }
-        }
-
-        WeatherSheet.Alerts -> {
-            ModalBottomSheet(
-                onDismissRequest = { activeSheet = null },
-                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 480.dp)
-                ) {
-                    AlertScreen(
-                        modifier = Modifier.fillMaxWidth(),
-                        respectStatusBar = false
-                    )
-                }
-            }
-        }
-
-        WeatherSheet.LifeIndex -> {
-            ModalBottomSheet(
-                onDismissRequest = { activeSheet = null },
-                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 480.dp)
-                ) {
-                    LifeIndexScreen(
-                        modifier = Modifier.fillMaxWidth(),
-                        respectStatusBar = false
-                    )
-                }
-            }
-        }
-
         null -> Unit
+        else -> Unit
     }
 
     if (noticeText.isNotBlank()) {
@@ -227,55 +196,27 @@ fun YunJiApp(
     }
 }
 
-private fun launchWeatherShare(
-    context: Context,
-    weatherData: HomeWeatherData?,
-    temperatureUnit: String,
-    windUnit: String
-): String {
-    if (weatherData == null) {
-        return "暂无可分享的天气数据。"
-    }
-    val shareText = WeatherShareUtils.buildShareText(weatherData, temperatureUnit, windUnit)
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "text/plain"
-        putExtra(Intent.EXTRA_TEXT, shareText)
-    }
-    return if (startChooser(context, intent, "分享天气")) {
-        ""
-    } else {
-        "系统没有可用的分享应用。"
+private fun activePageTitle(target: WeatherNavigationTarget): String {
+    return when (target) {
+        WeatherNavigationTarget.MANAGE_CITIES -> "管理城市"
+        WeatherNavigationTarget.DESKTOP_WEATHER -> "桌面天气"
+        WeatherNavigationTarget.PERSONALIZATION -> "个性化"
+        WeatherNavigationTarget.SETTINGS -> "设置"
+        WeatherNavigationTarget.ALERTS -> "天气预警"
+        WeatherNavigationTarget.LIFE_INDEX -> "生活指数"
+        WeatherNavigationTarget.SEARCH_CITY -> "搜索城市"
     }
 }
 
-private fun launchWeatherFeedback(
-    context: Context,
-    weatherData: HomeWeatherData?,
-    temperatureUnit: String,
-    windUnit: String
-): String {
-    if (weatherData == null) {
-        return "暂无天气数据可反馈。"
-    }
-    val body = WeatherShareUtils.buildShareText(weatherData, temperatureUnit, windUnit) +
-        "\n\n请补充你看到的实际天气、位置和问题描述："
-    val emailIntent = Intent(Intent.ACTION_SENDTO).apply {
-        setData(Uri.parse("mailto:"))
-        putExtra(Intent.EXTRA_SUBJECT, "云迹天气反馈 - ${weatherData.cityName}")
-        putExtra(Intent.EXTRA_TEXT, body)
-    }
-    if (startChooser(context, emailIntent, "反馈当前天气")) {
-        return ""
-    }
-    val fallbackIntent = Intent(Intent.ACTION_SEND).apply {
-        type = "text/plain"
-        putExtra(Intent.EXTRA_SUBJECT, "云迹天气反馈 - ${weatherData.cityName}")
-        putExtra(Intent.EXTRA_TEXT, body)
-    }
-    return if (startChooser(context, fallbackIntent, "反馈当前天气")) {
-        ""
-    } else {
-        "系统没有可用的反馈应用。"
+private fun activePageSubtitle(target: WeatherNavigationTarget): String? {
+    return when (target) {
+        WeatherNavigationTarget.MANAGE_CITIES -> "搜索、添加、切换默认城市"
+        WeatherNavigationTarget.DESKTOP_WEATHER -> "管理系统桌面小组件"
+        WeatherNavigationTarget.PERSONALIZATION -> "主题、动效和首页模块"
+        WeatherNavigationTarget.SETTINGS -> "通知、单位和本地数据"
+        WeatherNavigationTarget.ALERTS -> null
+        WeatherNavigationTarget.LIFE_INDEX -> null
+        WeatherNavigationTarget.SEARCH_CITY -> null
     }
 }
 
@@ -291,24 +232,4 @@ private fun requestWeatherWidgetPin(context: Context): String {
         }
     }
     return "请长按桌面，在系统小组件列表中选择云迹天气。"
-}
-
-private fun startChooser(context: Context, intent: Intent, title: String): Boolean {
-    return try {
-        context.startActivity(
-            Intent.createChooser(intent, title)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        )
-        true
-    } catch (exception: ActivityNotFoundException) {
-        false
-    }
-}
-
-private enum class WeatherSheet {
-    ManageCities,
-    SearchCity,
-    Settings,
-    Alerts,
-    LifeIndex
 }
