@@ -68,6 +68,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -91,7 +92,11 @@ import com.litroenade.yunjiweather.ui.compose.WeatherAtmosphere
 import com.litroenade.yunjiweather.ui.compose.WeatherAnimation
 import com.litroenade.yunjiweather.ui.compose.WeatherSceneSpec
 import com.litroenade.yunjiweather.ui.compose.formatWeatherTime
+import com.litroenade.yunjiweather.ui.compose.theme.LocalThemeSkin
 import com.litroenade.yunjiweather.ui.compose.theme.LocalYunJiVisualTheme
+import com.litroenade.yunjiweather.ui.compose.theme.effects.ThemeWeatherEffect
+import com.litroenade.yunjiweather.ui.compose.theme.effects.ThemeWeatherEffectCatalog
+import com.litroenade.yunjiweather.ui.compose.theme.skins.ThemeSkin
 import com.litroenade.yunjiweather.ui.home.HomeViewModel
 import com.litroenade.yunjiweather.utils.AirQualityUtils
 import com.litroenade.yunjiweather.utils.HomeBlock
@@ -106,6 +111,10 @@ import java.util.Locale
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 
+/**
+ * Main weather surface. It composes cached-first city paging, pull-to-refresh, weather
+ * atmosphere, warning/news cards, and user-reordered home modules into one scroll page.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
@@ -213,6 +222,10 @@ fun HomeScreen(
     val headerCityName = displayedWeatherData?.cityName ?: "云迹天气"
     val headerNoticeText = message
     val visualTheme = LocalYunJiVisualTheme.current
+    val themeSkin = LocalThemeSkin.current
+    val themeWeatherEffect = remember(themeSkin.key) {
+        ThemeWeatherEffectCatalog.getEffect(themeSkin.key)
+    }
     val weatherSceneSpec = remember(displayedWeatherData?.iconCode) {
         WeatherSceneSpec.fromIconCode(displayedWeatherData?.iconCode ?: "100")
     }
@@ -225,7 +238,7 @@ fun HomeScreen(
             )
         )
     } else {
-        weatherBackground(weatherSceneSpec)
+        weatherBackground(weatherSceneSpec, themeSkin)
     }
     Box(
         modifier = modifier
@@ -233,15 +246,34 @@ fun HomeScreen(
             .then(citySwipeModifier)
             .background(backgroundBrush)
     ) {
+        val backdropImageResId = themeWeatherEffect.homeBackdropImageResId
+        if (backdropImageResId != null) {
+            Image(
+                painter = painterResource(backdropImageResId),
+                contentDescription = null,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        translationX = -cityDragOffset * 0.16f
+                    }
+                    .alpha(themeWeatherEffect.homeBackdropAlpha(weatherSceneSpec)),
+                contentScale = ContentScale.Crop
+            )
+            HomeBackdropScrim(
+                sceneSpec = weatherSceneSpec,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
         if (animationEnabled) {
             WeatherAtmosphere(
                 sceneSpec = weatherSceneSpec,
+                immersion = themeSkin.homeImmersion,
                 modifier = Modifier
                     .fillMaxSize()
                     .graphicsLayer {
                         translationX = -cityDragOffset * 0.45f
                     }
-                    .alpha(0.92f)
+                    .alpha(themeWeatherEffect.atmosphereLayerAlpha(themeSkin))
             )
         }
         PullToRefreshBox(
@@ -361,7 +393,7 @@ fun HomeScreen(
                                             enabledBlocks = homeBlockEnabled,
                                             onOpenAlerts = onOpenAlerts,
                                             onOpenLifeIndex = onOpenLifeIndex,
-                                            onSettings = onSettings
+                                            onPersonalization = onPersonalization
                                         )
                                     }
                                 }
@@ -412,9 +444,10 @@ private fun PullRefreshStatus(
         pullFraction >= 1f -> "松开更新 · $lastUpdateText"
         else -> "下拉更新 · $lastUpdateText"
     }
-    val textColor = weatherScenePrimaryTextColor(sceneSpec, MaterialTheme.colorScheme.onSurface)
-    val containerColor = weatherSceneFloatingSurfaceColor(sceneSpec, MaterialTheme.colorScheme.surface)
-    val borderColor = weatherSceneStrokeColor(sceneSpec, textColor)
+    val themeEffect = ThemeWeatherEffectCatalog.getEffect(LocalThemeSkin.current.key)
+    val textColor = weatherScenePrimaryTextColor(sceneSpec, MaterialTheme.colorScheme.onSurface, themeEffect)
+    val containerColor = weatherSceneFloatingSurfaceColor(sceneSpec, MaterialTheme.colorScheme.surface, themeEffect)
+    val borderColor = weatherSceneStrokeColor(sceneSpec, textColor, themeEffect)
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(99.dp),
@@ -473,15 +506,17 @@ private fun CurrentWeatherSection(
     onDeveloperWeatherTap: () -> Unit
 ) {
     val visualTheme = LocalYunJiVisualTheme.current
-    val primaryTextColor = weatherScenePrimaryTextColor(sceneSpec, visualTheme.primaryWeatherText)
-    val secondaryTextColor = weatherSceneSecondaryTextColor(sceneSpec, visualTheme.secondaryWeatherText)
+    val themeSkin = LocalThemeSkin.current
+    val themeEffect = ThemeWeatherEffectCatalog.getEffect(themeSkin.key)
+    val primaryTextColor = weatherScenePrimaryTextColor(sceneSpec, visualTheme.primaryWeatherText, themeEffect)
+    val secondaryTextColor = weatherSceneSecondaryTextColor(sceneSpec, visualTheme.secondaryWeatherText, themeEffect)
     val windowInfo = LocalWindowInfo.current
     val density = LocalDensity.current
     val compact = with(density) { windowInfo.containerSize.height.toDp() < 760.dp }
     val currentWeatherHeight = if (compact) 292.dp else 330.dp
-    val animationWidth = if (compact) 176.dp else 210.dp
-    val animationHeight = if (compact) 142.dp else 170.dp
-    val animationTop = if (compact) 34.dp else 44.dp
+    val animationWidth = (if (compact) 176.dp else 210.dp) * themeSkin.heroAnimationScale
+    val animationHeight = (if (compact) 142.dp else 170.dp) * themeSkin.heroAnimationScale
+    val animationTop = if (compact) 28.dp else 36.dp
     val temperatureSize = if (compact) 76.sp else 86.sp
     val temperatureLineHeight = if (compact) 76.sp else 86.sp
     Box(
@@ -489,27 +524,31 @@ private fun CurrentWeatherSection(
             .fillMaxWidth()
             .height(currentWeatherHeight)
     ) {
-        if (animationEnabled) {
-            WeatherAnimation(
-                sceneSpec = sceneSpec,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = animationTop)
-                    .width(animationWidth)
-                    .height(animationHeight)
-                    .alpha(0.92f)
-            )
-        } else {
-            Image(
-                painter = painterResource(WeatherIconUtils.getWeatherIconRes(data.iconCode)),
-                contentDescription = data.condition,
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 58.dp, end = 18.dp)
-                    .size(124.dp)
-                    .alpha(0.72f),
-                colorFilter = ColorFilter.tint(primaryTextColor.copy(alpha = 0.72f))
-            )
+        when {
+            animationEnabled && themeEffect.drawsHeroIcon -> {
+                WeatherAnimation(
+                    sceneSpec = sceneSpec,
+                    motionScale = themeSkin.heroAnimationScale,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = animationTop)
+                        .width(animationWidth)
+                        .height(animationHeight)
+                        .alpha(0.92f)
+                )
+            }
+            !animationEnabled -> {
+                Image(
+                    painter = painterResource(WeatherIconUtils.getWeatherIconRes(data.iconCode)),
+                    contentDescription = data.condition,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 58.dp, end = 18.dp)
+                        .size(124.dp)
+                        .alpha(0.72f),
+                    colorFilter = ColorFilter.tint(primaryTextColor.copy(alpha = 0.72f))
+                )
+            }
         }
         Column(
             modifier = Modifier
@@ -582,10 +621,12 @@ private fun WeatherTopActions(
     onDesktopWeather: () -> Unit
 ) {
     val visualTheme = LocalYunJiVisualTheme.current
-    val primaryTextColor = weatherScenePrimaryTextColor(sceneSpec, visualTheme.primaryWeatherText)
-    val secondaryTextColor = weatherSceneSecondaryTextColor(sceneSpec, visualTheme.secondaryWeatherText)
-    val iconContainerColor = weatherSceneFloatingSurfaceColor(sceneSpec, MaterialTheme.colorScheme.surface)
-    val iconBorderColor = weatherSceneStrokeColor(sceneSpec, primaryTextColor)
+    val themeSkin = LocalThemeSkin.current
+    val themeEffect = ThemeWeatherEffectCatalog.getEffect(themeSkin.key)
+    val primaryTextColor = weatherScenePrimaryTextColor(sceneSpec, visualTheme.primaryWeatherText, themeEffect)
+    val secondaryTextColor = weatherSceneSecondaryTextColor(sceneSpec, visualTheme.secondaryWeatherText, themeEffect)
+    val iconContainerColor = weatherSceneFloatingSurfaceColor(sceneSpec, MaterialTheme.colorScheme.surface, themeEffect)
+    val iconBorderColor = weatherSceneStrokeColor(sceneSpec, primaryTextColor, themeEffect)
     var expanded by remember { mutableStateOf(false) }
     val actionSideWidth = 88.dp
     Row(
@@ -751,7 +792,8 @@ private fun CityPageDots(
     modifier: Modifier = Modifier
 ) {
     val visualTheme = LocalYunJiVisualTheme.current
-    val dotColor = weatherScenePrimaryTextColor(sceneSpec, visualTheme.primaryWeatherText)
+    val themeEffect = ThemeWeatherEffectCatalog.getEffect(LocalThemeSkin.current.key)
+    val dotColor = weatherScenePrimaryTextColor(sceneSpec, visualTheme.primaryWeatherText, themeEffect)
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -811,15 +853,15 @@ private fun HomeContentBlocks(
     enabledBlocks: Map<HomeBlock, Boolean>,
     onOpenAlerts: () -> Unit,
     onOpenLifeIndex: () -> Unit,
-    onSettings: () -> Unit
+    onPersonalization: () -> Unit
 ) {
     val visibleBlocks = blocks.filter { block -> enabledBlocks[block] ?: true }
     if (visibleBlocks.isEmpty()) {
         MessageCard(
             title = "首页模块已全部隐藏",
-            message = "可在我的页的首页模块中恢复默认布局。",
-            buttonText = "打开设置",
-            onButtonClick = onSettings
+            message = "可在个性换肤右上角设置中恢复默认布局。",
+            buttonText = "打开个性换肤",
+            onButtonClick = onPersonalization
         )
         return
     }
@@ -1582,42 +1624,94 @@ private fun lastWeatherUpdateLabel(state: UiState<HomeWeatherData>?, data: HomeW
     }
 }
 
-private fun weatherBackground(sceneSpec: WeatherSceneSpec): Brush {
+@Composable
+private fun HomeBackdropScrim(
+    sceneSpec: WeatherSceneSpec,
+    modifier: Modifier = Modifier
+) {
+    val topAlpha = if (sceneSpec.category == WeatherIconUtils.WeatherCategory.NIGHT) 0.44f else 0.26f
+    val bottomAlpha = if (sceneSpec.category == WeatherIconUtils.WeatherCategory.NIGHT) 0.54f else 0.34f
+    Canvas(modifier = modifier) {
+        drawRect(
+            brush = Brush.verticalGradient(
+                listOf(
+                    Color(0xFF06151A).copy(alpha = topAlpha),
+                    Color.Transparent,
+                    Color(0xFF06151A).copy(alpha = bottomAlpha)
+                )
+            )
+        )
+        drawRect(
+            brush = Brush.radialGradient(
+                listOf(
+                    Color.White.copy(alpha = if (sceneSpec.hasCelestialGlow()) 0.20f else 0.10f),
+                    Color.Transparent
+                ),
+                center = Offset(size.width * 0.72f, size.height * 0.12f),
+                radius = size.width * 0.86f
+            )
+        )
+    }
+}
+
+private fun weatherBackground(sceneSpec: WeatherSceneSpec, skin: ThemeSkin): Brush {
+    val depth = ((skin.homeImmersion - 1f) * 0.38f).coerceIn(0f, 0.22f)
+    if (sceneSpec.category == WeatherIconUtils.WeatherCategory.NIGHT) {
+        return Brush.verticalGradient(
+            listOf(
+                skin.nightGradientTop,
+                skin.nightGradientMiddle,
+                deepenWeatherColor(skin.nightGradientBottom, depth * 0.62f)
+            )
+        )
+    }
     return Brush.verticalGradient(
         listOf(
-            Color(sceneSpec.topColor),
-            Color(sceneSpec.middleColor),
+            deepenWeatherColor(Color(sceneSpec.topColor), depth),
+            deepenWeatherColor(Color(sceneSpec.middleColor), depth * 0.72f),
             Color(sceneSpec.bottomColor)
         )
     )
 }
 
-private fun weatherScenePrimaryTextColor(sceneSpec: WeatherSceneSpec, fallback: Color): Color {
-    return if (sceneSpec.usesLightForeground()) {
+private fun deepenWeatherColor(color: Color, amount: Float): Color {
+    if (amount <= 0f) {
+        return color
+    }
+    return Color(
+        red = (color.red * (1f - amount)).coerceIn(0f, 1f),
+        green = (color.green * (1f - amount * 0.92f)).coerceIn(0f, 1f),
+        blue = (color.blue * (1f - amount * 0.58f)).coerceIn(0f, 1f),
+        alpha = color.alpha
+    )
+}
+
+private fun weatherScenePrimaryTextColor(sceneSpec: WeatherSceneSpec, fallback: Color, effect: ThemeWeatherEffect): Color {
+    return if (effect.usesImmersiveForeground(sceneSpec)) {
         Color.White
     } else {
         fallback
     }
 }
 
-private fun weatherSceneSecondaryTextColor(sceneSpec: WeatherSceneSpec, fallback: Color): Color {
-    return if (sceneSpec.usesLightForeground()) {
+private fun weatherSceneSecondaryTextColor(sceneSpec: WeatherSceneSpec, fallback: Color, effect: ThemeWeatherEffect): Color {
+    return if (effect.usesImmersiveForeground(sceneSpec)) {
         Color.White.copy(alpha = 0.78f)
     } else {
         fallback
     }
 }
 
-private fun weatherSceneFloatingSurfaceColor(sceneSpec: WeatherSceneSpec, fallback: Color): Color {
-    return if (sceneSpec.usesLightForeground()) {
+private fun weatherSceneFloatingSurfaceColor(sceneSpec: WeatherSceneSpec, fallback: Color, effect: ThemeWeatherEffect): Color {
+    return if (effect.usesImmersiveForeground(sceneSpec)) {
         Color.White.copy(alpha = 0.18f)
     } else {
         fallback.copy(alpha = 0.34f)
     }
 }
 
-private fun weatherSceneStrokeColor(sceneSpec: WeatherSceneSpec, foreground: Color): Color {
-    return if (sceneSpec.usesLightForeground()) {
+private fun weatherSceneStrokeColor(sceneSpec: WeatherSceneSpec, foreground: Color, effect: ThemeWeatherEffect): Color {
+    return if (effect.usesImmersiveForeground(sceneSpec)) {
         Color.White.copy(alpha = 0.20f)
     } else {
         foreground.copy(alpha = 0.18f)

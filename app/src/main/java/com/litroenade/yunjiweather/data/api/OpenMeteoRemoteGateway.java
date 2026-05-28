@@ -20,6 +20,10 @@ import java.util.Objects;
 
 import retrofit2.Response;
 
+/**
+ * Maps Open-Meteo forecast and air-quality responses into the app's strict display model.
+ * Missing required fields fail fast so the repository can decide whether to show cache.
+ */
 public final class OpenMeteoRemoteGateway implements WeatherRepository.RemoteGateway {
 
     private static final String TIMEZONE = "Asia/Shanghai";

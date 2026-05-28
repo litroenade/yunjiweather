@@ -4,35 +4,36 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Stable catalog for the personalization slots shown in Settings. Keep order changes
+ * intentional because the UI and tests rely on this sequence.
+ */
 public final class VisualThemeCatalog {
 
     private static final List<VisualTheme> THEMES = Collections.unmodifiableList(Arrays.asList(
             new VisualTheme(
                     VisualThemeUtils.THEME_SKY,
-                    "经典晴空",
-                    "跟随晴雨雪动态变化，保留天气应用的清爽感。"
+                    "默认主题",
+                    "使用云迹天气默认配色和首页模块。"
+            ),
+            new VisualTheme(
+                    VisualThemeUtils.THEME_PANORAMA,
+                    "全景天气",
+                    "沉浸式动态天气，强化真实光影、雨雪和风场层次。"
             ),
             new VisualTheme(
                     VisualThemeUtils.THEME_FANTASY,
-                    "幻想夜",
-                    "以深色夜景和剪影层次为主，适合暗色展示。"
-            ),
-            new VisualTheme(
-                    VisualThemeUtils.THEME_SAKURA,
-                    "樱雨粉",
-                    "使用樱色与雨纹层次，让设置页更柔和。"
+                    "幻想乡",
+                    "空位：后续用于幻想风格皮肤。",
+                    true,
+                    false
             ),
             new VisualTheme(
                     VisualThemeUtils.THEME_CUSTOM_1,
-                    "自建主题 1",
-                    "空位：可保存自己的首页模块顺序。",
-                    true
-            ),
-            new VisualTheme(
-                    VisualThemeUtils.THEME_CUSTOM_2,
-                    "自建主题 2",
-                    "空位：可保存另一套首页布局。",
-                    true
+                    "空位",
+                    "预留给后续自建主题。",
+                    true,
+                    false
             )
     ));
 
@@ -65,6 +66,7 @@ public final class VisualThemeCatalog {
     }
 
     public static boolean isSupportedTheme(String themeKey) {
-        return findByKey(themeKey) != null;
+        VisualTheme theme = findByKey(themeKey);
+        return theme != null && theme.isSelectable();
     }
 }

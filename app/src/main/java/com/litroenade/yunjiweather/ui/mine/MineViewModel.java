@@ -17,8 +17,6 @@ import com.litroenade.yunjiweather.utils.LocalStorageSummaryUtils;
 import com.litroenade.yunjiweather.utils.MineCacheStatusUtils;
 import com.litroenade.yunjiweather.utils.VisualTheme;
 import com.litroenade.yunjiweather.utils.VisualThemeCatalog;
-import com.litroenade.yunjiweather.utils.VisualThemeStyle;
-import com.litroenade.yunjiweather.utils.VisualThemeStyleCatalog;
 
 import java.util.EnumMap;
 import java.util.List;
@@ -42,7 +40,6 @@ public class MineViewModel extends AndroidViewModel {
     private final MutableLiveData<String> windUnit = new MutableLiveData<>();
     private final MutableLiveData<Boolean> dailyReminderEnabled = new MutableLiveData<>();
     private final MutableLiveData<String> visualTheme = new MutableLiveData<>();
-    private final MutableLiveData<String> visualThemeStyle = new MutableLiveData<>();
     private final MutableLiveData<List<HomeBlock>> homeBlockOrder = new MutableLiveData<>();
     private final MutableLiveData<Map<HomeBlock, Boolean>> homeBlockEnabled = new MutableLiveData<>();
     private final MutableLiveData<String> dataUpdateTime = new MutableLiveData<>();
@@ -97,24 +94,12 @@ public class MineViewModel extends AndroidViewModel {
         return visualTheme;
     }
 
-    public LiveData<String> getVisualThemeStyle() {
-        return visualThemeStyle;
-    }
-
     public String getCurrentVisualTheme() {
         return settingsManager.getVisualTheme();
     }
 
-    public String getCurrentVisualThemeStyle() {
-        return settingsManager.getVisualThemeStyle(settingsManager.getVisualTheme());
-    }
-
     public List<VisualTheme> getVisualThemes() {
         return VisualThemeCatalog.getThemes();
-    }
-
-    public List<VisualThemeStyle> getVisualThemeStyles() {
-        return VisualThemeStyleCatalog.getStyles();
     }
 
     public LiveData<List<HomeBlock>> getHomeBlockOrder() {
@@ -191,15 +176,7 @@ public class MineViewModel extends AndroidViewModel {
         settingsManager.setVisualTheme(themeKey);
         reloadSettings();
         VisualTheme theme = VisualThemeCatalog.getThemeOrDefault(themeKey);
-        message.setValue("视觉主题已应用：" + theme.getDisplayName());
-    }
-
-    public void setVisualThemeStyle(String styleKey) {
-        String themeKey = settingsManager.getVisualTheme();
-        settingsManager.setVisualThemeStyle(themeKey, styleKey);
-        reloadSettings();
-        VisualThemeStyle style = VisualThemeStyleCatalog.getStyleOrDefault(styleKey);
-        message.setValue("主题外观已应用：" + style.getDisplayName());
+        message.setValue("主题/个性化已应用：" + theme.getDisplayName());
     }
 
     public void setHomeBlockEnabled(HomeBlock block, boolean enabled) {
@@ -249,7 +226,6 @@ public class MineViewModel extends AndroidViewModel {
         dailyReminderEnabled.setValue(settingsManager.isDailyReminderEnabled());
         String themeKey = settingsManager.getVisualTheme();
         visualTheme.setValue(themeKey);
-        visualThemeStyle.setValue(settingsManager.getVisualThemeStyle(themeKey));
         reloadHomeBlockLayout();
     }
 

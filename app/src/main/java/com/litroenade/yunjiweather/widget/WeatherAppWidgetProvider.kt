@@ -11,6 +11,10 @@ import com.litroenade.yunjiweather.R
 import com.litroenade.yunjiweather.ui.splash.SplashActivity
 import java.util.concurrent.Executors
 
+/**
+ * AppWidgetProvider stays thin: it loads a snapshot off the main thread, renders
+ * RemoteViews, and routes widget taps back into the normal SplashActivity entry.
+ */
 class WeatherAppWidgetProvider : AppWidgetProvider() {
 
     override fun onUpdate(

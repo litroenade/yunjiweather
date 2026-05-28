@@ -8,6 +8,10 @@ import com.litroenade.yunjiweather.data.model.LifeIndexItem;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Resolves life-index content from QWeather when available, otherwise falls back to
+ * valid cache and finally deterministic local suggestions for offline operation.
+ */
 public final class LifeIndexRepository {
 
     private static final String OPEN_METEO_LOCATION_PREFIX = "openmeteo:";

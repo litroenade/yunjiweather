@@ -48,9 +48,6 @@ class MainActivity : ComponentActivity() {
             val visualThemeKey by mineViewModel.getVisualTheme().observeAsState(
                 settingsManager.getVisualTheme()
             )
-            val visualThemeStyleKey by mineViewModel.getVisualThemeStyle().observeAsState(
-                settingsManager.getVisualThemeStyle(settingsManager.getVisualTheme())
-            )
             val animationEnabled by mineViewModel.getAnimationEnabled().observeAsState(
                 settingsManager.isAnimationEnabled()
             )
@@ -83,8 +80,7 @@ class MainActivity : ComponentActivity() {
             }
             YunJiTheme(
                 darkTheme = darkModeEnabled,
-                visualThemeKey = visualThemeKey,
-                visualThemeStyleKey = visualThemeStyleKey
+                visualThemeKey = visualThemeKey
             ) {
                 YunJiApp(
                     animationEnabled = animationEnabled,
@@ -94,6 +90,10 @@ class MainActivity : ComponentActivity() {
                     homeBlockOrder = homeBlockOrder,
                     homeBlockEnabled = homeBlockEnabled,
                     homeViewModel = homeViewModel,
+                    onHomeBlockEnabledChange = mineViewModel::setHomeBlockEnabled,
+                    onMoveHomeBlockUp = mineViewModel::moveHomeBlockUp,
+                    onMoveHomeBlockDown = mineViewModel::moveHomeBlockDown,
+                    onResetHomeBlocks = mineViewModel::resetHomeBlockLayout,
                     onDisplayedWeatherIconCodeChanged = { iconCode ->
                         displayedWeatherIconCode = iconCode
                     }

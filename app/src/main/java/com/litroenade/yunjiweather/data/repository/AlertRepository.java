@@ -7,6 +7,10 @@ import com.litroenade.yunjiweather.data.local.WarningDao;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Keeps warning refresh and local warning state in one place. QWeather is optional:
+ * without it, callers receive the existing local cache instead of fabricated warnings.
+ */
 public final class AlertRepository {
 
     private final AlertRemoteGateway remoteGateway;

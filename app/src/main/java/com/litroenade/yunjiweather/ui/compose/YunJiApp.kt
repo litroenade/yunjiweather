@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
@@ -28,14 +30,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.litroenade.yunjiweather.R
 import com.litroenade.yunjiweather.ui.compose.screens.AlertScreen
 import com.litroenade.yunjiweather.ui.compose.screens.CityScreen
 import com.litroenade.yunjiweather.ui.compose.screens.DesktopWeatherScreen
 import com.litroenade.yunjiweather.ui.compose.screens.HomeScreen
 import com.litroenade.yunjiweather.ui.compose.screens.LifeIndexScreen
 import com.litroenade.yunjiweather.ui.compose.screens.MineScreen
+import com.litroenade.yunjiweather.ui.compose.screens.PersonalizationBlockEditor
 import com.litroenade.yunjiweather.ui.compose.screens.PersonalizationScreen
 import com.litroenade.yunjiweather.ui.compose.theme.LocalYunJiVisualTheme
 import com.litroenade.yunjiweather.ui.home.HomeViewModel
@@ -53,9 +58,14 @@ fun YunJiApp(
     homeBlockOrder: List<HomeBlock> = HomeBlock.defaultOrder(),
     homeBlockEnabled: Map<HomeBlock, Boolean> = emptyMap(),
     homeViewModel: HomeViewModel = viewModel(),
+    onHomeBlockEnabledChange: (HomeBlock, Boolean) -> Unit = { _, _ -> },
+    onMoveHomeBlockUp: (HomeBlock) -> Unit = {},
+    onMoveHomeBlockDown: (HomeBlock) -> Unit = {},
+    onResetHomeBlocks: () -> Unit = {},
     onDisplayedWeatherIconCodeChanged: (String?) -> Unit = {}
 ) {
     var activeTarget by rememberSaveable { mutableStateOf<WeatherNavigationTarget?>(null) }
+    var showPersonalizationBlockEditor by rememberSaveable { mutableStateOf(false) }
     var noticeText by rememberSaveable { mutableStateOf("") }
     val context = LocalContext.current
     val visualTheme = LocalYunJiVisualTheme.current
@@ -70,10 +80,17 @@ fun YunJiApp(
         if (activePage != null) {
             onDisplayedWeatherIconCodeChanged("")
         }
+        if (activePage != WeatherNavigationTarget.PERSONALIZATION) {
+            showPersonalizationBlockEditor = false
+        }
     }
 
-    BackHandler(enabled = activeTarget != null) {
-        closePageAndRefresh()
+    BackHandler(enabled = activeTarget != null || showPersonalizationBlockEditor) {
+        if (showPersonalizationBlockEditor) {
+            showPersonalizationBlockEditor = false
+        } else {
+            closePageAndRefresh()
+        }
     }
 
     if (activePage == null) {
@@ -110,7 +127,20 @@ fun YunJiApp(
             title = activePageTitle(activePage),
             subtitle = activePageSubtitle(activePage),
             onBack = closePageAndRefresh,
-            modifier = modifier
+            modifier = modifier,
+            action = if (activePage == WeatherNavigationTarget.PERSONALIZATION) {
+                {
+                    IconButton(onClick = { showPersonalizationBlockEditor = true }) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_settings_24),
+                            contentDescription = "调整首页模块",
+                            tint = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                }
+            } else {
+                null
+            }
         ) { pageModifier ->
             when (activePage) {
                 WeatherNavigationTarget.MANAGE_CITIES -> CityScreen(
@@ -183,6 +213,22 @@ fun YunJiApp(
         else -> Unit
     }
 
+    if (showPersonalizationBlockEditor) {
+        ModalBottomSheet(
+            onDismissRequest = { showPersonalizationBlockEditor = false },
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f)
+        ) {
+            PersonalizationBlockEditor(
+                homeBlockOrder = homeBlockOrder,
+                homeBlockEnabled = homeBlockEnabled,
+                onHomeBlockEnabledChange = onHomeBlockEnabledChange,
+                onMoveHomeBlockUp = onMoveHomeBlockUp,
+                onMoveHomeBlockDown = onMoveHomeBlockDown,
+                onResetHomeBlocks = onResetHomeBlocks
+            )
+        }
+    }
+
     if (noticeText.isNotBlank()) {
         AlertDialog(
             onDismissRequest = { noticeText = "" },
@@ -200,7 +246,7 @@ private fun activePageTitle(target: WeatherNavigationTarget): String {
     return when (target) {
         WeatherNavigationTarget.MANAGE_CITIES -> "管理城市"
         WeatherNavigationTarget.DESKTOP_WEATHER -> "桌面天气"
-        WeatherNavigationTarget.PERSONALIZATION -> "个性化"
+        WeatherNavigationTarget.PERSONALIZATION -> "个性换肤"
         WeatherNavigationTarget.SETTINGS -> "设置"
         WeatherNavigationTarget.ALERTS -> "天气预警"
         WeatherNavigationTarget.LIFE_INDEX -> "生活指数"
@@ -212,7 +258,7 @@ private fun activePageSubtitle(target: WeatherNavigationTarget): String? {
     return when (target) {
         WeatherNavigationTarget.MANAGE_CITIES -> "搜索、添加、切换默认城市"
         WeatherNavigationTarget.DESKTOP_WEATHER -> "管理系统桌面小组件"
-        WeatherNavigationTarget.PERSONALIZATION -> "主题、动效和首页模块"
+        WeatherNavigationTarget.PERSONALIZATION -> "选择主题，右上角调整首页模块"
         WeatherNavigationTarget.SETTINGS -> "通知、单位和本地数据"
         WeatherNavigationTarget.ALERTS -> null
         WeatherNavigationTarget.LIFE_INDEX -> null

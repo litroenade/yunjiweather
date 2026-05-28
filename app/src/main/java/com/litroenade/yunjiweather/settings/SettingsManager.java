@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import com.litroenade.yunjiweather.utils.HomeBlock;
-import com.litroenade.yunjiweather.utils.VisualThemeStyleCatalog;
 import com.litroenade.yunjiweather.utils.VisualThemeUtils;
 import com.litroenade.yunjiweather.utils.WeatherDisplayUtils;
 
@@ -13,6 +12,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Owns device-local preferences and repairs old values at read time. Preference keys are
+ * treated as compatibility data because older app versions may have written them already.
+ */
 public final class SettingsManager {
 
     private static final String PREF_NAME = "yunji_weather_settings";
@@ -26,7 +29,6 @@ public final class SettingsManager {
     private static final String KEY_DEVELOPER_TOOLS_ENABLED = "developer_tools_enabled";
     private static final String KEY_HOME_BLOCK_ORDER_PREFIX = "home_block_order_";
     private static final String KEY_HOME_BLOCK_DISABLED_PREFIX = "home_block_disabled_";
-    private static final String KEY_VISUAL_THEME_STYLE_PREFIX = "visual_theme_style_";
 
     private final SharedPreferences preferences;
 
@@ -114,23 +116,6 @@ public final class SettingsManager {
     public void setVisualTheme(String themeKey) {
         VisualThemeUtils.validateThemeKey(themeKey);
         preferences.edit().putString(KEY_VISUAL_THEME, themeKey).apply();
-    }
-
-    public String getVisualThemeStyle(String themeKey) {
-        String normalizedThemeKey = VisualThemeUtils.normalizeThemeKey(themeKey);
-        String preferenceKey = visualThemeStyleKey(normalizedThemeKey);
-        String styleKey = getStringSetting(preferenceKey, VisualThemeStyleCatalog.STYLE_DEFAULT);
-        String normalizedStyleKey = VisualThemeStyleCatalog.getStyleOrDefault(styleKey).getKey();
-        repairStringIfNeeded(preferenceKey, styleKey, normalizedStyleKey);
-        return normalizedStyleKey;
-    }
-
-    public void setVisualThemeStyle(String themeKey, String styleKey) {
-        String normalizedThemeKey = VisualThemeUtils.normalizeThemeKey(themeKey);
-        validateVisualThemeStyle(styleKey);
-        preferences.edit()
-                .putString(visualThemeStyleKey(normalizedThemeKey), styleKey)
-                .apply();
     }
 
     public List<HomeBlock> getHomeBlockOrder(String themeKey) {
@@ -266,10 +251,6 @@ public final class SettingsManager {
         return KEY_HOME_BLOCK_DISABLED_PREFIX + themeKey;
     }
 
-    private static String visualThemeStyleKey(String themeKey) {
-        return KEY_VISUAL_THEME_STYLE_PREFIX + themeKey;
-    }
-
     private Set<HomeBlock> getDisabledHomeBlocks(String themeKey) {
         String normalizedThemeKey = VisualThemeUtils.normalizeThemeKey(themeKey);
         String preferenceKey = homeBlockDisabledKey(normalizedThemeKey);
@@ -339,9 +320,4 @@ public final class SettingsManager {
         return builder.toString();
     }
 
-    private static void validateVisualThemeStyle(String styleKey) {
-        if (!VisualThemeStyleCatalog.isSupportedStyle(styleKey)) {
-            throw new IllegalArgumentException("不支持的主题外观：" + styleKey);
-        }
-    }
 }

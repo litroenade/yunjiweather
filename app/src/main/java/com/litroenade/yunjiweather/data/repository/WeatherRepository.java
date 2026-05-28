@@ -6,6 +6,10 @@ import com.litroenade.yunjiweather.utils.DateTimeUtils;
 
 import java.io.IOException;
 
+/**
+ * Owns the home-weather loading policy: remote refresh first, then Room cache fallback
+ * with explicit cache messaging when the network or provider fails.
+ */
 public class WeatherRepository implements HomeWeatherSource, HomeWeatherCacheSource {
 
     private static final long HOME_CACHE_TTL_MILLIS = 30L * 60L * 1000L;

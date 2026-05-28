@@ -35,8 +35,8 @@ import com.litroenade.yunjiweather.ui.compose.InfoCard
 import com.litroenade.yunjiweather.ui.compose.ScreenHeader
 import com.litroenade.yunjiweather.ui.compose.SectionTitle
 import com.litroenade.yunjiweather.ui.mine.MineViewModel
-import com.litroenade.yunjiweather.utils.HomeBlock
 import com.litroenade.yunjiweather.utils.PermissionUtils
+import com.litroenade.yunjiweather.utils.VisualThemeCatalog
 import com.litroenade.yunjiweather.utils.WeatherDisplayUtils
 
 @Composable
@@ -57,14 +57,12 @@ fun MineScreen(
     val temperatureUnit by viewModel.getTemperatureUnit().observeAsState(WeatherDisplayUtils.TEMPERATURE_CELSIUS)
     val windUnit by viewModel.getWindUnit().observeAsState(WeatherDisplayUtils.WIND_SCALE)
     val selectedTheme by viewModel.getVisualTheme().observeAsState(viewModel.getCurrentVisualTheme())
-    val selectedThemeStyle by viewModel.getVisualThemeStyle().observeAsState(viewModel.getCurrentVisualThemeStyle())
-    val homeBlockOrder by viewModel.getHomeBlockOrder().observeAsState(HomeBlock.defaultOrder())
-    val homeBlockEnabled by viewModel.getHomeBlockEnabled().observeAsState(emptyMap())
     val dataUpdateTime by viewModel.getDataUpdateTime().observeAsState("暂无更新")
     val localStorageSummary by viewModel.getLocalStorageSummary().observeAsState("")
     val message by viewModel.getMessage().observeAsState("")
-    val themes = remember(viewModel) { viewModel.getVisualThemes() }
-    val themeStyles = remember(viewModel) { viewModel.getVisualThemeStyles() }
+    val selectedThemeName = remember(selectedTheme) {
+        VisualThemeCatalog.getThemeOrDefault(selectedTheme).displayName
+    }
     var infoDialog by remember { mutableStateOf<MineInfoDialog?>(null) }
 
     LaunchedEffect(Unit) {
@@ -172,23 +170,17 @@ fun MineScreen(
                         onClick = { viewModel.setWindUnit(WeatherDisplayUtils.WIND_METER_PER_SECOND) }
                     )
                 }
-            }
-        }
-        item {
-            InfoCard {
-                PersonalizationPanel(
-                    themes = themes,
-                    themeStyles = themeStyles,
-                    selectedTheme = selectedTheme,
-                    selectedThemeStyle = selectedThemeStyle,
-                    homeBlockOrder = homeBlockOrder,
-                    homeBlockEnabled = homeBlockEnabled,
-                    onThemeSelected = viewModel::setVisualTheme,
-                    onStyleSelected = viewModel::setVisualThemeStyle,
-                    onHomeBlockEnabledChange = viewModel::setHomeBlockEnabled,
-                    onMoveHomeBlockUp = viewModel::moveHomeBlockUp,
-                    onMoveHomeBlockDown = viewModel::moveHomeBlockDown,
-                    onResetHomeBlocks = viewModel::resetHomeBlockLayout
+                Text("当前主题", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                Text(
+                    text = selectedThemeName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    text = "从首页更多菜单进入个性换肤，可调整主题和首页模块。",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -364,7 +356,7 @@ private enum class MineInfoDialog(
     ),
     Help(
         "使用帮助",
-        "首页查看默认城市天气；顶部搜索入口用于添加城市，更多菜单保留管理城市、桌面天气、个性化和设置。我的页可开启通知、每日提醒、天气动画、深色模式，并切换单位和视觉主题。通知权限只在功能需要时申请；清理缓存不会删除已关注城市。"
+        "首页查看默认城市天气；顶部搜索入口用于添加城市，更多菜单保留管理城市、桌面天气、个性化和设置。我的页可开启通知、每日提醒、天气动画、深色模式，并切换单位和主题/个性化。通知权限只在功能需要时申请；清理缓存不会删除已关注城市。"
     ),
     About(
         "关于云迹天气",

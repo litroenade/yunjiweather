@@ -1,0 +1,90 @@
+package com.litroenade.yunjiweather.ui.compose.theme.skins.official
+
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.ui.graphics.Color
+import com.litroenade.yunjiweather.ui.compose.theme.skins.ThemeSkin
+import com.litroenade.yunjiweather.utils.VisualThemeUtils
+
+object OfficialWeatherSkin {
+    val skin = ThemeSkin(
+        key = VisualThemeUtils.THEME_SKY,
+        folderName = "official",
+        previewTitle = "官方天气",
+        previewSubtitle = "默认",
+        runtimeSelectable = true,
+        homeImmersion = 1.0f,
+        heroAnimationScale = 1.0f,
+        atmosphereAlpha = 0.92f,
+        weatherAnimationSpeed = 1.0f,
+        sunGlowScale = 1.0f,
+        sunDiscScale = 1.0f,
+        cloudShapeScale = 1.0f,
+        cloudOpacityMultiplier = 1.0f,
+        precipitationOpacityMultiplier = 1.0f,
+        particleSizeScale = 1.0f,
+        sunlightColor = Color(0xFFFFCD52),
+        sunRayColor = Color(0xFFFFB840),
+        cloudColor = Color(0xFFF7FAF8),
+        precipitationColor = Color(0xFFDDE8E8),
+        nightGradientTop = Color(0xFF071125),
+        nightGradientMiddle = Color(0xFF111A36),
+        nightGradientBottom = Color(0xFF263E67),
+        nightStarColor = Color(0xFFEAF3FF),
+        nightStarDensity = 1.0f,
+        nightStarGlowScale = 1.0f,
+        cardAlphaLight = 0.30f,
+        cardAlphaDark = 0.42f,
+        navAlphaLight = 0.68f,
+        navAlphaDark = 0.70f,
+        previewTop = Color(0xFF4AA3DF),
+        previewMiddle = Color(0xFF78C6EA),
+        previewBottom = Color(0xFFE4F4F8),
+        lightGradientTop = Color(0xFFA9D8F5),
+        lightGradientMiddle = Color(0xFFD9EEF3),
+        darkGradientTop = Color(0xFF172C3A),
+        darkGradientMiddle = Color(0xFF18272C),
+        lightColorScheme = lightColorScheme(
+            primary = Color(0xFF2F7D89),
+            onPrimary = Color.White,
+            primaryContainer = Color(0xFFD9F1F4),
+            onPrimaryContainer = Color(0xFF113B42),
+            secondary = Color(0xFF4D6F38),
+            onSecondary = Color.White,
+            secondaryContainer = Color(0xFFE5F1DA),
+            onSecondaryContainer = Color(0xFF20351A),
+            tertiary = Color(0xFF9B6A2C),
+            onTertiary = Color.White,
+            tertiaryContainer = Color(0xFFFFE6C6),
+            onTertiaryContainer = Color(0xFF3F2606),
+            background = Color(0xFFF4F7F8),
+            onBackground = Color(0xFF172326),
+            surface = Color.White,
+            onSurface = Color(0xFF172326),
+            surfaceVariant = Color(0xFFE1EAEC),
+            onSurfaceVariant = Color(0xFF506267),
+            error = Color(0xFFB42318)
+        ),
+        darkColorScheme = darkColorScheme(
+            primary = Color(0xFF8FD4DF),
+            onPrimary = Color(0xFF06343B),
+            primaryContainer = Color(0xFF194F58), 
+            onPrimaryContainer = Color(0xFFC8F4FA),
+            secondary = Color(0xFFB7D89A),
+            onSecondary = Color(0xFF1D320D),
+            secondaryContainer = Color(0xFF334C22),
+            onSecondaryContainer = Color(0xFFE0F4CF),
+            tertiary = Color(0xFFE8C28A),
+            onTertiary = Color(0xFF3B2506),
+            tertiaryContainer = Color(0xFF5A3B12),
+            onTertiaryContainer = Color(0xFFFFE2B5),
+            background = Color(0xFF111A1D),
+            onBackground = Color(0xFFE8EFF1),
+            surface = Color(0xFF192427),
+            onSurface = Color(0xFFE8EFF1),
+            surfaceVariant = Color(0xFF314044),
+            onSurfaceVariant = Color(0xFFC9D6D9),
+            error = Color(0xFFFFB4AB)
+        )
+    )
+}

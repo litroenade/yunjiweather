@@ -6,6 +6,7 @@ public final class VisualTheme {
     private final String displayName;
     private final String shortDescription;
     private final boolean customSlot;
+    private final boolean selectable;
 
     public VisualTheme(
             String key,
@@ -21,10 +22,21 @@ public final class VisualTheme {
             String shortDescription,
             boolean customSlot
     ) {
+        this(key, displayName, shortDescription, customSlot, true);
+    }
+
+    public VisualTheme(
+            String key,
+            String displayName,
+            String shortDescription,
+            boolean customSlot,
+            boolean selectable
+    ) {
         this.key = key;
         this.displayName = displayName;
         this.shortDescription = shortDescription;
         this.customSlot = customSlot;
+        this.selectable = selectable;
     }
 
     public String getKey() {
@@ -41,5 +53,9 @@ public final class VisualTheme {
 
     public boolean isCustomSlot() {
         return customSlot;
+    }
+
+    public boolean isSelectable() {
+        return selectable;
     }
 }

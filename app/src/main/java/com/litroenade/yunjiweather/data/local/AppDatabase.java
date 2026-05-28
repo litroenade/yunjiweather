@@ -10,6 +10,10 @@ import com.litroenade.yunjiweather.data.entity.CityEntity;
 import com.litroenade.yunjiweather.data.entity.WeatherCacheEntity;
 import com.litroenade.yunjiweather.data.entity.WarningEntity;
 
+/**
+ * Single local database for the account-free app. Destructive migration is intentional
+ * because the login/user-scoped schema was removed during the Compose rewrite.
+ */
 @Database(
         entities = {
                 WeatherCacheEntity.class,

@@ -3,6 +3,7 @@ package com.litroenade.yunjiweather.utils;
 import android.content.SharedPreferences;
 
 import com.litroenade.yunjiweather.settings.SettingsManager;
+import com.litroenade.yunjiweather.ui.compose.theme.skins.ThemeSkinCatalog;
 
 import org.junit.Test;
 
@@ -26,34 +27,81 @@ public class VisualThemeUtilsTest {
     public void catalog_returnsThemesInStableOrder() {
         List<VisualTheme> themes = VisualThemeCatalog.getThemes();
 
-        assertEquals(5, themes.size());
+        assertEquals(4, themes.size());
         assertEquals(VisualThemeUtils.THEME_SKY, themes.get(0).getKey());
-        assertEquals(VisualThemeUtils.THEME_FANTASY, themes.get(1).getKey());
-        assertEquals(VisualThemeUtils.THEME_SAKURA, themes.get(2).getKey());
+        assertEquals(VisualThemeUtils.THEME_PANORAMA, themes.get(1).getKey());
+        assertEquals(VisualThemeUtils.THEME_FANTASY, themes.get(2).getKey());
         assertEquals(VisualThemeUtils.THEME_CUSTOM_1, themes.get(3).getKey());
-        assertEquals(VisualThemeUtils.THEME_CUSTOM_2, themes.get(4).getKey());
+        assertEquals(false, themes.get(0).isCustomSlot());
+        assertEquals(false, themes.get(1).isCustomSlot());
+        assertEquals(true, themes.get(2).isCustomSlot());
         assertEquals(true, themes.get(3).isCustomSlot());
-        assertEquals(true, themes.get(4).isCustomSlot());
+        assertEquals(true, themes.get(0).isSelectable());
+        assertEquals(true, themes.get(1).isSelectable());
+        assertEquals(false, themes.get(2).isSelectable());
+        assertEquals(false, themes.get(3).isSelectable());
     }
 
     @Test
-    public void catalog_containsSakuraThemeModel() {
-        VisualTheme sakura = VisualThemeCatalog.findByKey(VisualThemeUtils.THEME_SAKURA);
+    public void catalog_containsPanoramaThemeModel() {
+        VisualTheme panorama = VisualThemeCatalog.findByKey(VisualThemeUtils.THEME_PANORAMA);
 
-        assertNotNull(sakura);
-        assertEquals("樱雨粉", sakura.getDisplayName());
-        assertEquals("使用樱色与雨纹层次，让设置页更柔和。", sakura.getShortDescription());
+        assertNotNull(panorama);
+        assertEquals("全景天气", panorama.getDisplayName());
+        assertEquals("沉浸式动态天气，强化真实光影、雨雪和风场层次。", panorama.getShortDescription());
     }
 
     @Test
-    public void styleCatalog_returnsVisualThemeStylesInStableOrder() {
-        List<VisualThemeStyle> styles = VisualThemeStyleCatalog.getStyles();
+    public void catalog_marksFantasyAsPlaceholderSlot() {
+        VisualTheme fantasy = VisualThemeCatalog.findByKey(VisualThemeUtils.THEME_FANTASY);
 
-        assertEquals(4, styles.size());
-        assertEquals(VisualThemeStyleCatalog.STYLE_DEFAULT, styles.get(0).getKey());
-        assertEquals(VisualThemeStyleCatalog.STYLE_SOFT_MIST, styles.get(1).getKey());
-        assertEquals(VisualThemeStyleCatalog.STYLE_SUNSET, styles.get(2).getKey());
-        assertEquals(VisualThemeStyleCatalog.STYLE_DEEP_SEA, styles.get(3).getKey());
+        assertNotNull(fantasy);
+        assertEquals("幻想乡", fantasy.getDisplayName());
+        assertEquals(false, fantasy.isSelectable());
+        assertEquals(false, VisualThemeUtils.isSupportedTheme(VisualThemeUtils.THEME_FANTASY));
+    }
+
+    @Test
+    public void skinCatalog_mapsThemeKeysToDedicatedFolders() {
+        assertEquals("official", ThemeSkinCatalog.getThemeFolder(VisualThemeUtils.THEME_SKY));
+        assertEquals("panorama", ThemeSkinCatalog.getThemeFolder(VisualThemeUtils.THEME_PANORAMA));
+        assertEquals("fantasy", ThemeSkinCatalog.getThemeFolder(VisualThemeUtils.THEME_FANTASY));
+        assertEquals("custom", ThemeSkinCatalog.getThemeFolder(VisualThemeUtils.THEME_CUSTOM_1));
+    }
+
+    @Test
+    public void panoramaSkinHasStrongerHomeImmersionThanDefaultTheme() {
+        assertEquals(true, ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_PANORAMA).getHomeImmersion() >
+                ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_SKY).getHomeImmersion());
+        assertEquals(true, ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_PANORAMA).getHeroAnimationScale() >
+                ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_SKY).getHeroAnimationScale());
+    }
+
+    @Test
+    public void panoramaSkinOverridesWeatherAnimationLightingAndParticles() {
+        assertEquals(true, ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_PANORAMA).getSunGlowScale() >
+                ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_SKY).getSunGlowScale());
+        assertEquals(true, ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_PANORAMA).getCloudShapeScale() >
+                ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_SKY).getCloudShapeScale());
+        assertEquals(true, ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_PANORAMA).getPrecipitationOpacityMultiplier() >
+                ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_SKY).getPrecipitationOpacityMultiplier());
+        assertEquals(true, ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_PANORAMA).getWeatherAnimationSpeed() >
+                ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_SKY).getWeatherAnimationSpeed());
+    }
+
+    @Test
+    public void panoramaSkinOverridesNightSceneStars() {
+        assertEquals(true, ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_SKY).getNightStarDensity() > 0f);
+        assertEquals(true, ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_PANORAMA).getNightStarDensity() >
+                ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_SKY).getNightStarDensity());
+        assertEquals(true, ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_PANORAMA).getNightStarGlowScale() >
+                ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_SKY).getNightStarGlowScale());
+    }
+
+    @Test
+    public void placeholderSkinsArePreviewOnly() {
+        assertEquals(false, ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_FANTASY).isRuntimeSelectable());
+        assertEquals(false, ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_CUSTOM_1).isRuntimeSelectable());
     }
 
     @Test
@@ -87,6 +135,61 @@ public class VisualThemeUtilsTest {
     public void settingsManager_repairsWrongTypedVisualThemeToDefault() {
         MemorySharedPreferences preferences = new MemorySharedPreferences();
         preferences.edit().putBoolean("visual_theme", true).apply();
+
+        SettingsManager settingsManager = new SettingsManager(preferences);
+
+        assertEquals(VisualThemeUtils.THEME_SKY, settingsManager.getVisualTheme());
+        assertEquals(VisualThemeUtils.THEME_SKY, preferences.getString("visual_theme", ""));
+    }
+
+    @Test
+    public void settingsManager_migratesLegacySakuraThemeToPanoramaWeather() {
+        MemorySharedPreferences preferences = new MemorySharedPreferences();
+        preferences.edit().putString("visual_theme", "sakura").apply();
+
+        SettingsManager settingsManager = new SettingsManager(preferences);
+
+        assertEquals(VisualThemeUtils.THEME_PANORAMA, settingsManager.getVisualTheme());
+        assertEquals(VisualThemeUtils.THEME_PANORAMA, preferences.getString("visual_theme", ""));
+    }
+
+    @Test
+    public void settingsManager_migratesLegacyFantasyThemeToPanoramaWeather() {
+        MemorySharedPreferences preferences = new MemorySharedPreferences();
+        preferences.edit().putString("visual_theme", "fantasy").apply();
+
+        SettingsManager settingsManager = new SettingsManager(preferences);
+
+        assertEquals(VisualThemeUtils.THEME_PANORAMA, settingsManager.getVisualTheme());
+        assertEquals(VisualThemeUtils.THEME_PANORAMA, preferences.getString("visual_theme", ""));
+    }
+
+    @Test
+    public void settingsManager_migratesLegacyRealWeatherThemeToPanoramaWeather() {
+        MemorySharedPreferences preferences = new MemorySharedPreferences();
+        preferences.edit().putString("visual_theme", "real_weather").apply();
+
+        SettingsManager settingsManager = new SettingsManager(preferences);
+
+        assertEquals(VisualThemeUtils.THEME_PANORAMA, settingsManager.getVisualTheme());
+        assertEquals(VisualThemeUtils.THEME_PANORAMA, preferences.getString("visual_theme", ""));
+    }
+
+    @Test
+    public void settingsManager_migratesLegacySecondCustomThemeToDefaultTheme() {
+        MemorySharedPreferences preferences = new MemorySharedPreferences();
+        preferences.edit().putString("visual_theme", "custom_2").apply();
+
+        SettingsManager settingsManager = new SettingsManager(preferences);
+
+        assertEquals(VisualThemeUtils.THEME_SKY, settingsManager.getVisualTheme());
+        assertEquals(VisualThemeUtils.THEME_SKY, preferences.getString("visual_theme", ""));
+    }
+
+    @Test
+    public void settingsManager_migratesReservedCustomSlotToDefaultTheme() {
+        MemorySharedPreferences preferences = new MemorySharedPreferences();
+        preferences.edit().putString("visual_theme", VisualThemeUtils.THEME_CUSTOM_1).apply();
 
         SettingsManager settingsManager = new SettingsManager(preferences);
 
@@ -140,7 +243,7 @@ public class VisualThemeUtilsTest {
         assertEquals(HomeBlock.DAILY_FORECAST, updatedSkyOrder.get(5));
         assertEquals(HomeBlock.HOURLY_FORECAST, updatedSkyOrder.get(6));
         assertEquals(false, settingsManager.isHomeBlockEnabled(VisualThemeUtils.THEME_SKY, HomeBlock.HOURLY_FORECAST));
-        assertEquals(true, settingsManager.isHomeBlockEnabled(VisualThemeUtils.THEME_FANTASY, HomeBlock.HOURLY_FORECAST));
+        assertEquals(true, settingsManager.isHomeBlockEnabled(VisualThemeUtils.THEME_PANORAMA, HomeBlock.HOURLY_FORECAST));
     }
 
     @Test
@@ -155,35 +258,6 @@ public class VisualThemeUtilsTest {
         assertEquals(HomeBlock.WEATHER_METRICS, resetOrder.get(0));
         assertEquals(HomeBlock.DAILY_FORECAST, resetOrder.get(6));
         assertEquals(true, settingsManager.isHomeBlockEnabled(VisualThemeUtils.THEME_SKY, HomeBlock.WEATHER_INSIGHT));
-    }
-
-    @Test
-    public void settingsManager_persistsVisualThemeStylePerTheme() {
-        SettingsManager settingsManager = new SettingsManager(new MemorySharedPreferences());
-
-        assertEquals(VisualThemeStyleCatalog.STYLE_DEFAULT, settingsManager.getVisualThemeStyle(VisualThemeUtils.THEME_SKY));
-
-        settingsManager.setVisualThemeStyle(VisualThemeUtils.THEME_SKY, VisualThemeStyleCatalog.STYLE_SOFT_MIST);
-
-        assertEquals(VisualThemeStyleCatalog.STYLE_SOFT_MIST, settingsManager.getVisualThemeStyle(VisualThemeUtils.THEME_SKY));
-        assertEquals(VisualThemeStyleCatalog.STYLE_DEFAULT, settingsManager.getVisualThemeStyle(VisualThemeUtils.THEME_FANTASY));
-    }
-
-    @Test
-    public void settingsManager_repairsUnsupportedVisualThemeStyleToDefault() {
-        MemorySharedPreferences preferences = new MemorySharedPreferences();
-        preferences.edit().putString("visual_theme_style_sky", "external").apply();
-
-        SettingsManager settingsManager = new SettingsManager(preferences);
-
-        assertEquals(VisualThemeStyleCatalog.STYLE_DEFAULT, settingsManager.getVisualThemeStyle(VisualThemeUtils.THEME_SKY));
-        assertEquals(VisualThemeStyleCatalog.STYLE_DEFAULT, preferences.getString("visual_theme_style_sky", ""));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void setVisualThemeStyle_rejectsUnsupportedStyle() {
-        new SettingsManager(new MemorySharedPreferences())
-                .setVisualThemeStyle(VisualThemeUtils.THEME_SKY, "external");
     }
 
     @Test(expected = IllegalArgumentException.class)

@@ -2,6 +2,10 @@ package com.litroenade.yunjiweather.data.api;
 
 import com.litroenade.yunjiweather.data.repository.WeatherRepository;
 
+/**
+ * Centralizes weather gateway wiring so ViewModel and Worker code do not need to know
+ * whether a city should be served by Open-Meteo or the optional QWeather adapter.
+ */
 public final class WeatherGatewayFactory {
 
     private static final String OPEN_METEO_LOCATION_PREFIX = "openmeteo:";

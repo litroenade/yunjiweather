@@ -10,6 +10,10 @@ import com.litroenade.yunjiweather.data.model.HomeWeatherData
 import com.litroenade.yunjiweather.utils.DateTimeUtils
 import com.litroenade.yunjiweather.utils.DefaultCityUtils
 
+/**
+ * Builds the small widget's read-only snapshot from Room cache only. The widget never
+ * performs a network refresh by itself, so launcher updates stay cheap and predictable.
+ */
 class WeatherWidgetSnapshotLoader(
     private val cityReader: DefaultCityReader,
     private val cacheReader: HomeWeatherCacheReader,

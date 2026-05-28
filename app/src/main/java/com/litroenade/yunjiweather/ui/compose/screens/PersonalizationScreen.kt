@@ -16,7 +16,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.litroenade.yunjiweather.ui.compose.InfoCard
 import com.litroenade.yunjiweather.ui.mine.MineViewModel
-import com.litroenade.yunjiweather.utils.HomeBlock
 
 @Composable
 fun PersonalizationScreen(
@@ -24,12 +23,8 @@ fun PersonalizationScreen(
     viewModel: MineViewModel = viewModel()
 ) {
     val selectedTheme by viewModel.getVisualTheme().observeAsState(viewModel.getCurrentVisualTheme())
-    val selectedThemeStyle by viewModel.getVisualThemeStyle().observeAsState(viewModel.getCurrentVisualThemeStyle())
-    val homeBlockOrder by viewModel.getHomeBlockOrder().observeAsState(HomeBlock.defaultOrder())
-    val homeBlockEnabled by viewModel.getHomeBlockEnabled().observeAsState(emptyMap())
     val message by viewModel.getMessage().observeAsState("")
     val themes = remember(viewModel) { viewModel.getVisualThemes() }
-    val themeStyles = remember(viewModel) { viewModel.getVisualThemeStyles() }
 
     LaunchedEffect(Unit) {
         viewModel.refresh()
@@ -40,7 +35,7 @@ fun PersonalizationScreen(
         contentPadding = PaddingValues(top = 18.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        if (message.isNotBlank()) {
+        if (message.isNotBlank() && !message.startsWith("主题/个性化")) {
             item {
                 InfoCard {
                     Text(
@@ -52,22 +47,11 @@ fun PersonalizationScreen(
             }
         }
         item {
-            InfoCard {
-                PersonalizationPanel(
-                    themes = themes,
-                    themeStyles = themeStyles,
-                    selectedTheme = selectedTheme,
-                    selectedThemeStyle = selectedThemeStyle,
-                    homeBlockOrder = homeBlockOrder,
-                    homeBlockEnabled = homeBlockEnabled,
-                    onThemeSelected = viewModel::setVisualTheme,
-                    onStyleSelected = viewModel::setVisualThemeStyle,
-                    onHomeBlockEnabledChange = viewModel::setHomeBlockEnabled,
-                    onMoveHomeBlockUp = viewModel::moveHomeBlockUp,
-                    onMoveHomeBlockDown = viewModel::moveHomeBlockDown,
-                    onResetHomeBlocks = viewModel::resetHomeBlockLayout
-                )
-            }
+            PersonalizationPanel(
+                themes = themes,
+                selectedTheme = selectedTheme,
+                onThemeSelected = viewModel::setVisualTheme
+            )
         }
     }
 }

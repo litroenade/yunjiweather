@@ -21,6 +21,10 @@ import java.util.Objects;
 
 import retrofit2.Response;
 
+/**
+ * Optional QWeather adapter for richer official weather data. It deliberately keeps
+ * provider parsing strict and lets IOException bubble to the repository cache policy.
+ */
 public final class QWeatherRemoteGateway implements WeatherRepository.RemoteGateway {
 
     private static final String SUCCESS_CODE = "200";

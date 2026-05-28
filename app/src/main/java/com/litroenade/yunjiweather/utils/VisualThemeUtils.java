@@ -1,12 +1,18 @@
 package com.litroenade.yunjiweather.utils;
 
+/**
+ * Normalizes persisted personalization theme keys before they reach UI code.
+ */
 public final class VisualThemeUtils {
 
     public static final String THEME_SKY = "sky";
+    public static final String THEME_PANORAMA = "panorama";
     public static final String THEME_FANTASY = "fantasy";
-    public static final String THEME_SAKURA = "sakura";
     public static final String THEME_CUSTOM_1 = "custom_1";
-    public static final String THEME_CUSTOM_2 = "custom_2";
+
+    private static final String LEGACY_THEME_REAL_WEATHER = "real_weather";
+    private static final String LEGACY_THEME_SAKURA = "sakura";
+    private static final String LEGACY_THEME_CUSTOM_2 = "custom_2";
 
     private VisualThemeUtils() {
     }
@@ -18,6 +24,15 @@ public final class VisualThemeUtils {
     }
 
     public static String normalizeThemeKey(String themeKey) {
+        // These values existed before the four-slot personalization model.
+        if (THEME_FANTASY.equals(themeKey)
+                || LEGACY_THEME_REAL_WEATHER.equals(themeKey)
+                || LEGACY_THEME_SAKURA.equals(themeKey)) {
+            return THEME_PANORAMA;
+        }
+        if (THEME_CUSTOM_1.equals(themeKey) || LEGACY_THEME_CUSTOM_2.equals(themeKey)) {
+            return THEME_SKY;
+        }
         return VisualThemeCatalog.getThemeOrDefault(themeKey).getKey();
     }
 
