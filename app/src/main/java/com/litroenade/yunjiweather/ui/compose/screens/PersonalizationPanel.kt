@@ -10,7 +10,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -21,9 +20,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -34,7 +30,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -42,16 +37,18 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.litroenade.yunjiweather.R
+import com.litroenade.yunjiweather.data.model.CustomThemeCropAnchor
+import com.litroenade.yunjiweather.data.model.CustomThemeWeatherKey
+import com.litroenade.yunjiweather.ui.compose.UriImage
+import com.litroenade.yunjiweather.ui.compose.home.modules.HomeModuleDefinition
 import com.litroenade.yunjiweather.ui.compose.theme.LocalYunJiVisualTheme
 import com.litroenade.yunjiweather.ui.compose.theme.skins.ThemeSkinCatalog
-import com.litroenade.yunjiweather.utils.HomeBlock
 import com.litroenade.yunjiweather.utils.VisualTheme
 import com.litroenade.yunjiweather.utils.VisualThemeUtils
 
@@ -59,40 +56,90 @@ import com.litroenade.yunjiweather.utils.VisualThemeUtils
 internal fun PersonalizationPanel(
     themes: List<VisualTheme>,
     selectedTheme: String,
-    onThemeSelected: (String) -> Unit
+    customThemeImageUri: String = "",
+    customThemeCropAnchor: String = CustomThemeCropAnchor.CENTER,
+    customThemeImageUris: Map<String, String> = emptyMap(),
+    customThemeCropAnchors: Map<String, String> = emptyMap(),
+    draftCustomThemeImageUris: Map<String, String> = emptyMap(),
+    draftCustomThemeCropAnchors: Map<String, String> = emptyMap(),
+    customThemeEditorMessage: String = "",
+    customThemeImporting: Boolean = false,
+    onThemeSelected: (String) -> Unit,
+    onPickCustomThemeImage: (String) -> Unit = {},
+    onCustomThemeCropAnchorChanged: (String, String) -> Unit = { _, _ -> },
+    onDraftCustomThemeCropAnchorChanged: (String, String) -> Unit = { _, _ -> },
+    onApplyCustomThemeDraft: (Map<String, String>, Map<String, String>) -> Unit = { _, _ -> },
+    onDiscardCustomThemeDraft: () -> Unit = {},
+    onClearCustomThemeImage: () -> Unit = {}
 ) {
     val visibleThemes = themes.take(MAX_THEME_CARDS)
     val selectedThemeModel = visibleThemes.firstOrNull { theme -> theme.key == selectedTheme }
         ?: visibleThemes.firstOrNull()
+    val hasCustomThemeDraft = draftCustomThemeImageUris.isNotEmpty()
+    val previewThemeKey = if (hasCustomThemeDraft) VisualThemeUtils.THEME_CUSTOM_1 else selectedThemeModel?.key ?: selectedTheme
+    val previewCustomImageUri = firstThemeImage(draftCustomThemeImageUris)
+        .ifBlank { firstThemeImage(customThemeImageUris) }
+        .ifBlank { customThemeImageUri }
+    val previewCustomCropAnchor = cropAnchorForPreview(
+        previewCustomImageUri,
+        draftCustomThemeImageUris,
+        draftCustomThemeCropAnchors,
+        customThemeImageUris,
+        customThemeCropAnchors,
+        customThemeCropAnchor
+    )
     Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
         ThemeAppliedStatus(themeName = selectedThemeModel?.displayName ?: "默认主题")
-        ThemePreviewCarousel(
-            themes = visibleThemes,
-            selectedTheme = selectedTheme,
-            onThemeSelected = onThemeSelected
+        CurrentThemePreview(
+            themeKey = previewThemeKey,
+            customThemeImageUri = previewCustomImageUri,
+            customThemeCropAnchor = previewCustomCropAnchor
         )
         if (selectedThemeModel != null) {
             SelectedThemePanel(
                 theme = selectedThemeModel,
                 selected = selectedThemeModel.key == selectedTheme,
-                onThemeSelected = onThemeSelected
+                hasCustomThemeImage = customThemeImageUris.isNotEmpty() || customThemeImageUri.isNotBlank(),
+                onThemeSelected = onThemeSelected,
+                onPickCustomThemeImage = onPickCustomThemeImage
+            )
+        }
+        if (selectedThemeModel?.key == VisualThemeUtils.THEME_CUSTOM_1 || hasCustomThemeDraft) {
+            CustomThemeControls(
+                customThemeImageUri = customThemeImageUri,
+                customThemeCropAnchor = customThemeCropAnchor,
+                customThemeImageUris = customThemeImageUris,
+                customThemeCropAnchors = customThemeCropAnchors,
+                draftCustomThemeImageUris = draftCustomThemeImageUris,
+                draftCustomThemeCropAnchors = draftCustomThemeCropAnchors,
+                customThemeEditorMessage = customThemeEditorMessage,
+                customThemeImporting = customThemeImporting,
+                onPickCustomThemeImage = onPickCustomThemeImage,
+                onCustomThemeCropAnchorChanged = onCustomThemeCropAnchorChanged,
+                onDraftCustomThemeCropAnchorChanged = onDraftCustomThemeCropAnchorChanged,
+                onApplyCustomThemeDraft = onApplyCustomThemeDraft,
+                onDiscardCustomThemeDraft = onDiscardCustomThemeDraft,
+                onClearCustomThemeImage = onClearCustomThemeImage
             )
         }
         ThemeCardGrid(
             themes = visibleThemes,
             selectedTheme = selectedTheme,
-            onThemeSelected = onThemeSelected
+            customThemeImageUri = previewCustomImageUri,
+            customThemeCropAnchor = previewCustomCropAnchor,
+            onThemeSelected = onThemeSelected,
+            onPickCustomThemeImage = onPickCustomThemeImage
         )
     }
 }
 
 @Composable
 internal fun PersonalizationBlockEditor(
-    homeBlockOrder: List<HomeBlock>,
-    homeBlockEnabled: Map<HomeBlock, Boolean>,
-    onHomeBlockEnabledChange: (HomeBlock, Boolean) -> Unit,
-    onMoveHomeBlockUp: (HomeBlock) -> Unit,
-    onMoveHomeBlockDown: (HomeBlock) -> Unit,
+    homeModules: List<HomeModuleDefinition>,
+    homeModuleEnabled: Map<String, Boolean>,
+    onHomeModuleEnabledChange: (HomeModuleDefinition, Boolean) -> Unit,
+    onMoveHomeModuleUp: (HomeModuleDefinition) -> Unit,
+    onMoveHomeModuleDown: (HomeModuleDefinition) -> Unit,
     onResetHomeBlocks: () -> Unit
 ) {
     Column(
@@ -112,15 +159,15 @@ internal fun PersonalizationBlockEditor(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        homeBlockOrder.forEachIndexed { index, block ->
+        homeModules.forEachIndexed { index, module ->
             HomeBlockRow(
-                block = block,
-                enabled = homeBlockEnabled[block] ?: true,
+                module = module,
+                enabled = homeModuleEnabled[module.key] ?: module.defaultEnabled,
                 canMoveUp = index > 0,
-                canMoveDown = index < homeBlockOrder.lastIndex,
-                onEnabledChange = { enabled -> onHomeBlockEnabledChange(block, enabled) },
-                onMoveUp = { onMoveHomeBlockUp(block) },
-                onMoveDown = { onMoveHomeBlockDown(block) }
+                canMoveDown = index < homeModules.lastIndex,
+                onEnabledChange = { enabled -> onHomeModuleEnabledChange(module, enabled) },
+                onMoveUp = { onMoveHomeModuleUp(module) },
+                onMoveDown = { onMoveHomeModuleDown(module) }
             )
         }
         OutlinedButton(
@@ -153,20 +200,12 @@ private fun ThemeAppliedStatus(themeName: String) {
 }
 
 @Composable
-private fun ThemePreviewCarousel(
-    themes: List<VisualTheme>,
-    selectedTheme: String,
-    onThemeSelected: (String) -> Unit
+private fun CurrentThemePreview(
+    themeKey: String,
+    customThemeImageUri: String,
+    customThemeCropAnchor: String
 ) {
     val visualTheme = LocalYunJiVisualTheme.current
-    val selectedIndex = themes.indexOfFirst { theme -> theme.key == selectedTheme }
-        .coerceAtLeast(0)
-    val listState = rememberLazyListState(initialFirstVisibleItemIndex = selectedIndex)
-    LaunchedEffect(selectedIndex) {
-        if (themes.isNotEmpty()) {
-            listState.animateScrollToItem(selectedIndex)
-        }
-    }
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
@@ -179,46 +218,21 @@ private fun ThemePreviewCarousel(
                 .height(398.dp)
         ) {
             ThemePreviewBackdrop(
-                themeKey = selectedTheme,
-                modifier = Modifier.fillMaxSize()
+                themeKey = themeKey,
+                modifier = Modifier.fillMaxSize(),
+                includeImage = false,
+                customThemeImageUri = customThemeImageUri,
+                customThemeCropAnchor = customThemeCropAnchor
             )
-            LazyRow(
+            PhonePreview(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 22.dp),
-                state = listState,
-                contentPadding = PaddingValues(horizontal = 60.dp),
-                horizontalArrangement = Arrangement.spacedBy(22.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                items(themes, key = { theme -> theme.key }) { theme ->
-                    val enabled = theme.isSelectable
-                    val selected = theme.key == selectedTheme
-                    val scale = if (selected) 1f else 0.84f
-                    PhonePreview(
-                        modifier = Modifier
-                            .width(194.dp)
-                            .height(334.dp)
-                            .graphicsLayer {
-                                scaleX = scale
-                                scaleY = scale
-                                alpha = if (enabled) {
-                                    if (selected) 1f else 0.72f
-                                } else {
-                                    0.42f
-                                }
-                            }
-                            .then(
-                                if (enabled) {
-                                    Modifier.clickable { onThemeSelected(theme.key) }
-                                } else {
-                                    Modifier
-                                }
-                            ),
-                        selectedTheme = theme.key
-                    )
-                }
-            }
+                    .align(Alignment.Center)
+                    .width(214.dp)
+                    .height(344.dp),
+                selectedTheme = themeKey,
+                customThemeImageUri = customThemeImageUri,
+                customThemeCropAnchor = customThemeCropAnchor
+            )
         }
     }
 }
@@ -227,31 +241,17 @@ private fun ThemePreviewCarousel(
 private fun SelectedThemePanel(
     theme: VisualTheme,
     selected: Boolean,
-    onThemeSelected: (String) -> Unit
+    hasCustomThemeImage: Boolean,
+    onThemeSelected: (String) -> Unit,
+    onPickCustomThemeImage: (String) -> Unit
 ) {
     val skin = ThemeSkinCatalog.getSkin(theme.key)
+    val needsCustomImage = theme.key == VisualThemeUtils.THEME_CUSTOM_1 && !hasCustomThemeImage
     Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Surface(
-            modifier = Modifier.size(54.dp),
-            shape = RoundedCornerShape(12.dp),
-            color = Color.Transparent
-        ) {
-            Box(
-                modifier = Modifier.background(themeBrush(theme.key)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(
-                    text = skin.previewTitle.take(1),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = Color.White,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        }
         Column(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(2.dp)
@@ -272,7 +272,11 @@ private fun SelectedThemePanel(
                 overflow = TextOverflow.Ellipsis
             )
         }
-        if (theme.isSelectable && !selected) {
+        if (needsCustomImage) {
+            Button(onClick = { onPickCustomThemeImage(CustomThemeWeatherKey.FALLBACK) }) {
+                Text("选择图片")
+            }
+        } else if (theme.isSelectable && !selected) {
             Button(onClick = { onThemeSelected(theme.key) }) {
                 Text("应用")
             }
@@ -285,9 +289,218 @@ private fun SelectedThemePanel(
 }
 
 @Composable
+private fun CustomThemeControls(
+    customThemeImageUri: String,
+    customThemeCropAnchor: String,
+    customThemeImageUris: Map<String, String>,
+    customThemeCropAnchors: Map<String, String>,
+    draftCustomThemeImageUris: Map<String, String>,
+    draftCustomThemeCropAnchors: Map<String, String>,
+    customThemeEditorMessage: String,
+    customThemeImporting: Boolean,
+    onPickCustomThemeImage: (String) -> Unit,
+    onCustomThemeCropAnchorChanged: (String, String) -> Unit,
+    onDraftCustomThemeCropAnchorChanged: (String, String) -> Unit,
+    onApplyCustomThemeDraft: (Map<String, String>, Map<String, String>) -> Unit,
+    onDiscardCustomThemeDraft: () -> Unit,
+    onClearCustomThemeImage: () -> Unit
+) {
+    val hasDraft = draftCustomThemeImageUris.isNotEmpty()
+    val hasSavedImages = customThemeImageUris.isNotEmpty() || customThemeImageUri.isNotBlank()
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.36f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.14f))
+    ) {
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "自定义主题编辑器",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = when {
+                            customThemeImporting -> "正在导入本地图片"
+                            hasDraft -> "已有未保存图片，确认后保存为自定义主题"
+                            !hasSavedImages -> "为不同天气上传图片，保存后会成为可应用主题"
+                            else -> "当前自定义主题会按天气自动切换背景"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            CustomThemeWeatherKey.orderedKeys().forEach { weatherKey ->
+                val draftImageUri = draftCustomThemeImageUris[weatherKey].orEmpty()
+                val savedImageUri = customThemeImageUris[weatherKey].orEmpty().ifBlank {
+                    if (weatherKey == CustomThemeWeatherKey.FALLBACK) customThemeImageUri else ""
+                }
+                val hasSlotDraft = draftImageUri.isNotBlank()
+                val imageUri = draftImageUri.ifBlank { savedImageUri }
+                val cropAnchor = if (hasSlotDraft) {
+                    draftCustomThemeCropAnchors[weatherKey] ?: CustomThemeCropAnchor.CENTER
+                } else {
+                    customThemeCropAnchors[weatherKey]
+                        ?: if (weatherKey == CustomThemeWeatherKey.FALLBACK) customThemeCropAnchor else CustomThemeCropAnchor.CENTER
+                }
+                CustomThemeWeatherSlotRow(
+                    weatherKey = weatherKey,
+                    imageUri = imageUri,
+                    cropAnchor = cropAnchor,
+                    draft = hasSlotDraft,
+                    enabled = !customThemeImporting,
+                    onPickCustomThemeImage = onPickCustomThemeImage,
+                    onCropAnchorChanged = { anchor ->
+                        if (hasSlotDraft) {
+                            onDraftCustomThemeCropAnchorChanged(weatherKey, anchor)
+                        } else {
+                            onCustomThemeCropAnchorChanged(weatherKey, anchor)
+                        }
+                    }
+                )
+            }
+            if (customThemeEditorMessage.isNotBlank()) {
+                Text(
+                    text = customThemeEditorMessage,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+            ) {
+                if (hasDraft) {
+                    TextButton(onClick = onDiscardCustomThemeDraft) {
+                        Text("放弃草稿")
+                    }
+                    Button(onClick = { onApplyCustomThemeDraft(draftCustomThemeImageUris, draftCustomThemeCropAnchors) }) {
+                        Text("保存并应用")
+                    }
+                } else if (hasSavedImages) {
+                    TextButton(onClick = onClearCustomThemeImage) {
+                        Text("移除自定义主题")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CustomThemeWeatherSlotRow(
+    weatherKey: String,
+    imageUri: String,
+    cropAnchor: String,
+    draft: Boolean,
+    enabled: Boolean,
+    onPickCustomThemeImage: (String) -> Unit,
+    onCropAnchorChanged: (String) -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.30f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+    ) {
+        Row(
+            modifier = Modifier.padding(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                modifier = Modifier.size(width = 76.dp, height = 100.dp),
+                shape = RoundedCornerShape(14.dp),
+                color = Color(0xFF1B2B30)
+            ) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    if (imageUri.isNotBlank()) {
+                        UriImage(
+                            uriString = imageUri,
+                            cropAnchor = cropAnchor,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        CustomThemeBackdropScrim(Modifier.fillMaxSize())
+                    } else {
+                        ReservedThemeBackdrop(Modifier.fillMaxSize())
+                    }
+                }
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(5.dp)
+            ) {
+                Text(
+                    text = CustomThemeWeatherKey.displayName(weatherKey),
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Text(
+                    text = when {
+                        draft -> "待保存"
+                        imageUri.isNotBlank() -> "已配置"
+                        else -> "未配置，将回退默认图"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    CropAnchorButton("顶", CustomThemeCropAnchor.TOP, cropAnchor, onCropAnchorChanged)
+                    CropAnchorButton("中", CustomThemeCropAnchor.CENTER, cropAnchor, onCropAnchorChanged)
+                    CropAnchorButton("底", CustomThemeCropAnchor.BOTTOM, cropAnchor, onCropAnchorChanged)
+                }
+            }
+            OutlinedButton(
+                enabled = enabled,
+                onClick = { onPickCustomThemeImage(weatherKey) }
+            ) {
+                Text(if (imageUri.isBlank()) "选择" else "替换")
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.CropAnchorButton(
+    text: String,
+    anchor: String,
+    selectedAnchor: String,
+    onCustomThemeCropAnchorChanged: (String) -> Unit
+) {
+    val selected = anchor == selectedAnchor
+    if (selected) {
+        Button(
+            modifier = Modifier.weight(1f),
+            onClick = { onCustomThemeCropAnchorChanged(anchor) }
+        ) {
+            Text(text)
+        }
+    } else {
+        OutlinedButton(
+            modifier = Modifier.weight(1f),
+            onClick = { onCustomThemeCropAnchorChanged(anchor) }
+        ) {
+            Text(text)
+        }
+    }
+}
+
+@Composable
 private fun PhonePreview(
     modifier: Modifier,
-    selectedTheme: String
+    selectedTheme: String,
+    customThemeImageUri: String,
+    customThemeCropAnchor: String
 ) {
     val skin = ThemeSkinCatalog.getSkin(selectedTheme)
     Surface(
@@ -302,7 +515,9 @@ private fun PhonePreview(
         ) {
             ThemePreviewBackdrop(
                 themeKey = selectedTheme,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                customThemeImageUri = customThemeImageUri,
+                customThemeCropAnchor = customThemeCropAnchor
             )
             Column(
                 modifier = Modifier.padding(18.dp),
@@ -398,7 +613,10 @@ private fun RowScope.MiniForecastTile(index: Int) {
 private fun ThemeCardGrid(
     themes: List<VisualTheme>,
     selectedTheme: String,
-    onThemeSelected: (String) -> Unit
+    customThemeImageUri: String,
+    customThemeCropAnchor: String,
+    onThemeSelected: (String) -> Unit,
+    onPickCustomThemeImage: (String) -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
@@ -414,7 +632,10 @@ private fun ThemeCardGrid(
                         modifier = Modifier.weight(1f),
                         theme = theme,
                         selected = theme.key == selectedTheme,
-                        onThemeSelected = onThemeSelected
+                        customThemeImageUri = customThemeImageUri,
+                        customThemeCropAnchor = customThemeCropAnchor,
+                        onThemeSelected = onThemeSelected,
+                        onPickCustomThemeImage = onPickCustomThemeImage
                     )
                 }
                 repeat(3 - rowThemes.size) {
@@ -430,9 +651,13 @@ private fun ThemeCard(
     modifier: Modifier,
     theme: VisualTheme,
     selected: Boolean,
-    onThemeSelected: (String) -> Unit
+    customThemeImageUri: String,
+    customThemeCropAnchor: String,
+    onThemeSelected: (String) -> Unit,
+    onPickCustomThemeImage: (String) -> Unit
 ) {
     val enabled = theme.isSelectable
+    val needsCustomImage = theme.key == VisualThemeUtils.THEME_CUSTOM_1 && customThemeImageUri.isBlank()
     Column(
         modifier = modifier.alpha(if (enabled) 1f else 0.58f),
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -443,7 +668,13 @@ private fun ThemeCard(
                 .aspectRatio(0.72f)
                 .then(
                     if (enabled) {
-                        Modifier.clickable { onThemeSelected(theme.key) }
+                        Modifier.clickable {
+                            if (needsCustomImage) {
+                                onPickCustomThemeImage(CustomThemeWeatherKey.FALLBACK)
+                            } else {
+                                onThemeSelected(theme.key)
+                            }
+                        }
                     } else {
                         Modifier
                     }
@@ -461,7 +692,9 @@ private fun ThemeCard(
             ) {
                 ThemePreviewBackdrop(
                     themeKey = theme.key,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.fillMaxSize(),
+                    customThemeImageUri = customThemeImageUri,
+                    customThemeCropAnchor = customThemeCropAnchor
                 )
                 Text(
                     modifier = Modifier.padding(14.dp),
@@ -470,23 +703,6 @@ private fun ThemeCard(
                     color = Color.White,
                     fontWeight = FontWeight.Light
                 )
-                if (selected) {
-                    Surface(
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(10.dp),
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary
-                    ) {
-                        Text(
-                            modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
-                            text = "✓",
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
                 Text(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
@@ -517,7 +733,7 @@ private fun ThemeCard(
 
 @Composable
 private fun HomeBlockRow(
-    block: HomeBlock,
+    module: HomeModuleDefinition,
     enabled: Boolean,
     canMoveUp: Boolean,
     canMoveDown: Boolean,
@@ -545,14 +761,14 @@ private fun HomeBlockRow(
                     verticalArrangement = Arrangement.spacedBy(2.dp)
                 ) {
                     Text(
-                        text = block.displayName,
+                        text = module.displayName,
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = block.shortDescription,
+                        text = module.shortDescription,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
@@ -589,23 +805,69 @@ private fun themeBrush(themeKey: String): Brush {
     )
 }
 
+private fun firstThemeImage(images: Map<String, String>): String {
+    return images[CustomThemeWeatherKey.FALLBACK]
+        ?: CustomThemeWeatherKey.orderedKeys().firstNotNullOfOrNull { key -> images[key]?.takeIf { it.isNotBlank() } }
+        ?: ""
+}
+
+private fun cropAnchorForPreview(
+    previewImageUri: String,
+    draftImages: Map<String, String>,
+    draftCropAnchors: Map<String, String>,
+    savedImages: Map<String, String>,
+    savedCropAnchors: Map<String, String>,
+    fallbackCropAnchor: String
+): String {
+    if (previewImageUri.isBlank()) {
+        return fallbackCropAnchor
+    }
+    val draftKey = draftImages.entries.firstOrNull { entry -> entry.value == previewImageUri }?.key
+    if (draftKey != null) {
+        return draftCropAnchors[draftKey] ?: fallbackCropAnchor
+    }
+    val savedKey = savedImages.entries.firstOrNull { entry -> entry.value == previewImageUri }?.key
+    return if (savedKey == null) {
+        fallbackCropAnchor
+    } else {
+        savedCropAnchors[savedKey] ?: fallbackCropAnchor
+    }
+}
+
 @Composable
 private fun ThemePreviewBackdrop(
     themeKey: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    includeImage: Boolean = true,
+    customThemeImageUri: String = "",
+    customThemeCropAnchor: String = CustomThemeCropAnchor.CENTER
 ) {
     Box(modifier = modifier.background(themeBrush(themeKey))) {
         when (themeKey) {
             VisualThemeUtils.THEME_PANORAMA -> {
-                Image(
-                    painter = painterResource(R.drawable.theme_panorama_preview),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                )
+                if (includeImage) {
+                    Image(
+                        painter = painterResource(R.drawable.theme_panorama_preview),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                }
                 PanoramaWeatherBackdrop(Modifier.fillMaxSize())
             }
             VisualThemeUtils.THEME_SKY -> OfficialWeatherBackdrop(Modifier.fillMaxSize())
+            VisualThemeUtils.THEME_CUSTOM_1 -> {
+                if (includeImage && customThemeImageUri.isNotBlank()) {
+                    UriImage(
+                        uriString = customThemeImageUri,
+                        cropAnchor = customThemeCropAnchor,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    CustomThemeBackdropScrim(Modifier.fillMaxSize())
+                } else {
+                    ReservedThemeBackdrop(Modifier.fillMaxSize())
+                }
+            }
             else -> ReservedThemeBackdrop(Modifier.fillMaxSize())
         }
     }
@@ -661,6 +923,23 @@ private fun PanoramaWeatherBackdrop(modifier: Modifier) {
                     Color(0xFF061619).copy(alpha = 0.30f)
                 ),
                 startY = size.height * 0.42f,
+                endY = size.height
+            )
+        )
+    }
+}
+
+@Composable
+private fun CustomThemeBackdropScrim(modifier: Modifier) {
+    Canvas(modifier = modifier) {
+        drawRect(color = Color.Black.copy(alpha = 0.10f))
+        drawRect(
+            brush = Brush.verticalGradient(
+                listOf(
+                    Color.Transparent,
+                    Color.Black.copy(alpha = 0.28f)
+                ),
+                startY = size.height * 0.38f,
                 endY = size.height
             )
         )

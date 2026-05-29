@@ -9,24 +9,33 @@ import androidx.lifecycle.MutableLiveData;
 
 import com.litroenade.yunjiweather.data.entity.CityEntity;
 import com.litroenade.yunjiweather.data.local.AppDatabase;
+import com.litroenade.yunjiweather.data.model.CustomThemeCropAnchor;
 import com.litroenade.yunjiweather.data.repository.CityRepository;
-import com.litroenade.yunjiweather.settings.SettingsManager;
+import com.litroenade.yunjiweather.data.repository.SettingsRepository;
+import com.litroenade.yunjiweather.ui.compose.home.modules.HomeModuleCatalog;
+import com.litroenade.yunjiweather.ui.compose.home.modules.HomeModuleDefinition;
 import com.litroenade.yunjiweather.utils.DefaultCityUtils;
-import com.litroenade.yunjiweather.utils.HomeBlock;
 import com.litroenade.yunjiweather.utils.LocalStorageSummaryUtils;
 import com.litroenade.yunjiweather.utils.MineCacheStatusUtils;
 import com.litroenade.yunjiweather.utils.VisualTheme;
 import com.litroenade.yunjiweather.utils.VisualThemeCatalog;
+import com.litroenade.yunjiweather.utils.VisualThemeUtils;
 
-import java.util.EnumMap;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.lifecycle.HiltViewModel;
+
+@HiltViewModel
 public class MineViewModel extends AndroidViewModel {
 
-    private final SettingsManager settingsManager;
+    private final SettingsRepository settingsRepository;
     private final AppDatabase database;
     private final CityRepository cityRepository;
     private final ExecutorService diskExecutor = Executors.newSingleThreadExecutor();
@@ -40,17 +49,27 @@ public class MineViewModel extends AndroidViewModel {
     private final MutableLiveData<String> windUnit = new MutableLiveData<>();
     private final MutableLiveData<Boolean> dailyReminderEnabled = new MutableLiveData<>();
     private final MutableLiveData<String> visualTheme = new MutableLiveData<>();
-    private final MutableLiveData<List<HomeBlock>> homeBlockOrder = new MutableLiveData<>();
-    private final MutableLiveData<Map<HomeBlock, Boolean>> homeBlockEnabled = new MutableLiveData<>();
+    private final MutableLiveData<String> customThemeImageUri = new MutableLiveData<>();
+    private final MutableLiveData<String> customThemeCropAnchor = new MutableLiveData<>();
+    private final MutableLiveData<Map<String, String>> customThemeImageUris = new MutableLiveData<>();
+    private final MutableLiveData<Map<String, String>> customThemeCropAnchors = new MutableLiveData<>();
+    private final MutableLiveData<List<HomeModuleDefinition>> homeModuleOrder = new MutableLiveData<>();
+    private final MutableLiveData<Map<String, Boolean>> homeModuleEnabled = new MutableLiveData<>();
     private final MutableLiveData<String> dataUpdateTime = new MutableLiveData<>();
     private final MutableLiveData<String> localStorageSummary = new MutableLiveData<>();
     private final MutableLiveData<String> message = new MutableLiveData<>();
 
-    public MineViewModel(@NonNull Application application) {
+    @Inject
+    public MineViewModel(
+            @NonNull Application application,
+            SettingsRepository settingsRepository,
+            AppDatabase database,
+            CityRepository cityRepository
+    ) {
         super(application);
-        settingsManager = new SettingsManager(application);
-        database = AppDatabase.getInstance(application);
-        cityRepository = new CityRepository(database.cityDao());
+        this.settingsRepository = settingsRepository;
+        this.database = database;
+        this.cityRepository = cityRepository;
         refresh();
     }
 
@@ -94,20 +113,36 @@ public class MineViewModel extends AndroidViewModel {
         return visualTheme;
     }
 
+    public LiveData<String> getCustomThemeImageUri() {
+        return customThemeImageUri;
+    }
+
+    public LiveData<String> getCustomThemeCropAnchor() {
+        return customThemeCropAnchor;
+    }
+
+    public LiveData<Map<String, String>> getCustomThemeImageUris() {
+        return customThemeImageUris;
+    }
+
+    public LiveData<Map<String, String>> getCustomThemeCropAnchors() {
+        return customThemeCropAnchors;
+    }
+
     public String getCurrentVisualTheme() {
-        return settingsManager.getVisualTheme();
+        return settingsRepository.getVisualTheme();
     }
 
     public List<VisualTheme> getVisualThemes() {
         return VisualThemeCatalog.getThemes();
     }
 
-    public LiveData<List<HomeBlock>> getHomeBlockOrder() {
-        return homeBlockOrder;
+    public LiveData<List<HomeModuleDefinition>> getHomeModuleOrder() {
+        return homeModuleOrder;
     }
 
-    public LiveData<Map<HomeBlock, Boolean>> getHomeBlockEnabled() {
-        return homeBlockEnabled;
+    public LiveData<Map<String, Boolean>> getHomeModuleEnabled() {
+        return homeModuleEnabled;
     }
 
     public LiveData<String> getDataUpdateTime() {
@@ -131,74 +166,121 @@ public class MineViewModel extends AndroidViewModel {
     }
 
     public void setWarningEnabled(boolean enabled) {
-        settingsManager.setWarningEnabled(enabled);
+        settingsRepository.setWarningEnabled(enabled);
         reloadSettings();
         message.setValue(enabled ? "天气预警通知已开启" : "天气预警通知已关闭");
     }
 
     public void setAnimationEnabled(boolean enabled) {
-        settingsManager.setAnimationEnabled(enabled);
+        settingsRepository.setAnimationEnabled(enabled);
         reloadSettings();
         message.setValue(enabled ? "天气动画已开启" : "天气动画已关闭");
     }
 
     public void setDarkModeEnabled(boolean enabled) {
-        settingsManager.setDarkModeEnabled(enabled);
+        settingsRepository.setDarkModeEnabled(enabled);
         reloadSettings();
         message.setValue(enabled ? "深色模式已开启" : "深色模式已关闭");
     }
 
     public void setDeveloperToolsEnabled(boolean enabled) {
-        settingsManager.setDeveloperToolsEnabled(enabled);
+        settingsRepository.setDeveloperToolsEnabled(enabled);
         reloadSettings();
         message.setValue(enabled ? "开发者工具已允许" : "开发者工具已关闭");
     }
 
     public void setTemperatureUnit(String unit) {
-        settingsManager.setTemperatureUnit(unit);
+        settingsRepository.setTemperatureUnit(unit);
         reloadSettings();
         message.setValue("温度单位已更新");
     }
 
     public void setWindUnit(String unit) {
-        settingsManager.setWindUnit(unit);
+        settingsRepository.setWindUnit(unit);
         reloadSettings();
         message.setValue("风速单位已更新");
     }
 
     public void setDailyReminderEnabled(boolean enabled) {
-        settingsManager.setDailyReminderEnabled(enabled);
+        settingsRepository.setDailyReminderEnabled(enabled);
         reloadSettings();
         message.setValue(enabled ? "每日提醒已开启" : "每日提醒已关闭");
     }
 
     public void setVisualTheme(String themeKey) {
-        settingsManager.setVisualTheme(themeKey);
+        settingsRepository.setVisualTheme(themeKey);
         reloadSettings();
         VisualTheme theme = VisualThemeCatalog.getThemeOrDefault(themeKey);
         message.setValue("主题/个性化已应用：" + theme.getDisplayName());
     }
 
-    public void setHomeBlockEnabled(HomeBlock block, boolean enabled) {
-        settingsManager.setHomeBlockEnabled(settingsManager.getVisualTheme(), block, enabled);
-        reloadHomeBlockLayout();
-        message.setValue(enabled ? "首页模块已显示：" + block.getDisplayName() : "首页模块已隐藏：" + block.getDisplayName());
+    public void setCustomThemeImageUri(String imageUri) {
+        settingsRepository.setCustomThemeImageUri(imageUri);
+        settingsRepository.setVisualTheme(VisualThemeUtils.THEME_CUSTOM_1);
+        reloadSettings();
+        message.setValue("自定义主题图片已更新");
     }
 
-    public void moveHomeBlockUp(HomeBlock block) {
-        settingsManager.moveHomeBlock(settingsManager.getVisualTheme(), block, -1);
-        reloadHomeBlockLayout();
-        message.setValue("首页模块已上移：" + block.getDisplayName());
+    public void setCustomThemeCropAnchor(String cropAnchor) {
+        settingsRepository.setCustomThemeCropAnchor(cropAnchor);
+        reloadSettings();
+        message.setValue("自定义主题裁剪位置已更新");
     }
 
-    public void moveHomeBlockDown(HomeBlock block) {
-        settingsManager.moveHomeBlock(settingsManager.getVisualTheme(), block, 1);
+    public void setCustomThemeImage(String weatherKey, String imageUri, String cropAnchor) {
+        settingsRepository.setCustomThemeImage(weatherKey, imageUri, cropAnchor);
+        settingsRepository.setVisualTheme(VisualThemeUtils.THEME_CUSTOM_1);
+        reloadSettings();
+        message.setValue("自定义主题图片已保存");
+    }
+
+    public void setCustomThemeImages(Map<String, String> imageUris, Map<String, String> cropAnchors) {
+        if (imageUris == null || imageUris.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<String, String> entry : imageUris.entrySet()) {
+            settingsRepository.setCustomThemeImage(
+                    entry.getKey(),
+                    entry.getValue(),
+                    cropAnchors == null ? CustomThemeCropAnchor.CENTER : cropAnchors.get(entry.getKey())
+            );
+        }
+        settingsRepository.setVisualTheme(VisualThemeUtils.THEME_CUSTOM_1);
+        reloadSettings();
+        message.setValue("自定义主题已保存并应用");
+    }
+
+    public void clearCustomThemeImage() {
+        settingsRepository.clearCustomThemeImages();
+        if (VisualThemeUtils.THEME_CUSTOM_1.equals(settingsRepository.getVisualTheme())) {
+            settingsRepository.setVisualTheme(VisualThemeUtils.THEME_SKY);
+        }
+        reloadSettings();
+        message.setValue("自定义主题图片已移除");
+    }
+
+    public void setHomeModuleEnabled(HomeModuleDefinition module, boolean enabled) {
+        settingsRepository.setHomeModuleEnabled(settingsRepository.getVisualTheme(), module.getKey(), enabled);
         reloadHomeBlockLayout();
-        message.setValue("首页模块已下移：" + block.getDisplayName());
+        message.setValue(enabled ? "首页模块已显示：" + module.getDisplayName() : "首页模块已隐藏：" + module.getDisplayName());
+    }
+
+    public void moveHomeModuleUp(HomeModuleDefinition module) {
+        String themeKey = settingsRepository.getVisualTheme();
+        settingsRepository.moveHomeModule(themeKey, module.getKey(), -1, HomeModuleCatalog.getAvailableModuleKeys(themeKey));
+        reloadHomeBlockLayout();
+        message.setValue("首页模块已上移：" + module.getDisplayName());
+    }
+
+    public void moveHomeModuleDown(HomeModuleDefinition module) {
+        String themeKey = settingsRepository.getVisualTheme();
+        settingsRepository.moveHomeModule(themeKey, module.getKey(), 1, HomeModuleCatalog.getAvailableModuleKeys(themeKey));
+        reloadHomeBlockLayout();
+        message.setValue("首页模块已下移：" + module.getDisplayName());
     }
 
     public void resetHomeBlockLayout() {
-        settingsManager.resetHomeBlockLayout(settingsManager.getVisualTheme());
+        settingsRepository.resetHomeBlockLayout(settingsRepository.getVisualTheme());
         reloadHomeBlockLayout();
         message.setValue("首页模块布局已恢复默认");
     }
@@ -217,27 +299,42 @@ public class MineViewModel extends AndroidViewModel {
     }
 
     private void reloadSettings() {
-        warningEnabled.setValue(settingsManager.isWarningEnabled());
-        animationEnabled.setValue(settingsManager.isAnimationEnabled());
-        darkModeEnabled.setValue(settingsManager.isDarkModeEnabled());
-        developerToolsEnabled.setValue(settingsManager.isDeveloperToolsEnabled());
-        temperatureUnit.setValue(settingsManager.getTemperatureUnit());
-        windUnit.setValue(settingsManager.getWindUnit());
-        dailyReminderEnabled.setValue(settingsManager.isDailyReminderEnabled());
-        String themeKey = settingsManager.getVisualTheme();
+        warningEnabled.setValue(settingsRepository.isWarningEnabled());
+        animationEnabled.setValue(settingsRepository.isAnimationEnabled());
+        darkModeEnabled.setValue(settingsRepository.isDarkModeEnabled());
+        developerToolsEnabled.setValue(settingsRepository.isDeveloperToolsEnabled());
+        temperatureUnit.setValue(settingsRepository.getTemperatureUnit());
+        windUnit.setValue(settingsRepository.getWindUnit());
+        dailyReminderEnabled.setValue(settingsRepository.isDailyReminderEnabled());
+        String themeKey = settingsRepository.getVisualTheme();
         visualTheme.setValue(themeKey);
+        customThemeImageUri.setValue(settingsRepository.getCustomThemeImageUri());
+        customThemeCropAnchor.setValue(settingsRepository.getCustomThemeCropAnchor());
+        customThemeImageUris.setValue(settingsRepository.getCustomThemeImageUris());
+        customThemeCropAnchors.setValue(settingsRepository.getCustomThemeCropAnchors());
         reloadHomeBlockLayout();
     }
 
     private void reloadHomeBlockLayout() {
-        String themeKey = settingsManager.getVisualTheme();
-        List<HomeBlock> order = settingsManager.getHomeBlockOrder(themeKey);
-        Map<HomeBlock, Boolean> enabled = new EnumMap<>(HomeBlock.class);
-        for (HomeBlock block : order) {
-            enabled.put(block, settingsManager.isHomeBlockEnabled(themeKey, block));
+        String themeKey = settingsRepository.getVisualTheme();
+        List<HomeModuleDefinition> availableModules = HomeModuleCatalog.getAvailableModules(themeKey);
+        List<String> availableKeys = HomeModuleCatalog.getAvailableModuleKeys(themeKey);
+        List<String> orderedKeys = settingsRepository.getHomeModuleOrder(themeKey, availableKeys);
+        Map<String, HomeModuleDefinition> moduleByKey = new HashMap<>();
+        for (HomeModuleDefinition module : availableModules) {
+            moduleByKey.put(module.getKey(), module);
         }
-        homeBlockOrder.setValue(order);
-        homeBlockEnabled.setValue(enabled);
+        List<HomeModuleDefinition> orderedModules = new ArrayList<>();
+        Map<String, Boolean> enabled = new HashMap<>();
+        for (String moduleKey : orderedKeys) {
+            HomeModuleDefinition module = moduleByKey.get(moduleKey);
+            if (module != null) {
+                orderedModules.add(module);
+                enabled.put(moduleKey, settingsRepository.isHomeModuleEnabled(themeKey, moduleKey));
+            }
+        }
+        homeModuleOrder.setValue(orderedModules);
+        homeModuleEnabled.setValue(enabled);
     }
 
     private void refreshDefaultCity() {

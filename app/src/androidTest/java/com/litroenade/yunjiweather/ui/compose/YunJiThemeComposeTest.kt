@@ -6,8 +6,12 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import com.litroenade.yunjiweather.ui.compose.theme.effects.ThemeWeatherEffectCatalog
 import com.litroenade.yunjiweather.ui.compose.screens.PersonalizationPanel
@@ -85,10 +89,47 @@ class YunJiThemeComposeTest {
         }
 
         composeRule.onNodeWithText("主题/个性化已应用：默认主题").assertExists()
+        composeRule.onNodeWithText("龙岗区 · 官方天气").assertExists()
+        composeRule.onAllNodesWithText("龙岗区 · 全景天气").assertCountEquals(0)
         composeRule.onNodeWithText("更多皮肤").assertExists()
-        composeRule.onNodeWithText("默认主题").assertExists()
+        composeRule.onAllNodesWithText("默认主题").assertCountEquals(2)
         composeRule.onNodeWithText("全景天气").assertExists()
-        composeRule.onNodeWithText("幻想乡").assertExists()
+        assertEquals(VisualThemeUtils.THEME_CUSTOM_1, VisualThemeCatalog.getThemes().last().key)
+        assertEquals(null, VisualThemeCatalog.getThemes().firstOrNull { it.key == VisualThemeUtils.THEME_FANTASY })
+    }
+
+    @Test
+    fun customThemeEditorAppliesDraftOnlyAfterUserConfirms() {
+        var appliedImageUri = ""
+        var appliedCropAnchor = ""
+
+        composeRule.setContent {
+            YunJiTheme(
+                darkTheme = true,
+                visualThemeKey = VisualThemeUtils.THEME_CUSTOM_1
+            ) {
+                PersonalizationPanel(
+                    themes = VisualThemeCatalog.getThemes(),
+                    selectedTheme = VisualThemeUtils.THEME_CUSTOM_1,
+                    customThemeImageUri = "",
+                    draftCustomThemeImageUri = "file:///tmp/yunji-custom-theme.image",
+                    draftCustomThemeCropAnchor = "bottom",
+                    customThemeEditorMessage = "图片已导入，调整裁剪位置后点击应用。",
+                    onThemeSelected = {},
+                    onApplyCustomThemeDraft = { imageUri, cropAnchor ->
+                        appliedImageUri = imageUri
+                        appliedCropAnchor = cropAnchor
+                    }
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("草稿预览").assertExists()
+        composeRule.onNodeWithText("应用自定义主题").performClick()
+        composeRule.runOnIdle {
+            assertEquals("file:///tmp/yunji-custom-theme.image", appliedImageUri)
+            assertEquals("bottom", appliedCropAnchor)
+        }
     }
 
     @Test
@@ -114,5 +155,24 @@ class YunJiThemeComposeTest {
         }
 
         composeRule.waitForIdle()
+    }
+
+    @Test
+    fun weatherAtmosphereHasStableQaTag() {
+        composeRule.setContent {
+            YunJiTheme(
+                darkTheme = false,
+                visualThemeKey = VisualThemeUtils.THEME_PANORAMA
+            ) {
+                Box(Modifier.size(180.dp)) {
+                    WeatherAtmosphere(
+                        sceneSpec = WeatherSceneSpec.fromIconCode("305"),
+                        modifier = Modifier.size(180.dp)
+                    )
+                }
+            }
+        }
+
+        composeRule.onNodeWithTag("weather-atmosphere-animation").assertExists()
     }
 }

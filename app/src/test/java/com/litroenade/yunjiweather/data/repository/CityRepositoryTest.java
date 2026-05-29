@@ -161,6 +161,15 @@ public class CityRepositoryTest {
         }
 
         @Override
+        public void updateSortOrder(String locationId, int sortOrder, long updateTime) {
+            CityEntity city = findByLocationId(locationId);
+            if (city != null) {
+                city.sortOrder = sortOrder;
+                city.updateTime = updateTime;
+            }
+        }
+
+        @Override
         public void deleteByLocationId(String locationId) {
             deletedLocationId = locationId;
             cities.removeIf(city -> city.locationId.equals(locationId));

@@ -41,6 +41,30 @@
         android:textSize="12sp"/>
 
     <TextView
+        android:id="@+id/widget_details"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="5dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text=""
+        android:textColor="#D9FFFFFF"
+        android:textSize="11sp"
+        android:visibility="gone"/>
+
+    <TextView
+        android:id="@+id/widget_advice"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text=""
+        android:textColor="#D9FFFFFF"
+        android:textSize="11sp"
+        android:visibility="gone"/>
+
+    <TextView
         android:id="@+id/widget_update_time"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

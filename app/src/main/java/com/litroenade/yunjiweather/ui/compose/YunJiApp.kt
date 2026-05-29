@@ -43,9 +43,12 @@ import com.litroenade.yunjiweather.ui.compose.screens.MineScreen
 import com.litroenade.yunjiweather.ui.compose.screens.PersonalizationBlockEditor
 import com.litroenade.yunjiweather.ui.compose.screens.PersonalizationScreen
 import com.litroenade.yunjiweather.ui.compose.theme.LocalYunJiVisualTheme
+import com.litroenade.yunjiweather.ui.compose.home.modules.HomeModuleCatalog
+import com.litroenade.yunjiweather.ui.compose.home.modules.HomeModuleDefinition
 import com.litroenade.yunjiweather.ui.home.HomeViewModel
-import com.litroenade.yunjiweather.utils.HomeBlock
+import com.litroenade.yunjiweather.ui.location.LocationUiState
 import com.litroenade.yunjiweather.widget.WeatherAppWidgetProvider
+import com.litroenade.yunjiweather.widget.WeatherWidgetLayoutMode
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,12 +58,14 @@ fun YunJiApp(
     developerToolsEnabled: Boolean = false,
     temperatureUnit: String,
     windUnit: String,
-    homeBlockOrder: List<HomeBlock> = HomeBlock.defaultOrder(),
-    homeBlockEnabled: Map<HomeBlock, Boolean> = emptyMap(),
+    homeModules: List<HomeModuleDefinition> = HomeModuleCatalog.getBuiltInModules(),
+    homeModuleEnabled: Map<String, Boolean> = emptyMap(),
     homeViewModel: HomeViewModel = viewModel(),
-    onHomeBlockEnabledChange: (HomeBlock, Boolean) -> Unit = { _, _ -> },
-    onMoveHomeBlockUp: (HomeBlock) -> Unit = {},
-    onMoveHomeBlockDown: (HomeBlock) -> Unit = {},
+    locationUiState: LocationUiState = LocationUiState.idle(),
+    onRequestLocation: () -> Unit = {},
+    onHomeModuleEnabledChange: (HomeModuleDefinition, Boolean) -> Unit = { _, _ -> },
+    onMoveHomeModuleUp: (HomeModuleDefinition) -> Unit = {},
+    onMoveHomeModuleDown: (HomeModuleDefinition) -> Unit = {},
     onResetHomeBlocks: () -> Unit = {},
     onDisplayedWeatherIconCodeChanged: (String?) -> Unit = {}
 ) {
@@ -109,8 +114,8 @@ fun YunJiApp(
                 developerToolsEnabled = developerToolsEnabled,
                 temperatureUnit = temperatureUnit,
                 windUnit = windUnit,
-                homeBlockOrder = homeBlockOrder,
-                homeBlockEnabled = homeBlockEnabled,
+                homeModules = homeModules,
+                homeModuleEnabled = homeModuleEnabled,
                 viewModel = homeViewModel,
                 onDisplayedWeatherIconCodeChanged = onDisplayedWeatherIconCodeChanged,
                 onManageCities = { activeTarget = WeatherNavigationTarget.MANAGE_CITIES },
@@ -148,12 +153,14 @@ fun YunJiApp(
                     temperatureUnit = temperatureUnit,
                     respectStatusBar = false,
                     showHeader = false,
+                    locationUiState = locationUiState,
+                    onRequestLocation = onRequestLocation,
                     onDefaultCityChanged = homeViewModel::refresh
                 )
 
                 WeatherNavigationTarget.DESKTOP_WEATHER -> DesktopWeatherScreen(
                     modifier = pageModifier,
-                    onRequestWidget = { noticeText = requestWeatherWidgetPin(context) }
+                    onRequestWidget = { mode -> noticeText = requestWeatherWidgetPin(context, mode) }
                 )
 
                 WeatherNavigationTarget.PERSONALIZATION -> PersonalizationScreen(
@@ -200,6 +207,8 @@ fun YunJiApp(
                         temperatureUnit = temperatureUnit,
                         respectStatusBar = false,
                         autoFocusSearch = true,
+                        locationUiState = locationUiState,
+                        onRequestLocation = onRequestLocation,
                         onDefaultCityChanged = {
                             activeTarget = null
                             homeViewModel.refresh()
@@ -219,11 +228,11 @@ fun YunJiApp(
             containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.98f)
         ) {
             PersonalizationBlockEditor(
-                homeBlockOrder = homeBlockOrder,
-                homeBlockEnabled = homeBlockEnabled,
-                onHomeBlockEnabledChange = onHomeBlockEnabledChange,
-                onMoveHomeBlockUp = onMoveHomeBlockUp,
-                onMoveHomeBlockDown = onMoveHomeBlockDown,
+                homeModules = homeModules,
+                homeModuleEnabled = homeModuleEnabled,
+                onHomeModuleEnabledChange = onHomeModuleEnabledChange,
+                onMoveHomeModuleUp = onMoveHomeModuleUp,
+                onMoveHomeModuleDown = onMoveHomeModuleDown,
                 onResetHomeBlocks = onResetHomeBlocks
             )
         }
@@ -249,7 +258,7 @@ private fun activePageTitle(target: WeatherNavigationTarget): String {
         WeatherNavigationTarget.PERSONALIZATION -> "个性换肤"
         WeatherNavigationTarget.SETTINGS -> "设置"
         WeatherNavigationTarget.ALERTS -> "天气预警"
-        WeatherNavigationTarget.LIFE_INDEX -> "生活指数"
+        WeatherNavigationTarget.LIFE_INDEX -> "生活建议"
         WeatherNavigationTarget.SEARCH_CITY -> "搜索城市"
     }
 }
@@ -266,11 +275,11 @@ private fun activePageSubtitle(target: WeatherNavigationTarget): String? {
     }
 }
 
-private fun requestWeatherWidgetPin(context: Context): String {
+private fun requestWeatherWidgetPin(context: Context, mode: WeatherWidgetLayoutMode): String {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
         val appWidgetManager = context.getSystemService(AppWidgetManager::class.java)
         if (appWidgetManager?.isRequestPinAppWidgetSupported == true) {
-            val provider = ComponentName(context, WeatherAppWidgetProvider::class.java)
+            val provider = ComponentName(context, WeatherAppWidgetProvider.providerClassFor(mode))
             val requested = appWidgetManager.requestPinAppWidget(provider, null, null)
             if (requested) {
                 return "已请求添加桌面天气，请在系统弹窗中确认。"

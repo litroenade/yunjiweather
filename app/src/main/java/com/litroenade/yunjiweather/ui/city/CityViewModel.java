@@ -10,22 +10,23 @@ import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
 import com.litroenade.yunjiweather.data.api.CityLookupGateway;
-import com.litroenade.yunjiweather.data.api.WeatherApiService;
-import com.litroenade.yunjiweather.data.api.WeatherGatewayFactory;
 import com.litroenade.yunjiweather.data.entity.CityEntity;
-import com.litroenade.yunjiweather.data.local.AppDatabase;
 import com.litroenade.yunjiweather.data.model.CityWeatherSummary;
 import com.litroenade.yunjiweather.data.repository.CityRepository;
 import com.litroenade.yunjiweather.data.repository.CityWeatherSummaryRepository;
-import com.litroenade.yunjiweather.data.repository.WeatherRepository;
-import com.litroenade.yunjiweather.data.repository.WeatherRepositoryFactory;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.lifecycle.HiltViewModel;
+
+@HiltViewModel
 public class CityViewModel extends AndroidViewModel {
 
     private final CityRepository cityRepository;
@@ -34,6 +35,7 @@ public class CityViewModel extends AndroidViewModel {
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final Handler mainHandler = new Handler(Looper.getMainLooper());
     private final MutableLiveData<List<CityEntity>> cities = new MutableLiveData<>();
+    private final MutableLiveData<List<CityEntity>> searchResults = new MutableLiveData<>();
     private final MutableLiveData<Map<String, CityWeatherSummary>> citySummaries = new MutableLiveData<>();
     private final MutableLiveData<String> defaultCity = new MutableLiveData<>();
     private final MutableLiveData<String> message = new MutableLiveData<>();
@@ -42,23 +44,26 @@ public class CityViewModel extends AndroidViewModel {
     private long defaultCityChangeCounter;
     private volatile boolean cleared;
 
-    public CityViewModel(@NonNull Application application) {
+    @Inject
+    public CityViewModel(
+            @NonNull Application application,
+            CityRepository cityRepository,
+            CityLookupGateway cityLookupGateway,
+            CityWeatherSummaryRepository cityWeatherSummaryRepository
+    ) {
         super(application);
-        AppDatabase database = AppDatabase.getInstance(application);
-        cityRepository = new CityRepository(database.cityDao());
-        WeatherApiService apiService = WeatherGatewayFactory.createQWeatherServiceOrNull();
-        cityLookupGateway = WeatherGatewayFactory.createCityLookupGateway(apiService);
-        WeatherRepository weatherRepository = WeatherRepositoryFactory.createHomeRepository(database, apiService);
-        cityWeatherSummaryRepository = new CityWeatherSummaryRepository(
-                weatherRepository,
-                weatherRepository,
-                false
-        );
+        this.cityRepository = cityRepository;
+        this.cityLookupGateway = cityLookupGateway;
+        this.cityWeatherSummaryRepository = cityWeatherSummaryRepository;
         reload();
     }
 
     public LiveData<List<CityEntity>> getCities() {
         return cities;
+    }
+
+    public LiveData<List<CityEntity>> getSearchResults() {
+        return searchResults;
     }
 
     public LiveData<Map<String, CityWeatherSummary>> getCitySummaries() {
@@ -98,10 +103,57 @@ public class CityViewModel extends AndroidViewModel {
                     city.isDefault = true;
                 }
                 cityRepository.insert(city);
+                searchResults.postValue(Collections.emptyList());
                 message.postValue("城市已添加");
                 reloadOnExecutor();
             } catch (IOException exception) {
                 message.postValue(exception.getMessage());
+            } finally {
+                busy.postValue(false);
+            }
+        });
+    }
+
+    public void searchCities(String cityName) {
+        busy.setValue(true);
+        executorService.execute(() -> {
+            try {
+                List<CityEntity> results = cityLookupGateway.searchCities(
+                        cityName,
+                        cityRepository.count() + 1,
+                        System.currentTimeMillis()
+                );
+                searchResults.postValue(results);
+                message.postValue(results.isEmpty() ? "未找到匹配城市" : "请选择要添加的城市");
+            } catch (IOException exception) {
+                searchResults.postValue(Collections.emptyList());
+                message.postValue(exception.getMessage());
+            } finally {
+                busy.postValue(false);
+            }
+        });
+    }
+
+    public void addCity(CityEntity city) {
+        if (city == null) {
+            return;
+        }
+        busy.setValue(true);
+        executorService.execute(() -> {
+            try {
+                if (cityRepository.findByLocationId(city.locationId) != null) {
+                    message.postValue("该城市已存在");
+                    return;
+                }
+                long nowTime = System.currentTimeMillis();
+                city.isDefault = cityRepository.count() == 0;
+                city.sortOrder = cityRepository.count() + 1;
+                city.updateTime = nowTime;
+                city.createTime = nowTime;
+                cityRepository.insert(city);
+                searchResults.postValue(Collections.emptyList());
+                message.postValue("城市已添加");
+                reloadOnExecutor();
             } finally {
                 busy.postValue(false);
             }
@@ -124,6 +176,14 @@ public class CityViewModel extends AndroidViewModel {
         });
     }
 
+    public void moveCityUp(CityEntity city) {
+        moveCity(city, -1);
+    }
+
+    public void moveCityDown(CityEntity city) {
+        moveCity(city, 1);
+    }
+
     public void setDefaultCity(CityEntity city) {
         busy.setValue(true);
         executorService.execute(() -> {
@@ -132,6 +192,18 @@ public class CityViewModel extends AndroidViewModel {
                 message.postValue("默认城市已切换为 " + city.cityName);
                 reloadOnExecutor();
                 defaultCityChangeVersion.postValue(++defaultCityChangeCounter);
+            } finally {
+                busy.postValue(false);
+            }
+        });
+    }
+
+    private void moveCity(CityEntity city, int direction) {
+        busy.setValue(true);
+        executorService.execute(() -> {
+            try {
+                cityRepository.moveCity(city.locationId, direction, System.currentTimeMillis());
+                reloadOnExecutor();
             } finally {
                 busy.postValue(false);
             }

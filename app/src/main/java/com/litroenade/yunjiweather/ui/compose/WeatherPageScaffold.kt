@@ -32,9 +32,9 @@ import com.litroenade.yunjiweather.ui.compose.theme.LocalYunJiVisualTheme
 @Composable
 internal fun WeatherPageScaffold(
     title: String,
-    subtitle: String? = null,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    subtitle: String? = null,
     action: @Composable (() -> Unit)? = null,
     content: @Composable (Modifier) -> Unit
 ) {

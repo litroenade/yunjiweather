@@ -1,7 +1,7 @@
 package com.litroenade.yunjiweather.utils;
 
 /**
- * Normalizes persisted personalization theme keys before they reach UI code.
+ * 统一收敛个性化主题标识，兼容旧版本写入的主题值。
  */
 public final class VisualThemeUtils {
 
@@ -24,13 +24,13 @@ public final class VisualThemeUtils {
     }
 
     public static String normalizeThemeKey(String themeKey) {
-        // These values existed before the four-slot personalization model.
+        // 四槽位主题模型上线前的旧值统一迁移到当前可展示主题。
         if (THEME_FANTASY.equals(themeKey)
                 || LEGACY_THEME_REAL_WEATHER.equals(themeKey)
                 || LEGACY_THEME_SAKURA.equals(themeKey)) {
             return THEME_PANORAMA;
         }
-        if (THEME_CUSTOM_1.equals(themeKey) || LEGACY_THEME_CUSTOM_2.equals(themeKey)) {
+        if (LEGACY_THEME_CUSTOM_2.equals(themeKey)) {
             return THEME_SKY;
         }
         return VisualThemeCatalog.getThemeOrDefault(themeKey).getKey();

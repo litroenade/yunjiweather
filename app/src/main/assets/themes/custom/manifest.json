@@ -1,7 +1,7 @@
 {
   "key": "custom_1",
   "folder": "custom",
-  "name": "空位",
-  "status": "reserved",
-  "description": "预留给后续自建主题。"
+  "name": "自定义主题",
+  "status": "available",
+  "description": "用户上传天气背景图片后生成的本地主题模板。"
 }

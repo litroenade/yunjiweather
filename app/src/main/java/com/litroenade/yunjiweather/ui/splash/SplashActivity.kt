@@ -17,29 +17,29 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.litroenade.yunjiweather.MainActivity
 import com.litroenade.yunjiweather.R
-import com.litroenade.yunjiweather.settings.SettingsManager
 import com.litroenade.yunjiweather.ui.compose.theme.YunJiTheme
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 
 @SuppressLint("CustomSplashScreen")
+@AndroidEntryPoint
 class SplashActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            val settingsManager = remember { SettingsManager(this) }
-            val visualThemeKey = settingsManager.getVisualTheme()
+            val splashViewModel: SplashViewModel = viewModel()
             YunJiTheme(
-                darkTheme = settingsManager.isDarkModeEnabled(),
-                visualThemeKey = visualThemeKey
+                darkTheme = splashViewModel.isDarkModeEnabled,
+                visualThemeKey = splashViewModel.visualTheme
             ) {
                 SplashRoute(
                     onFinished = {

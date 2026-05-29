@@ -2,7 +2,11 @@ package com.litroenade.yunjiweather.utils;
 
 import android.content.SharedPreferences;
 
-import com.litroenade.yunjiweather.settings.SettingsManager;
+import com.litroenade.yunjiweather.data.local.prefs.SettingsPreferencesDataSource;
+import com.litroenade.yunjiweather.data.model.CustomThemeCropAnchor;
+import com.litroenade.yunjiweather.ui.compose.home.modules.HomeModuleCatalog;
+import com.litroenade.yunjiweather.ui.compose.theme.mixins.ThemeMixinCatalog;
+import com.litroenade.yunjiweather.ui.compose.theme.profiles.ThemeProfileCatalog;
 import com.litroenade.yunjiweather.ui.compose.theme.skins.ThemeSkinCatalog;
 
 import org.junit.Test;
@@ -27,19 +31,16 @@ public class VisualThemeUtilsTest {
     public void catalog_returnsThemesInStableOrder() {
         List<VisualTheme> themes = VisualThemeCatalog.getThemes();
 
-        assertEquals(4, themes.size());
+        assertEquals(3, themes.size());
         assertEquals(VisualThemeUtils.THEME_SKY, themes.get(0).getKey());
         assertEquals(VisualThemeUtils.THEME_PANORAMA, themes.get(1).getKey());
-        assertEquals(VisualThemeUtils.THEME_FANTASY, themes.get(2).getKey());
-        assertEquals(VisualThemeUtils.THEME_CUSTOM_1, themes.get(3).getKey());
+        assertEquals(VisualThemeUtils.THEME_CUSTOM_1, themes.get(2).getKey());
         assertEquals(false, themes.get(0).isCustomSlot());
         assertEquals(false, themes.get(1).isCustomSlot());
         assertEquals(true, themes.get(2).isCustomSlot());
-        assertEquals(true, themes.get(3).isCustomSlot());
         assertEquals(true, themes.get(0).isSelectable());
         assertEquals(true, themes.get(1).isSelectable());
-        assertEquals(false, themes.get(2).isSelectable());
-        assertEquals(false, themes.get(3).isSelectable());
+        assertEquals(true, themes.get(2).isSelectable());
     }
 
     @Test
@@ -59,6 +60,7 @@ public class VisualThemeUtilsTest {
         assertEquals("幻想乡", fantasy.getDisplayName());
         assertEquals(false, fantasy.isSelectable());
         assertEquals(false, VisualThemeUtils.isSupportedTheme(VisualThemeUtils.THEME_FANTASY));
+        assertEquals(false, VisualThemeCatalog.getThemes().contains(fantasy));
     }
 
     @Test
@@ -101,7 +103,7 @@ public class VisualThemeUtilsTest {
     @Test
     public void placeholderSkinsArePreviewOnly() {
         assertEquals(false, ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_FANTASY).isRuntimeSelectable());
-        assertEquals(false, ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_CUSTOM_1).isRuntimeSelectable());
+        assertEquals(true, ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_CUSTOM_1).isRuntimeSelectable());
     }
 
     @Test
@@ -109,7 +111,7 @@ public class VisualThemeUtilsTest {
         MemorySharedPreferences preferences = new MemorySharedPreferences();
         preferences.edit().putString("visual_theme", "external-fanart").apply();
 
-        SettingsManager settingsManager = new SettingsManager(preferences);
+        SettingsPreferencesDataSource settingsManager = new SettingsPreferencesDataSource(preferences);
 
         assertEquals(VisualThemeUtils.THEME_SKY, settingsManager.getVisualTheme());
         assertEquals(VisualThemeUtils.THEME_SKY, preferences.getString("visual_theme", ""));
@@ -123,7 +125,7 @@ public class VisualThemeUtilsTest {
                 .putString("wind_unit", "KNOT")
                 .apply();
 
-        SettingsManager settingsManager = new SettingsManager(preferences);
+        SettingsPreferencesDataSource settingsManager = new SettingsPreferencesDataSource(preferences);
 
         assertEquals(WeatherDisplayUtils.TEMPERATURE_CELSIUS, settingsManager.getTemperatureUnit());
         assertEquals(WeatherDisplayUtils.TEMPERATURE_CELSIUS, preferences.getString("temperature_unit", ""));
@@ -136,7 +138,7 @@ public class VisualThemeUtilsTest {
         MemorySharedPreferences preferences = new MemorySharedPreferences();
         preferences.edit().putBoolean("visual_theme", true).apply();
 
-        SettingsManager settingsManager = new SettingsManager(preferences);
+        SettingsPreferencesDataSource settingsManager = new SettingsPreferencesDataSource(preferences);
 
         assertEquals(VisualThemeUtils.THEME_SKY, settingsManager.getVisualTheme());
         assertEquals(VisualThemeUtils.THEME_SKY, preferences.getString("visual_theme", ""));
@@ -147,7 +149,7 @@ public class VisualThemeUtilsTest {
         MemorySharedPreferences preferences = new MemorySharedPreferences();
         preferences.edit().putString("visual_theme", "sakura").apply();
 
-        SettingsManager settingsManager = new SettingsManager(preferences);
+        SettingsPreferencesDataSource settingsManager = new SettingsPreferencesDataSource(preferences);
 
         assertEquals(VisualThemeUtils.THEME_PANORAMA, settingsManager.getVisualTheme());
         assertEquals(VisualThemeUtils.THEME_PANORAMA, preferences.getString("visual_theme", ""));
@@ -158,7 +160,7 @@ public class VisualThemeUtilsTest {
         MemorySharedPreferences preferences = new MemorySharedPreferences();
         preferences.edit().putString("visual_theme", "fantasy").apply();
 
-        SettingsManager settingsManager = new SettingsManager(preferences);
+        SettingsPreferencesDataSource settingsManager = new SettingsPreferencesDataSource(preferences);
 
         assertEquals(VisualThemeUtils.THEME_PANORAMA, settingsManager.getVisualTheme());
         assertEquals(VisualThemeUtils.THEME_PANORAMA, preferences.getString("visual_theme", ""));
@@ -169,7 +171,7 @@ public class VisualThemeUtilsTest {
         MemorySharedPreferences preferences = new MemorySharedPreferences();
         preferences.edit().putString("visual_theme", "real_weather").apply();
 
-        SettingsManager settingsManager = new SettingsManager(preferences);
+        SettingsPreferencesDataSource settingsManager = new SettingsPreferencesDataSource(preferences);
 
         assertEquals(VisualThemeUtils.THEME_PANORAMA, settingsManager.getVisualTheme());
         assertEquals(VisualThemeUtils.THEME_PANORAMA, preferences.getString("visual_theme", ""));
@@ -180,21 +182,46 @@ public class VisualThemeUtilsTest {
         MemorySharedPreferences preferences = new MemorySharedPreferences();
         preferences.edit().putString("visual_theme", "custom_2").apply();
 
-        SettingsManager settingsManager = new SettingsManager(preferences);
+        SettingsPreferencesDataSource settingsManager = new SettingsPreferencesDataSource(preferences);
 
         assertEquals(VisualThemeUtils.THEME_SKY, settingsManager.getVisualTheme());
         assertEquals(VisualThemeUtils.THEME_SKY, preferences.getString("visual_theme", ""));
     }
 
     @Test
-    public void settingsManager_migratesReservedCustomSlotToDefaultTheme() {
+    public void settingsManager_keepsCustomThemeSlotAsRuntimeTheme() {
         MemorySharedPreferences preferences = new MemorySharedPreferences();
         preferences.edit().putString("visual_theme", VisualThemeUtils.THEME_CUSTOM_1).apply();
 
-        SettingsManager settingsManager = new SettingsManager(preferences);
+        SettingsPreferencesDataSource settingsManager = new SettingsPreferencesDataSource(preferences);
 
-        assertEquals(VisualThemeUtils.THEME_SKY, settingsManager.getVisualTheme());
-        assertEquals(VisualThemeUtils.THEME_SKY, preferences.getString("visual_theme", ""));
+        assertEquals(VisualThemeUtils.THEME_CUSTOM_1, settingsManager.getVisualTheme());
+        assertEquals(VisualThemeUtils.THEME_CUSTOM_1, preferences.getString("visual_theme", ""));
+    }
+
+    @Test
+    public void settingsManager_persistsCustomThemeImageAndCropAnchor() {
+        SettingsPreferencesDataSource settingsManager = new SettingsPreferencesDataSource(new MemorySharedPreferences());
+
+        assertEquals("", settingsManager.getCustomThemeImageUri());
+        assertEquals(CustomThemeCropAnchor.CENTER, settingsManager.getCustomThemeCropAnchor());
+
+        settingsManager.setCustomThemeImageUri("content://yunji/custom-theme");
+        settingsManager.setCustomThemeCropAnchor(CustomThemeCropAnchor.TOP);
+
+        assertEquals("content://yunji/custom-theme", settingsManager.getCustomThemeImageUri());
+        assertEquals(CustomThemeCropAnchor.TOP, settingsManager.getCustomThemeCropAnchor());
+    }
+
+    @Test
+    public void settingsManager_repairsUnsupportedCustomThemeCropAnchorToCenter() {
+        MemorySharedPreferences preferences = new MemorySharedPreferences();
+        preferences.edit().putString("custom_theme_crop_anchor", "diagonal").apply();
+
+        SettingsPreferencesDataSource settingsManager = new SettingsPreferencesDataSource(preferences);
+
+        assertEquals(CustomThemeCropAnchor.CENTER, settingsManager.getCustomThemeCropAnchor());
+        assertEquals(CustomThemeCropAnchor.CENTER, preferences.getString("custom_theme_crop_anchor", ""));
     }
 
     @Test
@@ -205,7 +232,7 @@ public class VisualThemeUtilsTest {
                 .putInt("wind_unit", 2)
                 .apply();
 
-        SettingsManager settingsManager = new SettingsManager(preferences);
+        SettingsPreferencesDataSource settingsManager = new SettingsPreferencesDataSource(preferences);
 
         assertEquals(WeatherDisplayUtils.TEMPERATURE_CELSIUS, settingsManager.getTemperatureUnit());
         assertEquals(WeatherDisplayUtils.TEMPERATURE_CELSIUS, preferences.getString("temperature_unit", ""));
@@ -215,7 +242,7 @@ public class VisualThemeUtilsTest {
 
     @Test
     public void settingsManager_persistsDeveloperToolsEnabled() {
-        SettingsManager settingsManager = new SettingsManager(new MemorySharedPreferences());
+        SettingsPreferencesDataSource settingsManager = new SettingsPreferencesDataSource(new MemorySharedPreferences());
 
         assertEquals(false, settingsManager.isDeveloperToolsEnabled());
 
@@ -228,7 +255,7 @@ public class VisualThemeUtilsTest {
 
     @Test
     public void settingsManager_persistsHomeBlockLayoutPerTheme() {
-        SettingsManager settingsManager = new SettingsManager(new MemorySharedPreferences());
+        SettingsPreferencesDataSource settingsManager = new SettingsPreferencesDataSource(new MemorySharedPreferences());
 
         List<HomeBlock> defaultOrder = settingsManager.getHomeBlockOrder(VisualThemeUtils.THEME_SKY);
         assertEquals(7, defaultOrder.size());
@@ -247,8 +274,62 @@ public class VisualThemeUtilsTest {
     }
 
     @Test
+    public void homeModuleCatalog_addsThemeModulesAfterBuiltInHomeBlocks() {
+        List<String> defaultKeys = HomeModuleCatalog.getAvailableModuleKeys(VisualThemeUtils.THEME_SKY);
+        List<String> panoramaKeys = HomeModuleCatalog.getAvailableModuleKeys(VisualThemeUtils.THEME_PANORAMA);
+
+        assertEquals(7, defaultKeys.size());
+        assertEquals(HomeBlock.WEATHER_METRICS.getKey(), defaultKeys.get(0));
+        assertEquals(HomeBlock.DAILY_FORECAST.getKey(), defaultKeys.get(6));
+        assertEquals(8, panoramaKeys.size());
+        assertEquals(HomeBlock.DAILY_FORECAST.getKey(), panoramaKeys.get(6));
+        assertEquals("calendar_life", panoramaKeys.get(7));
+        assertEquals("日历生活", HomeModuleCatalog.getDefinition("calendar_life").getDisplayName());
+    }
+
+    @Test
+    public void themeMixinCatalog_exposesPanoramaCalendarHomeModule() {
+        assertEquals(0, ThemeMixinCatalog.getHomeModules(VisualThemeUtils.THEME_SKY).size());
+        assertEquals(1, ThemeMixinCatalog.getHomeModules(VisualThemeUtils.THEME_PANORAMA).size());
+        assertEquals(
+                "calendar_life",
+                ThemeMixinCatalog.getHomeModules(VisualThemeUtils.THEME_PANORAMA).get(0).getKey()
+        );
+    }
+
+    @Test
+    public void themeProfileCatalogCombinesMetadataSkinAndMixins() {
+        assertEquals("默认主题", ThemeProfileCatalog.getProfile(VisualThemeUtils.THEME_SKY).getVisualTheme().getDisplayName());
+        assertEquals("全景天气", ThemeProfileCatalog.getProfile(VisualThemeUtils.THEME_PANORAMA).getVisualTheme().getDisplayName());
+        assertEquals("panorama", ThemeProfileCatalog.getProfile(VisualThemeUtils.THEME_PANORAMA).getSkin().getFolderName());
+        assertEquals(1, ThemeProfileCatalog.getProfile(VisualThemeUtils.THEME_PANORAMA).getMixins().size());
+        assertEquals("official", ThemeProfileCatalog.getThemeFolder("external-fanart"));
+    }
+
+    @Test
+    public void settingsManager_persistsStringHomeModuleLayoutPerTheme() {
+        SettingsPreferencesDataSource settingsManager = new SettingsPreferencesDataSource(new MemorySharedPreferences());
+        List<String> panoramaKeys = HomeModuleCatalog.getAvailableModuleKeys(VisualThemeUtils.THEME_PANORAMA);
+
+        List<String> defaultOrder = settingsManager.getHomeModuleOrder(VisualThemeUtils.THEME_PANORAMA, panoramaKeys);
+        assertEquals(8, defaultOrder.size());
+        assertEquals(HomeBlock.WEATHER_METRICS.getKey(), defaultOrder.get(0));
+        assertEquals("calendar_life", defaultOrder.get(7));
+        assertEquals(true, settingsManager.isHomeModuleEnabled(VisualThemeUtils.THEME_PANORAMA, "calendar_life"));
+
+        settingsManager.setHomeModuleEnabled(VisualThemeUtils.THEME_PANORAMA, "calendar_life", false);
+        settingsManager.moveHomeModule(VisualThemeUtils.THEME_PANORAMA, "calendar_life", -1, panoramaKeys);
+
+        List<String> updatedOrder = settingsManager.getHomeModuleOrder(VisualThemeUtils.THEME_PANORAMA, panoramaKeys);
+        assertEquals("calendar_life", updatedOrder.get(6));
+        assertEquals(HomeBlock.DAILY_FORECAST.getKey(), updatedOrder.get(7));
+        assertEquals(false, settingsManager.isHomeModuleEnabled(VisualThemeUtils.THEME_PANORAMA, "calendar_life"));
+        assertEquals(true, settingsManager.isHomeModuleEnabled(VisualThemeUtils.THEME_SKY, "calendar_life"));
+    }
+
+    @Test
     public void settingsManager_resetsHomeBlockLayoutForTheme() {
-        SettingsManager settingsManager = new SettingsManager(new MemorySharedPreferences());
+        SettingsPreferencesDataSource settingsManager = new SettingsPreferencesDataSource(new MemorySharedPreferences());
         settingsManager.setHomeBlockEnabled(VisualThemeUtils.THEME_SKY, HomeBlock.WEATHER_INSIGHT, false);
         settingsManager.moveHomeBlock(VisualThemeUtils.THEME_SKY, HomeBlock.DAILY_FORECAST, -1);
 
@@ -262,17 +343,17 @@ public class VisualThemeUtilsTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void setTemperatureUnit_rejectsUnsupportedUnit() {
-        new SettingsManager(new MemorySharedPreferences()).setTemperatureUnit("K");
+        new SettingsPreferencesDataSource(new MemorySharedPreferences()).setTemperatureUnit("K");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void setWindUnit_rejectsUnsupportedUnit() {
-        new SettingsManager(new MemorySharedPreferences()).setWindUnit("KNOT");
+        new SettingsPreferencesDataSource(new MemorySharedPreferences()).setWindUnit("KNOT");
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void setVisualTheme_rejectsUnsupportedTheme() {
-        new SettingsManager(new MemorySharedPreferences()).setVisualTheme("external-fanart");
+        new SettingsPreferencesDataSource(new MemorySharedPreferences()).setVisualTheme("external-fanart");
     }
 
     private static final class MemorySharedPreferences implements SharedPreferences {

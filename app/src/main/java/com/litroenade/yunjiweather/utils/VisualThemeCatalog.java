@@ -5,37 +5,39 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Stable catalog for the personalization slots shown in Settings. Keep order changes
- * intentional because the UI and tests rely on this sequence.
+ * 个性化页面的稳定主题目录。
+ * 顺序会直接影响界面展示和测试断言，因此新增主题时要显式维护。
  */
 public final class VisualThemeCatalog {
 
-    private static final List<VisualTheme> THEMES = Collections.unmodifiableList(Arrays.asList(
-            new VisualTheme(
-                    VisualThemeUtils.THEME_SKY,
-                    "默认主题",
-                    "使用云迹天气默认配色和首页模块。"
-            ),
-            new VisualTheme(
-                    VisualThemeUtils.THEME_PANORAMA,
-                    "全景天气",
-                    "沉浸式动态天气，强化真实光影、雨雪和风场层次。"
-            ),
-            new VisualTheme(
-                    VisualThemeUtils.THEME_FANTASY,
-                    "幻想乡",
-                    "空位：后续用于幻想风格皮肤。",
-                    true,
-                    false
-            ),
-            new VisualTheme(
-                    VisualThemeUtils.THEME_CUSTOM_1,
-                    "空位",
-                    "预留给后续自建主题。",
-                    true,
-                    false
-            )
-    ));
+    private static final VisualTheme DEFAULT_THEME = new VisualTheme(
+            VisualThemeUtils.THEME_SKY,
+            "默认主题",
+            "使用云迹天气默认配色和首页模块。"
+    );
+    private static final VisualTheme PANORAMA_THEME = new VisualTheme(
+            VisualThemeUtils.THEME_PANORAMA,
+            "全景天气",
+            "沉浸式动态天气，强化真实光影、雨雪和风场层次。"
+    );
+    private static final VisualTheme FANTASY_THEME = new VisualTheme(
+            VisualThemeUtils.THEME_FANTASY,
+            "幻想乡",
+            "暂不开放：后续用于幻想风格皮肤。",
+            true,
+            false
+    );
+    private static final VisualTheme CUSTOM_THEME = new VisualTheme(
+            VisualThemeUtils.THEME_CUSTOM_1,
+            "自定义主题",
+            "上传图片并选择裁剪位置。",
+            true,
+            true
+    );
+
+    private static final List<VisualTheme> ALL_THEMES = List.of(DEFAULT_THEME, PANORAMA_THEME, FANTASY_THEME, CUSTOM_THEME);
+
+    private static final List<VisualTheme> THEMES = List.of(DEFAULT_THEME, PANORAMA_THEME, CUSTOM_THEME);
 
     private VisualThemeCatalog() {
     }
@@ -49,7 +51,7 @@ public final class VisualThemeCatalog {
     }
 
     public static VisualTheme findByKey(String themeKey) {
-        for (VisualTheme theme : THEMES) {
+        for (VisualTheme theme : ALL_THEMES) {
             if (theme.getKey().equals(themeKey)) {
                 return theme;
             }

@@ -33,8 +33,8 @@ public class DateTimeUtilsTest {
     }
 
     @Test
-    public void parseQWeatherTime_returnsEpochMillisFromOffsetTime() {
-        long time = DateTimeUtils.parseQWeatherTime("2020-06-30T22:00+08:00");
+    public void parseOpenMeteoLocalTime_returnsEpochMillisInChinaTimeZone() {
+        long time = DateTimeUtils.parseOpenMeteoLocalTime("2020-06-30T22:00");
 
         assertEquals(1_593_525_600_000L, time);
     }

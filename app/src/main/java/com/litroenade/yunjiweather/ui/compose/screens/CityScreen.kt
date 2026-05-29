@@ -45,6 +45,8 @@ import com.litroenade.yunjiweather.ui.city.CityViewModel
 import com.litroenade.yunjiweather.ui.compose.InfoCard
 import com.litroenade.yunjiweather.ui.compose.ScreenHeader
 import com.litroenade.yunjiweather.ui.compose.formatWeatherTime
+import com.litroenade.yunjiweather.ui.location.LocationStatus
+import com.litroenade.yunjiweather.ui.location.LocationUiState
 import com.litroenade.yunjiweather.utils.WeatherDisplayUtils
 
 @Composable
@@ -54,10 +56,13 @@ fun CityScreen(
     respectStatusBar: Boolean = true,
     autoFocusSearch: Boolean = false,
     showHeader: Boolean = true,
+    locationUiState: LocationUiState = LocationUiState.idle(),
+    onRequestLocation: () -> Unit = {},
     onDefaultCityChanged: () -> Unit = {},
     viewModel: CityViewModel = viewModel()
 ) {
     val cities by viewModel.getCities().observeAsState(emptyList())
+    val searchResults by viewModel.getSearchResults().observeAsState(emptyList())
     val summaries by viewModel.getCitySummaries().observeAsState(emptyMap())
     val defaultCity by viewModel.getDefaultCity().observeAsState("未设置")
     val message by viewModel.getMessage().observeAsState("")
@@ -95,22 +100,31 @@ fun CityScreen(
                 query = query,
                 busy = busy,
                 message = message,
+                searchResults = searchResults,
                 autoFocusSearch = autoFocusSearch,
+                locationUiState = locationUiState,
                 onQueryChange = { query = it },
+                onRequestLocation = onRequestLocation,
                 onQuickAdd = viewModel::addCity,
+                onSearch = { viewModel.searchCities(query) },
+                onAddCandidate = viewModel::addCity,
                 onSubmit = {
-                    viewModel.addCity(query)
-                    query = ""
+                    viewModel.searchCities(query)
                 }
             )
         }
         items(cities, key = { city -> city.locationId }) { city ->
+            val cityIndex = cities.indexOf(city)
             CityCard(
                 city = city,
                 summary = summaries[city.locationId],
                 actionsEnabled = !busy,
                 temperatureUnit = temperatureUnit,
+                canMoveUp = !city.isDefault && cityIndex > 1,
+                canMoveDown = !city.isDefault && cityIndex < cities.lastIndex,
                 onSetDefault = { viewModel.setDefaultCity(city) },
+                onMoveUp = { viewModel.moveCityUp(city) },
+                onMoveDown = { viewModel.moveCityDown(city) },
                 onDelete = { viewModel.removeCity(city) }
             )
         }
@@ -122,9 +136,14 @@ private fun CitySearchCard(
     query: String,
     busy: Boolean,
     message: String,
+    searchResults: List<CityEntity>,
     autoFocusSearch: Boolean,
+    locationUiState: LocationUiState,
     onQueryChange: (String) -> Unit,
+    onRequestLocation: () -> Unit,
     onQuickAdd: (String) -> Unit,
+    onSearch: () -> Unit,
+    onAddCandidate: (CityEntity) -> Unit,
     onSubmit: () -> Unit
 ) {
     val focusRequester = remember { FocusRequester() }
@@ -159,9 +178,20 @@ private fun CitySearchCard(
             )
             Button(
                 enabled = !busy,
-                onClick = onSubmit
+                onClick = onSearch
             ) {
-                Text("添加")
+                Text("搜索")
+            }
+        }
+        if (searchResults.isNotEmpty()) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                searchResults.forEach { candidate ->
+                    CitySearchResultRow(
+                        candidate = candidate,
+                        enabled = !busy,
+                        onAddCandidate = onAddCandidate
+                    )
+                }
             }
         }
         Text(
@@ -183,6 +213,25 @@ private fun CitySearchCard(
                 }
             }
         }
+        OutlinedButton(
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !busy && !locationUiState.isBusy,
+            onClick = onRequestLocation
+        ) {
+            Text(locationActionText(locationUiState.status))
+        }
+        if (locationUiState.message.isNotBlank()) {
+            Text(
+                text = locationUiState.message,
+                style = MaterialTheme.typography.bodySmall,
+                color = when (locationUiState.status) {
+                    LocationStatus.ERROR,
+                    LocationStatus.DENIED -> MaterialTheme.colorScheme.error
+                    LocationStatus.SUCCESS -> MaterialTheme.colorScheme.primary
+                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                }
+            )
+        }
         if (message.isNotBlank()) {
             Text(
                 text = message,
@@ -201,12 +250,81 @@ private fun CitySearchCard(
 }
 
 @Composable
+private fun CitySearchResultRow(
+    candidate: CityEntity,
+    enabled: Boolean,
+    onAddCandidate: (CityEntity) -> Unit
+) {
+    SurfaceLikeSearchResult {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                Text(
+                    text = candidate.cityName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "${candidate.province} · ${candidate.country}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            OutlinedButton(
+                enabled = enabled,
+                onClick = { onAddCandidate(candidate) }
+            ) {
+                Text("添加")
+            }
+        }
+    }
+}
+
+@Composable
+private fun SurfaceLikeSearchResult(content: @Composable () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.34f),
+                shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp)
+            )
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+    ) {
+        content()
+    }
+}
+
+private fun locationActionText(status: LocationStatus): String {
+    return when (status) {
+        LocationStatus.REQUESTING_PERMISSION -> "等待定位授权"
+        LocationStatus.FETCHING_LOCATION -> "正在定位"
+        LocationStatus.SUCCESS -> "重新定位当前城市"
+        else -> "定位当前城市"
+    }
+}
+
+@Composable
 private fun CityCard(
     city: CityEntity,
     summary: CityWeatherSummary?,
     actionsEnabled: Boolean,
     temperatureUnit: String,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
     onSetDefault: () -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
     onDelete: () -> Unit
 ) {
     val cardShape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)
@@ -276,6 +394,35 @@ private fun CityCard(
                 border = BorderStroke(1.dp, Color.White.copy(alpha = 0.54f))
             ) {
                 Text("删除", maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            OutlinedButton(
+                modifier = Modifier.weight(1f),
+                enabled = actionsEnabled && canMoveUp,
+                onClick = onMoveUp,
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = primaryText,
+                    disabledContentColor = secondaryText
+                ),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = if (canMoveUp) 0.54f else 0.22f))
+            ) {
+                Text("上移", maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            OutlinedButton(
+                modifier = Modifier.weight(1f),
+                enabled = actionsEnabled && canMoveDown,
+                onClick = onMoveDown,
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = primaryText,
+                    disabledContentColor = secondaryText
+                ),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = if (canMoveDown) 0.54f else 0.22f))
+            ) {
+                Text("下移", maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
         if (summary == null || summary.errorMessage.isNotBlank()) {

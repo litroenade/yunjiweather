@@ -70,6 +70,10 @@ val LocalThemeSkin = staticCompositionLocalOf<ThemeSkin> {
 fun YunJiTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     visualThemeKey: String = VisualThemeUtils.THEME_SKY,
+    customThemeImageUri: String = "",
+    customThemeCropAnchor: String = "center",
+    customThemeImageUris: Map<String, String> = emptyMap(),
+    customThemeCropAnchors: Map<String, String> = emptyMap(),
     content: @Composable () -> Unit
 ) {
     val skin = ThemeSkinCatalog.getRuntimeSkin(visualThemeKey)
@@ -84,6 +88,16 @@ fun YunJiTheme(
                 LocalYunJiVisualTheme provides visualThemeFor(
                     skin,
                     darkTheme
+                ),
+                LocalCustomThemeOptions provides CustomThemeOptions(
+                    imageUri = customThemeImageUri,
+                    cropAnchor = customThemeCropAnchor,
+                    imagesByWeatherKey = customThemeImageUris.mapValues { entry ->
+                        CustomThemeImage(
+                            uri = entry.value,
+                            cropAnchor = customThemeCropAnchors[entry.key] ?: customThemeCropAnchor
+                        )
+                    }
                 )
             ) {
                 content()

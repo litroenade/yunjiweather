@@ -1,79 +1,46 @@
 package com.litroenade.yunjiweather.data.repository;
 
-import com.litroenade.yunjiweather.data.api.WeatherApiService;
 import com.litroenade.yunjiweather.data.local.LifeIndexCacheGateway;
+import com.litroenade.yunjiweather.data.model.HomeWeatherData;
 import com.litroenade.yunjiweather.data.model.LifeIndexDefaults;
 import com.litroenade.yunjiweather.data.model.LifeIndexItem;
 
-import java.io.IOException;
 import java.util.List;
 
 /**
- * Resolves life-index content from QWeather when available, otherwise falls back to
- * valid cache and finally deterministic local suggestions for offline operation.
+ * 生活建议的数据策略层。
+ * 不再依赖付费指数接口：优先用缓存，其次用当前天气生成本地建议，最后才给通用建议。
  */
 public final class LifeIndexRepository {
 
-    private static final String OPEN_METEO_LOCATION_PREFIX = "openmeteo:";
-    private static final long INDEX_CACHE_TTL_MILLIS = 6L * 60L * 60L * 1000L;
-
-    private final LifeIndexRemoteGateway remoteGateway;
     private final LifeIndexStore store;
 
-    public LifeIndexRepository(WeatherApiService apiService, LifeIndexCacheGateway cacheGateway) {
-        this(apiService == null ? null : new QWeatherLifeIndexRemoteGateway(apiService), cacheGateway);
+    public LifeIndexRepository(LifeIndexCacheGateway cacheGateway) {
+        this((LifeIndexStore) cacheGateway);
     }
 
-    LifeIndexRepository(LifeIndexRemoteGateway remoteGateway, LifeIndexStore store) {
-        this.remoteGateway = remoteGateway;
+    LifeIndexRepository(LifeIndexStore store) {
         this.store = store;
     }
 
     public LoadResult load(String locationId, String cityName, long nowTime) {
-        if (!canFetchRemoteIndices(remoteGateway != null, locationId)) {
-            LoadSource source = remoteGateway == null ? LoadSource.CACHE_NO_API : LoadSource.CACHE_UNSUPPORTED_LOCATION;
-            String errorMessage = remoteGateway == null ? null : "当前城市没有 QWeather 城市 ID";
-            LoadResult cacheResult = readCache(locationId, nowTime, source, errorMessage);
-            return cacheResult == null
-                    ? LoadResult.local(LifeIndexDefaults.createFallbackItems(), errorMessage)
-                    : cacheResult;
-        }
-        try {
-            List<LifeIndexItem> remoteItems = remoteGateway.fetch(locationId);
-            List<LifeIndexItem> completedItems = LifeIndexDefaults.completeWithFallbacks(remoteItems);
-            store.save(locationId, cityName, completedItems, nowTime, nowTime + INDEX_CACHE_TTL_MILLIS);
-            return LoadResult.remote(completedItems);
-        } catch (IOException | RuntimeException exception) {
-            LoadResult cacheResult = readCache(locationId, nowTime, LoadSource.CACHE_ERROR, exception.getMessage());
-            return cacheResult == null
-                    ? LoadResult.local(LifeIndexDefaults.createFallbackItems(), exception.getMessage())
-                    : cacheResult;
-        }
+        return load(locationId, cityName, null, nowTime);
     }
 
-    public static boolean canFetchRemoteIndices(boolean qWeatherConfigured, String locationId) {
-        if (!qWeatherConfigured) {
-            return false;
-        }
-        if (locationId == null || locationId.trim().isEmpty()) {
-            throw new IllegalArgumentException("locationId must not be empty");
-        }
-        return !locationId.startsWith(OPEN_METEO_LOCATION_PREFIX);
-    }
-
-    private LoadResult readCache(String locationId, long nowTime, LoadSource source, String errorMessage) {
+    public LoadResult load(String locationId, String cityName, HomeWeatherData weatherData, long nowTime) {
         LifeIndexStore.CacheRecord cacheRecord = store.readValid(locationId, nowTime);
-        if (cacheRecord == null) {
-            return null;
+        if (cacheRecord != null) {
+            return LoadResult.cache(cacheRecord.getItems(), cacheRecord.getUpdateTime());
         }
-        return LoadResult.cache(cacheRecord.getItems(), cacheRecord.getUpdateTime(), source, errorMessage);
+        if (weatherData != null) {
+            return LoadResult.localWeather(LifeIndexDefaults.createWeatherDrivenItems(weatherData));
+        }
+        return LoadResult.local(LifeIndexDefaults.createFallbackItems());
     }
 
     public enum LoadSource {
-        REMOTE,
-        CACHE_NO_API,
-        CACHE_UNSUPPORTED_LOCATION,
-        CACHE_ERROR,
+        CACHE,
+        LOCAL_WEATHER,
         LOCAL
     }
 
@@ -81,30 +48,23 @@ public final class LifeIndexRepository {
         private final List<LifeIndexItem> items;
         private final LoadSource source;
         private final long cacheUpdateTime;
-        private final String errorMessage;
 
-        private LoadResult(List<LifeIndexItem> items, LoadSource source, long cacheUpdateTime, String errorMessage) {
+        private LoadResult(List<LifeIndexItem> items, LoadSource source, long cacheUpdateTime) {
             this.items = items;
             this.source = source;
             this.cacheUpdateTime = cacheUpdateTime;
-            this.errorMessage = errorMessage;
         }
 
-        private static LoadResult remote(List<LifeIndexItem> items) {
-            return new LoadResult(items, LoadSource.REMOTE, 0L, null);
+        private static LoadResult cache(List<LifeIndexItem> items, long cacheUpdateTime) {
+            return new LoadResult(items, LoadSource.CACHE, cacheUpdateTime);
         }
 
-        private static LoadResult cache(
-                List<LifeIndexItem> items,
-                long cacheUpdateTime,
-                LoadSource source,
-                String errorMessage
-        ) {
-            return new LoadResult(items, source, cacheUpdateTime, errorMessage);
+        private static LoadResult local(List<LifeIndexItem> items) {
+            return new LoadResult(items, LoadSource.LOCAL, 0L);
         }
 
-        private static LoadResult local(List<LifeIndexItem> items, String errorMessage) {
-            return new LoadResult(items, LoadSource.LOCAL, 0L, errorMessage);
+        private static LoadResult localWeather(List<LifeIndexItem> items) {
+            return new LoadResult(items, LoadSource.LOCAL_WEATHER, 0L);
         }
 
         public List<LifeIndexItem> getItems() {
@@ -117,10 +77,6 @@ public final class LifeIndexRepository {
 
         public long getCacheUpdateTime() {
             return cacheUpdateTime;
-        }
-
-        public String getErrorMessage() {
-            return errorMessage;
         }
     }
 }

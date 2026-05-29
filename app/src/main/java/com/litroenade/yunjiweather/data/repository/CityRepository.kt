@@ -46,6 +46,28 @@ class CityRepository(private val cityDao: CityDao) {
         }
     }
 
+    fun moveCity(locationId: String, direction: Int, nowTime: Long) {
+        if (direction == 0) {
+            return
+        }
+        val cities = cityDao.findAll()
+        val currentIndex = cities.indexOfFirst { city -> city.locationId == locationId }
+        if (currentIndex < 0) {
+            return
+        }
+        val city = cities[currentIndex]
+        if (city.isDefault) {
+            return
+        }
+        val targetIndex = (currentIndex + direction).coerceIn(0, cities.lastIndex)
+        val targetCity = cities[targetIndex]
+        if (targetIndex == currentIndex || targetCity.isDefault) {
+            return
+        }
+        cityDao.updateSortOrder(city.locationId, targetCity.sortOrder, nowTime)
+        cityDao.updateSortOrder(targetCity.locationId, city.sortOrder, nowTime)
+    }
+
     fun saveAsDefaultCity(city: CityEntity, nowTime: Long) {
         val oldCity = cityDao.findByLocationId(city.locationId)
         if (oldCity == null) {

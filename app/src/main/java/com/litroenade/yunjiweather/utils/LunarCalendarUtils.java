@@ -302,34 +302,6 @@ public final class LunarCalendarUtils {
             this.festivalText = festivalText;
         }
 
-        public int getGregorianYear() {
-            return gregorianYear;
-        }
-
-        public int getGregorianMonth() {
-            return gregorianMonth;
-        }
-
-        public int getGregorianDay() {
-            return gregorianDay;
-        }
-
-        public int getLunarYear() {
-            return lunarYear;
-        }
-
-        public int getLunarMonth() {
-            return lunarMonth;
-        }
-
-        public int getLunarDay() {
-            return lunarDay;
-        }
-
-        public boolean isLeapMonth() {
-            return leapMonth;
-        }
-
         public String getGregorianText() {
             return gregorianText;
         }

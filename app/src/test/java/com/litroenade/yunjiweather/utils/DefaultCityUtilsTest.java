@@ -33,7 +33,7 @@ public class DefaultCityUtilsTest {
         CityEntity result = DefaultCityUtils.resolveDefaultCity(cityDao, 123L);
 
         assertEquals("北京", result.cityName);
-        assertEquals("101010100", result.locationId);
+        assertEquals("openmeteo:1816670", result.locationId);
         assertTrue(result.isDefault);
         assertEquals(123L, result.createTime);
         assertEquals(1, cityDao.findAll().size());
@@ -98,6 +98,15 @@ public class DefaultCityUtilsTest {
             CityEntity city = findByLocationId(locationId);
             if (city != null) {
                 city.isDefault = true;
+                city.updateTime = updateTime;
+            }
+        }
+
+        @Override
+        public void updateSortOrder(String locationId, int sortOrder, long updateTime) {
+            CityEntity city = findByLocationId(locationId);
+            if (city != null) {
+                city.sortOrder = sortOrder;
                 city.updateTime = updateTime;
             }
         }

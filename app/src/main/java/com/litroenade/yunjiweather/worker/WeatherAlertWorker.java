@@ -3,60 +3,39 @@ package com.litroenade.yunjiweather.worker;
 import android.content.Context;
 
 import androidx.annotation.NonNull;
+import androidx.hilt.work.HiltWorker;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
-import com.litroenade.yunjiweather.data.api.ApiClient;
-import com.litroenade.yunjiweather.data.api.ApiConfig;
-import com.litroenade.yunjiweather.data.entity.CityEntity;
-import com.litroenade.yunjiweather.data.local.AppDatabase;
-import com.litroenade.yunjiweather.data.repository.AlertRepository;
-import com.litroenade.yunjiweather.data.repository.CityRepository;
-import com.litroenade.yunjiweather.data.repository.WarningRefreshResult;
-import com.litroenade.yunjiweather.notification.NotificationCandidateSelector;
+import com.litroenade.yunjiweather.domain.usecase.DispatchWarningNotificationsUseCase;
 import com.litroenade.yunjiweather.notification.SystemWarningNotifier;
-import com.litroenade.yunjiweather.notification.WarningNotificationDispatcher;
-import com.litroenade.yunjiweather.settings.SettingsManager;
 
-import java.io.IOException;
+import dagger.assisted.Assisted;
+import dagger.assisted.AssistedInject;
 
+@HiltWorker
 public class WeatherAlertWorker extends Worker {
 
-    public WeatherAlertWorker(@NonNull Context context, @NonNull WorkerParameters workerParams) {
+    private final DispatchWarningNotificationsUseCase dispatchWarningNotificationsUseCase;
+
+    @AssistedInject
+    public WeatherAlertWorker(
+            @Assisted @NonNull Context context,
+            @Assisted @NonNull WorkerParameters workerParams,
+            DispatchWarningNotificationsUseCase dispatchWarningNotificationsUseCase
+    ) {
         super(context, workerParams);
+        this.dispatchWarningNotificationsUseCase = dispatchWarningNotificationsUseCase;
     }
 
     @NonNull
     @Override
     public Result doWork() {
         Context context = getApplicationContext();
-        SettingsManager settingsManager = new SettingsManager(context);
-        if (!settingsManager.isWarningEnabled() || !ApiConfig.isConfigured()) {
-            return Result.success();
-        }
-
-        AppDatabase database = AppDatabase.getInstance(context);
-        CityEntity defaultCity = new CityRepository(database.cityDao()).findDefaultCity();
-        if (defaultCity == null) {
-            return Result.success();
-        }
-
-        AlertRepository repository = new AlertRepository(
-                ApiClient.createWeatherApiService(),
-                database.warningDao()
-        );
         try {
-            WarningRefreshResult result = repository.refreshWarnings(defaultCity.locationId);
-            WarningNotificationDispatcher dispatcher = new WarningNotificationDispatcher(
-                    new NotificationCandidateSelector()
-            );
-            dispatcher.dispatch(
-                    result.getWarnings(),
-                    new SystemWarningNotifier(context),
-                    repository::markNotified
-            );
+            dispatchWarningNotificationsUseCase.execute(new SystemWarningNotifier(context));
             return Result.success();
-        } catch (IOException | RuntimeException exception) {
+        } catch (RuntimeException exception) {
             return Result.retry();
         }
     }

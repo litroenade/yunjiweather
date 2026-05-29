@@ -3,8 +3,10 @@ package com.litroenade.yunjiweather
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -18,19 +20,27 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
+import com.litroenade.yunjiweather.data.model.CustomThemeCropAnchor
 import com.litroenade.yunjiweather.notification.NotificationHelper
-import com.litroenade.yunjiweather.settings.SettingsManager
 import com.litroenade.yunjiweather.ui.compose.YunJiApp
 import com.litroenade.yunjiweather.ui.compose.WeatherSceneSpec
+import com.litroenade.yunjiweather.ui.compose.home.modules.HomeModuleCatalog
 import com.litroenade.yunjiweather.ui.compose.theme.YunJiTheme
 import com.litroenade.yunjiweather.ui.home.HomeViewModel
+import com.litroenade.yunjiweather.ui.location.AndroidLocationClient
+import com.litroenade.yunjiweather.ui.location.LocationPermissionResult
+import com.litroenade.yunjiweather.ui.location.LocationUiState
 import com.litroenade.yunjiweather.ui.mine.MineViewModel
-import com.litroenade.yunjiweather.utils.HomeBlock
+import com.litroenade.yunjiweather.utils.VisualThemeUtils
+import com.litroenade.yunjiweather.utils.WeatherDisplayUtils
+import com.litroenade.yunjiweather.widget.WeatherWidgetRefreshScheduler
 import com.litroenade.yunjiweather.worker.DailyWeatherWorker
 import com.litroenade.yunjiweather.worker.WeatherAlertWorker
 import com.litroenade.yunjiweather.worker.WorkerScopeUtils
+import dagger.hilt.android.AndroidEntryPoint
 import java.util.concurrent.TimeUnit
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -41,27 +51,67 @@ class MainActivity : ComponentActivity() {
         setContent {
             val mineViewModel: MineViewModel = viewModel()
             val homeViewModel: HomeViewModel = viewModel()
-            val settingsManager = remember { SettingsManager(this) }
+            val locationClient = remember { AndroidLocationClient(this@MainActivity) }
+            var locationUiState by remember { mutableStateOf(LocationUiState.idle()) }
+            fun fetchDeviceLocation() {
+                locationUiState = LocationUiState.fetchingLocation()
+                locationClient.requestCurrentLocation(
+                    onSuccess = { latitude, longitude ->
+                        homeViewModel.updateDefaultCityByLocation(latitude, longitude)
+                        locationUiState = LocationUiState.success("已获取系统定位，正在切换默认城市。")
+                    },
+                    onError = { message ->
+                        locationUiState = LocationUiState.error(message)
+                    }
+                )
+            }
+            val locationPermissionLauncher = rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestMultiplePermissions()
+            ) { grants ->
+                if (LocationPermissionResult.hasUsablePermission(grants)) {
+                    fetchDeviceLocation()
+                } else {
+                    locationUiState = LocationUiState.denied()
+                }
+            }
+            val requestDeviceLocation = {
+                if (LocationPermissionResult.hasUsablePermission(this@MainActivity)) {
+                    fetchDeviceLocation()
+                } else {
+                    locationUiState = LocationUiState.requestingPermission()
+                    locationPermissionLauncher.launch(LocationPermissionResult.RUNTIME_PERMISSIONS)
+                }
+            }
             val darkModeEnabled by mineViewModel.getDarkModeEnabled().observeAsState(
-                settingsManager.isDarkModeEnabled()
+                false
             )
             val visualThemeKey by mineViewModel.getVisualTheme().observeAsState(
-                settingsManager.getVisualTheme()
+                VisualThemeUtils.THEME_SKY
             )
+            val customThemeImageUri by mineViewModel.getCustomThemeImageUri().observeAsState(
+                ""
+            )
+            val customThemeCropAnchor by mineViewModel.getCustomThemeCropAnchor().observeAsState(
+                CustomThemeCropAnchor.CENTER
+            )
+            val customThemeImageUris by mineViewModel.getCustomThemeImageUris().observeAsState(emptyMap())
+            val customThemeCropAnchors by mineViewModel.getCustomThemeCropAnchors().observeAsState(emptyMap())
             val animationEnabled by mineViewModel.getAnimationEnabled().observeAsState(
-                settingsManager.isAnimationEnabled()
+                true
             )
             val temperatureUnit by mineViewModel.getTemperatureUnit().observeAsState(
-                settingsManager.getTemperatureUnit()
+                WeatherDisplayUtils.TEMPERATURE_CELSIUS
             )
             val windUnit by mineViewModel.getWindUnit().observeAsState(
-                settingsManager.getWindUnit()
+                WeatherDisplayUtils.WIND_SCALE
             )
             val developerToolsEnabled by mineViewModel.getDeveloperToolsEnabled().observeAsState(
-                settingsManager.isDeveloperToolsEnabled()
+                false
             )
-            val homeBlockOrder by mineViewModel.getHomeBlockOrder().observeAsState(HomeBlock.defaultOrder())
-            val homeBlockEnabled by mineViewModel.getHomeBlockEnabled().observeAsState(emptyMap())
+            val homeModuleOrder by mineViewModel.getHomeModuleOrder().observeAsState(
+                HomeModuleCatalog.getAvailableModules(visualThemeKey)
+            )
+            val homeModuleEnabled by mineViewModel.getHomeModuleEnabled().observeAsState(emptyMap())
             var displayedWeatherIconCode by remember { mutableStateOf<String?>(null) }
             val homeUiState by homeViewModel.getUiState().observeAsState()
             val weatherIconCode = displayedWeatherIconCode ?: homeUiState?.data?.iconCode
@@ -80,19 +130,25 @@ class MainActivity : ComponentActivity() {
             }
             YunJiTheme(
                 darkTheme = darkModeEnabled,
-                visualThemeKey = visualThemeKey
+                visualThemeKey = visualThemeKey,
+                customThemeImageUri = customThemeImageUri,
+                customThemeCropAnchor = customThemeCropAnchor,
+                customThemeImageUris = customThemeImageUris,
+                customThemeCropAnchors = customThemeCropAnchors
             ) {
                 YunJiApp(
                     animationEnabled = animationEnabled,
                     developerToolsEnabled = developerToolsEnabled,
                     temperatureUnit = temperatureUnit,
                     windUnit = windUnit,
-                    homeBlockOrder = homeBlockOrder,
-                    homeBlockEnabled = homeBlockEnabled,
+                    homeModules = homeModuleOrder,
+                    homeModuleEnabled = homeModuleEnabled,
                     homeViewModel = homeViewModel,
-                    onHomeBlockEnabledChange = mineViewModel::setHomeBlockEnabled,
-                    onMoveHomeBlockUp = mineViewModel::moveHomeBlockUp,
-                    onMoveHomeBlockDown = mineViewModel::moveHomeBlockDown,
+                    locationUiState = locationUiState,
+                    onRequestLocation = requestDeviceLocation,
+                    onHomeModuleEnabledChange = mineViewModel::setHomeModuleEnabled,
+                    onMoveHomeModuleUp = mineViewModel::moveHomeModuleUp,
+                    onMoveHomeModuleDown = mineViewModel::moveHomeModuleDown,
                     onResetHomeBlocks = mineViewModel::resetHomeBlockLayout,
                     onDisplayedWeatherIconCodeChanged = { iconCode ->
                         displayedWeatherIconCode = iconCode
@@ -121,6 +177,7 @@ class MainActivity : ComponentActivity() {
     private fun scheduleWorkers(workManager: WorkManager = WorkManager.getInstance(this)) {
         scheduleWeatherAlertWorker(workManager)
         scheduleDailyWeatherWorker(workManager)
+        WeatherWidgetRefreshScheduler.sync(this)
     }
 
     private fun scheduleWeatherAlertWorker(workManager: WorkManager) {

@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
+import com.litroenade.yunjiweather.ui.compose.WeatherLightContext
 import com.litroenade.yunjiweather.ui.compose.WeatherSceneSpec
 import com.litroenade.yunjiweather.ui.compose.theme.effects.ThemeWeatherEffect
 import com.litroenade.yunjiweather.ui.compose.theme.skins.ThemeSkin
@@ -27,10 +28,12 @@ internal object OfficialWeatherEffect : ThemeWeatherEffect {
 
     override fun DrawScope.drawAtmosphere(
         sceneSpec: WeatherSceneSpec,
+        lightContext: WeatherLightContext,
         progress: Float,
         immersion: Float,
         skin: ThemeSkin
     ) {
+        drawOfficialLightWash(lightContext, skin)
         drawHaze(sceneSpec, immersion, skin)
         if (sceneSpec.category == WeatherIconUtils.WeatherCategory.NIGHT) {
             drawNightStars(progress, immersion, skin)
@@ -48,6 +51,7 @@ internal object OfficialWeatherEffect : ThemeWeatherEffect {
 
     override fun DrawScope.drawHero(
         sceneSpec: WeatherSceneSpec,
+        lightContext: WeatherLightContext,
         progress: Float,
         skin: ThemeSkin
     ) {
@@ -65,6 +69,39 @@ internal object OfficialWeatherEffect : ThemeWeatherEffect {
             WeatherIconUtils.WeatherCategory.CLOUDY -> drawCloudy(progress, skin)
         }
     }
+}
+
+private fun DrawScope.drawOfficialLightWash(
+    lightContext: WeatherLightContext,
+    skin: ThemeSkin
+) {
+    if (lightContext.isNight) {
+        drawRect(
+            brush = Brush.verticalGradient(
+                listOf(
+                    skin.nightGradientTop.copy(alpha = 0.16f),
+                    Color.Transparent
+                )
+            )
+        )
+        return
+    }
+    val warmAlpha = when (lightContext.phase) {
+        WeatherLightContext.Phase.DAWN,
+        WeatherLightContext.Phase.DUSK -> 0.12f + lightContext.warmth * 0.10f
+        WeatherLightContext.Phase.DAY -> 0.05f + lightContext.exposure * 0.08f
+        WeatherLightContext.Phase.NIGHT -> 0f
+    }
+    drawRect(
+        brush = Brush.radialGradient(
+            listOf(
+                skin.sunlightColor.copy(alpha = warmAlpha),
+                Color.Transparent
+            ),
+            center = Offset(size.width * (0.15f + lightContext.dayProgress * 0.70f), size.height * 0.08f),
+            radius = size.width * 0.86f
+        )
+    )
 }
 
 private fun DrawScope.drawNightStars(

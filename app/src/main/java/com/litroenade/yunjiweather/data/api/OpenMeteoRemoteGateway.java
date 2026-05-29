@@ -21,8 +21,8 @@ import java.util.Objects;
 import retrofit2.Response;
 
 /**
- * Maps Open-Meteo forecast and air-quality responses into the app's strict display model.
- * Missing required fields fail fast so the repository can decide whether to show cache.
+ * 将开放气象数据源的天气和空气质量响应转换为首页展示模型。
+ * 必要字段缺失时主动抛错，由仓库层决定是否回退到本地缓存。
  */
 public final class OpenMeteoRemoteGateway implements WeatherRepository.RemoteGateway {
 

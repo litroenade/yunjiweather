@@ -53,6 +53,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -88,32 +90,41 @@ import com.litroenade.yunjiweather.ui.compose.InfoCard
 import com.litroenade.yunjiweather.ui.compose.MessageCard
 import com.litroenade.yunjiweather.ui.compose.MetricTile
 import com.litroenade.yunjiweather.ui.compose.SectionTitle
+import com.litroenade.yunjiweather.ui.compose.UriImage
 import com.litroenade.yunjiweather.ui.compose.WeatherAtmosphere
 import com.litroenade.yunjiweather.ui.compose.WeatherAnimation
+import com.litroenade.yunjiweather.ui.compose.WeatherLightContext
 import com.litroenade.yunjiweather.ui.compose.WeatherSceneSpec
+import com.litroenade.yunjiweather.ui.compose.debug.DebugWeatherOverride
+import com.litroenade.yunjiweather.ui.compose.debug.DebugWeatherPresets
 import com.litroenade.yunjiweather.ui.compose.formatWeatherTime
+import com.litroenade.yunjiweather.ui.compose.home.modules.HomeModuleCatalog
+import com.litroenade.yunjiweather.ui.compose.home.modules.HomeModuleDefinition
+import com.litroenade.yunjiweather.ui.compose.theme.LocalCustomThemeOptions
 import com.litroenade.yunjiweather.ui.compose.theme.LocalThemeSkin
 import com.litroenade.yunjiweather.ui.compose.theme.LocalYunJiVisualTheme
+import com.litroenade.yunjiweather.ui.compose.theme.rememberCustomThemeImageAnalysis
 import com.litroenade.yunjiweather.ui.compose.theme.effects.ThemeWeatherEffect
 import com.litroenade.yunjiweather.ui.compose.theme.effects.ThemeWeatherEffectCatalog
 import com.litroenade.yunjiweather.ui.compose.theme.skins.ThemeSkin
 import com.litroenade.yunjiweather.ui.home.HomeViewModel
 import com.litroenade.yunjiweather.utils.AirQualityUtils
-import com.litroenade.yunjiweather.utils.HomeBlock
 import com.litroenade.yunjiweather.utils.LunarCalendarUtils
 import com.litroenade.yunjiweather.utils.SunProgressState
 import com.litroenade.yunjiweather.utils.SunriseSunsetProgress
 import com.litroenade.yunjiweather.utils.WeatherDisplayUtils
 import com.litroenade.yunjiweather.utils.WeatherIconUtils
+import com.litroenade.yunjiweather.utils.VisualThemeUtils
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 
 /**
- * Main weather surface. It composes cached-first city paging, pull-to-refresh, weather
- * atmosphere, warning/news cards, and user-reordered home modules into one scroll page.
+ * 首页主天气面板。
+ * 这里把切城、下拉刷新、动态天气背景和可重排模块组合起来，具体卡片渲染下沉到模块层。
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -123,8 +134,8 @@ fun HomeScreen(
     developerToolsEnabled: Boolean = false,
     temperatureUnit: String = WeatherDisplayUtils.TEMPERATURE_CELSIUS,
     windUnit: String = WeatherDisplayUtils.WIND_SCALE,
-    homeBlockOrder: List<HomeBlock> = HomeBlock.defaultOrder(),
-    homeBlockEnabled: Map<HomeBlock, Boolean> = emptyMap(),
+    homeModules: List<HomeModuleDefinition> = HomeModuleCatalog.getBuiltInModules(),
+    homeModuleEnabled: Map<String, Boolean> = emptyMap(),
     onManageCities: () -> Unit = {},
     onSearchCity: () -> Unit = {},
     onSettings: () -> Unit = {},
@@ -142,13 +153,13 @@ fun HomeScreen(
     val activeWarnings by viewModel.getActiveWarnings().observeAsState(emptyList())
     val isRefreshing by viewModel.getRefreshing().observeAsState(false)
     val pullToRefreshState = rememberPullToRefreshState()
-    var debugWeatherScenario by remember { mutableStateOf<DebugWeatherScenario?>(null) }
+    var debugWeatherOverride by remember { mutableStateOf<DebugWeatherOverride?>(null) }
     var showDebugWeatherDialog by remember { mutableStateOf(false) }
-    var debugWeatherTapCount by remember { mutableStateOf(0) }
+    var debugWeatherTapCount by remember { mutableIntStateOf(0) }
     val swipeThresholdPx = with(LocalDensity.current) { 72.dp.toPx() }
-    var horizontalSwipeDistance by remember { mutableStateOf(0f) }
+    var horizontalSwipeDistance by remember { mutableFloatStateOf(0f) }
     var isCityDragging by remember { mutableStateOf(false) }
-    var citySwitchDirection by remember { mutableStateOf(1) }
+    var citySwitchDirection by remember { mutableIntStateOf(1) }
     val cityDragOffset by animateFloatAsState(
         targetValue = if (isCityDragging) {
             horizontalSwipeDistance
@@ -168,12 +179,12 @@ fun HomeScreen(
     }
 
     val weatherData = uiState?.data
-    val displayedWeatherData = remember(weatherData, debugWeatherScenario) {
-        weatherData?.let { data -> debugWeatherScenario?.applyTo(data) ?: data }
+    val displayedWeatherData = remember(weatherData, debugWeatherOverride) {
+        weatherData?.let { data -> debugWeatherOverride?.applyTo(data) ?: data }
     }
     LaunchedEffect(weatherData?.locationId, developerToolsEnabled) {
         if (!developerToolsEnabled) {
-            debugWeatherScenario = null
+            debugWeatherOverride = null
         }
         debugWeatherTapCount = 0
         showDebugWeatherDialog = false
@@ -223,11 +234,49 @@ fun HomeScreen(
     val headerNoticeText = message
     val visualTheme = LocalYunJiVisualTheme.current
     val themeSkin = LocalThemeSkin.current
+    val customThemeOptions = LocalCustomThemeOptions.current
     val themeWeatherEffect = remember(themeSkin.key) {
         ThemeWeatherEffectCatalog.getEffect(themeSkin.key)
     }
     val weatherSceneSpec = remember(displayedWeatherData?.iconCode) {
         WeatherSceneSpec.fromIconCode(displayedWeatherData?.iconCode ?: "100")
+    }
+    val customThemeImage = remember(customThemeOptions, weatherSceneSpec) {
+        customThemeOptions.imageForScene(weatherSceneSpec)
+    }
+    val useCustomBackdrop = themeSkin.key == VisualThemeUtils.THEME_CUSTOM_1 &&
+        customThemeImage.uri.isNotBlank()
+    val customImageAnalysis by rememberCustomThemeImageAnalysis(
+        if (useCustomBackdrop) customThemeImage.uri else ""
+    )
+    val customForeground = if (useCustomBackdrop && customImageAnalysis.ready) {
+        customImageAnalysis.primaryText
+    } else {
+        null
+    }
+    val customSecondaryForeground = if (useCustomBackdrop && customImageAnalysis.ready) {
+        customImageAnalysis.secondaryText
+    } else {
+        null
+    }
+    var visualMinuteOfDay by remember { mutableIntStateOf(currentMinuteOfDay()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            visualMinuteOfDay = currentMinuteOfDay()
+            delay(60_000L)
+        }
+    }
+    val effectiveMinuteOfDay = debugWeatherOverride?.time?.minuteOfDay ?: visualMinuteOfDay
+    val lightContext = remember(
+        debugWeatherOverride,
+        displayedWeatherData?.sunrise,
+        displayedWeatherData?.sunset,
+        effectiveMinuteOfDay
+    ) {
+        val sunrise = displayedWeatherData?.sunrise ?: ""
+        val sunset = displayedWeatherData?.sunset ?: ""
+        debugWeatherOverride?.lightContext(sunrise, sunset)
+            ?: WeatherLightContext.fromMinuteOfDay(sunrise, sunset, effectiveMinuteOfDay)
     }
     val backgroundBrush = if (displayedWeatherData?.iconCode.isNullOrBlank()) {
         Brush.verticalGradient(
@@ -247,7 +296,24 @@ fun HomeScreen(
             .background(backgroundBrush)
     ) {
         val backdropImageResId = themeWeatherEffect.homeBackdropImageResId
-        if (backdropImageResId != null) {
+        if (useCustomBackdrop) {
+            UriImage(
+                uriString = customThemeImage.uri,
+                cropAnchor = customThemeImage.cropAnchor,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer {
+                        translationX = -cityDragOffset * 0.16f
+                    }
+                    .alpha(0.86f)
+            )
+            HomeBackdropScrim(
+                sceneSpec = weatherSceneSpec,
+                lightContext = lightContext,
+                darkenScale = customImageAnalysis.darkScrimScale,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else if (backdropImageResId != null) {
             Image(
                 painter = painterResource(backdropImageResId),
                 contentDescription = null,
@@ -256,17 +322,19 @@ fun HomeScreen(
                     .graphicsLayer {
                         translationX = -cityDragOffset * 0.16f
                     }
-                    .alpha(themeWeatherEffect.homeBackdropAlpha(weatherSceneSpec)),
+                    .alpha(themeWeatherEffect.homeBackdropAlpha(weatherSceneSpec, lightContext)),
                 contentScale = ContentScale.Crop
             )
             HomeBackdropScrim(
                 sceneSpec = weatherSceneSpec,
+                lightContext = lightContext,
                 modifier = Modifier.fillMaxSize()
             )
         }
         if (animationEnabled) {
             WeatherAtmosphere(
                 sceneSpec = weatherSceneSpec,
+                lightContext = lightContext,
                 immersion = themeSkin.homeImmersion,
                 modifier = Modifier
                     .fillMaxSize()
@@ -287,6 +355,8 @@ fun HomeScreen(
                     pullFraction = pullToRefreshState.distanceFraction,
                     lastUpdateText = lastUpdateText,
                     sceneSpec = weatherSceneSpec,
+                    lightContext = lightContext,
+                    foregroundOverride = customForeground,
                     modifier = Modifier
                         .align(Alignment.TopCenter)
                         .statusBarsPadding()
@@ -312,6 +382,9 @@ fun HomeScreen(
                     cityName = headerCityName,
                     noticeText = headerNoticeText,
                     sceneSpec = weatherSceneSpec,
+                    lightContext = lightContext,
+                    foregroundOverride = customForeground,
+                    secondaryForegroundOverride = customSecondaryForeground,
                     onManageCities = onManageCities,
                     onSearchCity = onSearchCity,
                     onSettings = onSettings,
@@ -345,10 +418,10 @@ fun HomeScreen(
                                 MessageCard("天气加载失败", "天气数据为空。", "重试", viewModel::refresh)
                             }
                         } else {
-                            val displayData = debugWeatherScenario?.applyTo(data) ?: data
+                            val displayData = debugWeatherOverride?.applyTo(data) ?: data
                             item {
                                 AnimatedContent(
-                                    targetState = "${displayData.locationId}:${displayData.iconCode}",
+                                    targetState = displayData,
                                     transitionSpec = {
                                         val direction = citySwitchDirection
                                         val enter = slideInHorizontally(
@@ -364,18 +437,30 @@ fun HomeScreen(
                                         (enter togetherWith exit).using(SizeTransform(clip = false))
                                     },
                                     label = "city-weather-content"
-                                ) {
+                                ) { animatedData ->
+                                    val animatedSceneSpec = WeatherSceneSpec.fromIconCode(animatedData.iconCode)
+                                    val animatedLightContext = debugWeatherOverride?.lightContext(
+                                        animatedData.sunrise ?: "",
+                                        animatedData.sunset ?: ""
+                                    ) ?: WeatherLightContext.fromMinuteOfDay(
+                                        animatedData.sunrise ?: "",
+                                        animatedData.sunset ?: "",
+                                        effectiveMinuteOfDay
+                                    )
                                     Column(
                                         modifier = Modifier.fillMaxWidth(),
                                         verticalArrangement = Arrangement.spacedBy(14.dp)
                                     ) {
                                         CurrentWeatherSection(
-                                            data = displayData,
+                                            data = animatedData,
                                             state = state,
                                             animationEnabled = animationEnabled,
                                             developerToolsEnabled = developerToolsEnabled,
                                             temperatureUnit = temperatureUnit,
-                                            sceneSpec = weatherSceneSpec,
+                                            sceneSpec = animatedSceneSpec,
+                                            lightContext = animatedLightContext,
+                                            foregroundOverride = customForeground,
+                                            secondaryForegroundOverride = customSecondaryForeground,
                                             onDeveloperWeatherTap = {
                                                 debugWeatherTapCount += 1
                                                 if (debugWeatherTapCount >= 5) {
@@ -385,12 +470,12 @@ fun HomeScreen(
                                             }
                                         )
                                         HomeContentBlocks(
-                                            data = displayData,
+                                            data = animatedData,
                                             warnings = activeWarnings,
                                             temperatureUnit = temperatureUnit,
                                             windUnit = windUnit,
-                                            blocks = homeBlockOrder,
-                                            enabledBlocks = homeBlockEnabled,
+                                            modules = homeModules,
+                                            enabledModules = homeModuleEnabled,
                                             onOpenAlerts = onOpenAlerts,
                                             onOpenLifeIndex = onOpenLifeIndex,
                                             onPersonalization = onPersonalization
@@ -409,6 +494,8 @@ fun HomeScreen(
                 pageCount = cityPages.size,
                 currentPage = selectedCityPage,
                 sceneSpec = weatherSceneSpec,
+                lightContext = lightContext,
+                foregroundOverride = customForeground,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .navigationBarsPadding()
@@ -418,9 +505,9 @@ fun HomeScreen(
     }
     if (showDebugWeatherDialog && developerToolsEnabled && weatherData != null) {
         DebugWeatherDialog(
-            selectedScenario = debugWeatherScenario,
-            onScenarioSelected = { scenario ->
-                debugWeatherScenario = scenario
+            selectedOverride = debugWeatherOverride,
+            onOverrideSelected = { override ->
+                debugWeatherOverride = override
                 showDebugWeatherDialog = false
             },
             onDismiss = { showDebugWeatherDialog = false }
@@ -434,6 +521,8 @@ private fun PullRefreshStatus(
     pullFraction: Float,
     lastUpdateText: String,
     sceneSpec: WeatherSceneSpec,
+    lightContext: WeatherLightContext,
+    foregroundOverride: Color?,
     modifier: Modifier = Modifier
 ) {
     if (!isRefreshing && pullFraction <= 0.02f) {
@@ -445,9 +534,10 @@ private fun PullRefreshStatus(
         else -> "下拉更新 · $lastUpdateText"
     }
     val themeEffect = ThemeWeatherEffectCatalog.getEffect(LocalThemeSkin.current.key)
-    val textColor = weatherScenePrimaryTextColor(sceneSpec, MaterialTheme.colorScheme.onSurface, themeEffect)
-    val containerColor = weatherSceneFloatingSurfaceColor(sceneSpec, MaterialTheme.colorScheme.surface, themeEffect)
-    val borderColor = weatherSceneStrokeColor(sceneSpec, textColor, themeEffect)
+    val textColor = foregroundOverride
+        ?: weatherScenePrimaryTextColor(sceneSpec, lightContext, MaterialTheme.colorScheme.onSurface, themeEffect)
+    val containerColor = weatherSceneFloatingSurfaceColor(sceneSpec, lightContext, MaterialTheme.colorScheme.surface, themeEffect)
+    val borderColor = weatherSceneStrokeColor(sceneSpec, lightContext, textColor, themeEffect)
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(99.dp),
@@ -503,13 +593,18 @@ private fun CurrentWeatherSection(
     developerToolsEnabled: Boolean,
     temperatureUnit: String,
     sceneSpec: WeatherSceneSpec,
+    lightContext: WeatherLightContext,
+    foregroundOverride: Color?,
+    secondaryForegroundOverride: Color?,
     onDeveloperWeatherTap: () -> Unit
 ) {
     val visualTheme = LocalYunJiVisualTheme.current
     val themeSkin = LocalThemeSkin.current
     val themeEffect = ThemeWeatherEffectCatalog.getEffect(themeSkin.key)
-    val primaryTextColor = weatherScenePrimaryTextColor(sceneSpec, visualTheme.primaryWeatherText, themeEffect)
-    val secondaryTextColor = weatherSceneSecondaryTextColor(sceneSpec, visualTheme.secondaryWeatherText, themeEffect)
+    val primaryTextColor = foregroundOverride
+        ?: weatherScenePrimaryTextColor(sceneSpec, lightContext, visualTheme.primaryWeatherText, themeEffect)
+    val secondaryTextColor = secondaryForegroundOverride
+        ?: weatherSceneSecondaryTextColor(sceneSpec, lightContext, visualTheme.secondaryWeatherText, themeEffect)
     val windowInfo = LocalWindowInfo.current
     val density = LocalDensity.current
     val compact = with(density) { windowInfo.containerSize.height.toDp() < 760.dp }
@@ -528,6 +623,7 @@ private fun CurrentWeatherSection(
             animationEnabled && themeEffect.drawsHeroIcon -> {
                 WeatherAnimation(
                     sceneSpec = sceneSpec,
+                    lightContext = lightContext,
                     motionScale = themeSkin.heroAnimationScale,
                     modifier = Modifier
                         .align(Alignment.TopEnd)
@@ -614,6 +710,9 @@ private fun WeatherTopActions(
     cityName: String,
     noticeText: String,
     sceneSpec: WeatherSceneSpec,
+    lightContext: WeatherLightContext,
+    foregroundOverride: Color?,
+    secondaryForegroundOverride: Color?,
     onManageCities: () -> Unit,
     onSearchCity: () -> Unit,
     onSettings: () -> Unit,
@@ -623,10 +722,12 @@ private fun WeatherTopActions(
     val visualTheme = LocalYunJiVisualTheme.current
     val themeSkin = LocalThemeSkin.current
     val themeEffect = ThemeWeatherEffectCatalog.getEffect(themeSkin.key)
-    val primaryTextColor = weatherScenePrimaryTextColor(sceneSpec, visualTheme.primaryWeatherText, themeEffect)
-    val secondaryTextColor = weatherSceneSecondaryTextColor(sceneSpec, visualTheme.secondaryWeatherText, themeEffect)
-    val iconContainerColor = weatherSceneFloatingSurfaceColor(sceneSpec, MaterialTheme.colorScheme.surface, themeEffect)
-    val iconBorderColor = weatherSceneStrokeColor(sceneSpec, primaryTextColor, themeEffect)
+    val primaryTextColor = foregroundOverride
+        ?: weatherScenePrimaryTextColor(sceneSpec, lightContext, visualTheme.primaryWeatherText, themeEffect)
+    val secondaryTextColor = secondaryForegroundOverride
+        ?: weatherSceneSecondaryTextColor(sceneSpec, lightContext, visualTheme.secondaryWeatherText, themeEffect)
+    val iconContainerColor = weatherSceneFloatingSurfaceColor(sceneSpec, lightContext, MaterialTheme.colorScheme.surface, themeEffect)
+    val iconBorderColor = weatherSceneStrokeColor(sceneSpec, lightContext, primaryTextColor, themeEffect)
     var expanded by remember { mutableStateOf(false) }
     val actionSideWidth = 88.dp
     Row(
@@ -789,11 +890,14 @@ private fun CityPageDots(
     pageCount: Int,
     currentPage: Int,
     sceneSpec: WeatherSceneSpec,
+    lightContext: WeatherLightContext,
+    foregroundOverride: Color?,
     modifier: Modifier = Modifier
 ) {
     val visualTheme = LocalYunJiVisualTheme.current
     val themeEffect = ThemeWeatherEffectCatalog.getEffect(LocalThemeSkin.current.key)
-    val dotColor = weatherScenePrimaryTextColor(sceneSpec, visualTheme.primaryWeatherText, themeEffect)
+    val dotColor = foregroundOverride
+        ?: weatherScenePrimaryTextColor(sceneSpec, lightContext, visualTheme.primaryWeatherText, themeEffect)
     Row(
         modifier = modifier
             .fillMaxWidth()
@@ -828,7 +932,7 @@ private fun CityPageDots(
 }
 
 @Composable
-private fun WeatherMetricPanel(data: HomeWeatherData, temperatureUnit: String, windUnit: String) {
+internal fun WeatherMetricPanel(data: HomeWeatherData, temperatureUnit: String, windUnit: String) {
     InfoCard {
         SectionTitle("今日实况")
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -844,42 +948,7 @@ private fun WeatherMetricPanel(data: HomeWeatherData, temperatureUnit: String, w
 }
 
 @Composable
-private fun HomeContentBlocks(
-    data: HomeWeatherData,
-    warnings: List<WarningEntity>,
-    temperatureUnit: String,
-    windUnit: String,
-    blocks: List<HomeBlock>,
-    enabledBlocks: Map<HomeBlock, Boolean>,
-    onOpenAlerts: () -> Unit,
-    onOpenLifeIndex: () -> Unit,
-    onPersonalization: () -> Unit
-) {
-    val visibleBlocks = blocks.filter { block -> enabledBlocks[block] ?: true }
-    if (visibleBlocks.isEmpty()) {
-        MessageCard(
-            title = "首页模块已全部隐藏",
-            message = "可在个性换肤右上角设置中恢复默认布局。",
-            buttonText = "打开个性换肤",
-            onButtonClick = onPersonalization
-        )
-        return
-    }
-    visibleBlocks.forEach { block ->
-        when (block) {
-            HomeBlock.WEATHER_METRICS -> WeatherMetricPanel(data, temperatureUnit, windUnit)
-            HomeBlock.WIND_DETAIL -> WindDetailPanel(data, windUnit)
-            HomeBlock.AIR_SUN -> SunAndAirPanel(data)
-            HomeBlock.ADVICE -> AdvicePanel(data)
-            HomeBlock.WEATHER_INSIGHT -> WeatherInsightPanel(data, warnings, onOpenAlerts, onOpenLifeIndex)
-            HomeBlock.HOURLY_FORECAST -> HourlyForecast(data.hourlyForecasts, temperatureUnit)
-            HomeBlock.DAILY_FORECAST -> DailyForecast(data.dailyForecasts, temperatureUnit, data.updateTime)
-        }
-    }
-}
-
-@Composable
-private fun WindDetailPanel(data: HomeWeatherData, windUnit: String) {
+internal fun WindDetailPanel(data: HomeWeatherData, windUnit: String) {
     InfoCard {
         SectionTitle("风和风力")
         Text(
@@ -902,7 +971,7 @@ private fun WindDetailPanel(data: HomeWeatherData, windUnit: String) {
 }
 
 @Composable
-private fun SunAndAirPanel(data: HomeWeatherData) {
+internal fun SunAndAirPanel(data: HomeWeatherData) {
     InfoCard {
         SectionTitle("空气质量概览")
         Surface(
@@ -1073,6 +1142,11 @@ private fun currentMinuteText(): String {
     return SimpleDateFormat("HH:mm", Locale.CHINA).format(Date())
 }
 
+private fun currentMinuteOfDay(): Int {
+    val calendar = Calendar.getInstance(Locale.CHINA)
+    return calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
+}
+
 @Composable
 private fun AirQualitySummary(data: HomeWeatherData) {
     val airQualityIndex = AirQualityUtils.parseUsAqiDisplay(data.airQualityIndex)
@@ -1148,7 +1222,7 @@ private fun AirQualitySummary(data: HomeWeatherData) {
 }
 
 @Composable
-private fun WeatherInsightPanel(
+internal fun WeatherInsightPanel(
     data: HomeWeatherData,
     warnings: List<WarningEntity>,
     onOpenAlerts: () -> Unit,
@@ -1180,7 +1254,7 @@ private fun WeatherInsightPanel(
 }
 
 @Composable
-private fun AdvicePanel(data: HomeWeatherData) {
+internal fun AdvicePanel(data: HomeWeatherData) {
     InfoCard {
         SectionTitle("生活建议")
         Row(
@@ -1197,6 +1271,38 @@ private fun AdvicePanel(data: HomeWeatherData) {
                 text = data.travelAdvice,
                 modifier = Modifier.weight(1f)
             )
+        }
+    }
+}
+
+@Composable
+internal fun CalendarLifePanel(
+    data: HomeWeatherData,
+    onOpenLifeIndex: () -> Unit
+) {
+    val lunarDay = remember { LunarCalendarUtils.today() }
+    InfoCard {
+        SectionTitle("日历生活")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            FeatureEntryTile(
+                title = lunarDay.weekdayText,
+                subtitle = "${lunarDay.gregorianText} · ${lunarDay.lunarText}",
+                onClick = onOpenLifeIndex,
+                modifier = Modifier.weight(1f)
+            )
+            FeatureEntryTile(
+                title = lunarDay.festivalOrDefaultText,
+                subtitle = "结合 ${data.cityName} 的天气查看生活建议",
+                onClick = onOpenLifeIndex,
+                modifier = Modifier.weight(1f)
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            MetricTile("穿衣", data.clothingAdvice, Modifier.weight(1f))
+            MetricTile("出行", data.travelAdvice, Modifier.weight(1f))
         }
     }
 }
@@ -1228,7 +1334,7 @@ private fun AdviceTile(
 }
 
 @Composable
-private fun HourlyForecast(forecasts: List<WeatherHourlyData>, temperatureUnit: String) {
+internal fun HourlyForecast(forecasts: List<WeatherHourlyData>, temperatureUnit: String) {
     InfoCard {
         SectionTitle("逐小时")
         if (forecasts.isEmpty()) {
@@ -1282,7 +1388,7 @@ private fun HourlyForecastCard(item: WeatherHourlyData, temperatureUnit: String)
 }
 
 @Composable
-private fun DailyForecast(
+internal fun DailyForecast(
     items: List<WeatherDailyData>,
     temperatureUnit: String,
     referenceTimeMillis: Long
@@ -1359,201 +1465,80 @@ private fun forecastCalendarText(dateText: String, referenceTimeMillis: Long): S
     return lunarInfo.festivalText?.takeIf { text -> text.isNotBlank() } ?: lunarInfo.lunarText
 }
 
-private data class DebugWeatherScenario(
-    val title: String,
-    val subtitle: String,
-    val temperature: String,
-    val feelsLike: String,
-    val tempMax: String,
-    val tempMin: String,
-    val condition: String,
-    val iconCode: String,
-    val windDir: String,
-    val windScale: String,
-    val windSpeed: String,
-    val visibility: String,
-    val airQualityIndex: String,
-    val airQualityCategory: String,
-    val primaryPollutant: String,
-    val uvIndex: String,
-    val clothingAdvice: String,
-    val travelAdvice: String
-) {
-    fun applyTo(data: HomeWeatherData): HomeWeatherData {
-        return HomeWeatherData(
-            data.cityName,
-            data.locationId,
-            temperature,
-            condition,
-            feelsLike,
-            tempMax,
-            tempMin,
-            data.humidity,
-            windDir,
-            windScale,
-            windSpeed,
-            data.pressure,
-            visibility,
-            iconCode,
-            data.updateTime,
-            clothingAdvice,
-            travelAdvice,
-            airQualityIndex,
-            airQualityCategory,
-            primaryPollutant,
-            uvIndex,
-            data.sunrise,
-            data.sunset,
-            data.hourlyForecasts.map { item ->
-                item.copy(condition = condition, iconCode = iconCode)
-            },
-            data.dailyForecasts.map { item ->
-                item.copy(condition = condition, iconCode = iconCode)
-            }
-        )
-    }
-}
-
-private val debugWeatherScenarios = listOf(
-    DebugWeatherScenario(
-        title = "晴天",
-        subtitle = "强光、低云量、空气较好",
-        temperature = "29",
-        feelsLike = "31",
-        tempMax = "32",
-        tempMin = "23",
-        condition = "晴",
-        iconCode = "100",
-        windDir = "东南风",
-        windScale = "2",
-        windSpeed = "10",
-        visibility = "18",
-        airQualityIndex = "42",
-        airQualityCategory = "优",
-        primaryPollutant = "无",
-        uvIndex = "8",
-        clothingAdvice = "白天气温偏高，建议穿轻薄透气衣物。",
-        travelAdvice = "天气晴朗，适合出行，注意防晒补水。"
-    ),
-    DebugWeatherScenario(
-        title = "多云",
-        subtitle = "弱光、云层、常规首页状态",
-        temperature = "24",
-        feelsLike = "25",
-        tempMax = "28",
-        tempMin = "21",
-        condition = "多云",
-        iconCode = "101",
-        windDir = "东北风",
-        windScale = "2",
-        windSpeed = "12",
-        visibility = "14",
-        airQualityIndex = "58",
-        airQualityCategory = "良",
-        primaryPollutant = "PM2.5",
-        uvIndex = "4",
-        clothingAdvice = "体感舒适，早晚可加一件薄外套。",
-        travelAdvice = "云量较多，整体适宜通勤和户外活动。"
-    ),
-    DebugWeatherScenario(
-        title = "小雨",
-        subtitle = "雨层动效、湿度场景",
-        temperature = "19",
-        feelsLike = "18",
-        tempMax = "21",
-        tempMin = "17",
-        condition = "小雨",
-        iconCode = "305",
-        windDir = "北风",
-        windScale = "3",
-        windSpeed = "18",
-        visibility = "8",
-        airQualityIndex = "35",
-        airQualityCategory = "优",
-        primaryPollutant = "无",
-        uvIndex = "1",
-        clothingAdvice = "雨天体感偏凉，建议携带雨具并加外套。",
-        travelAdvice = "道路湿滑，出行请预留时间。"
-    ),
-    DebugWeatherScenario(
-        title = "大雪",
-        subtitle = "雪粒动效、低温场景",
-        temperature = "-4",
-        feelsLike = "-8",
-        tempMax = "-1",
-        tempMin = "-7",
-        condition = "大雪",
-        iconCode = "402",
-        windDir = "西北风",
-        windScale = "4",
-        windSpeed = "24",
-        visibility = "4",
-        airQualityIndex = "66",
-        airQualityCategory = "良",
-        primaryPollutant = "PM10",
-        uvIndex = "1",
-        clothingAdvice = "低温降雪，建议穿厚羽绒服并注意防滑。",
-        travelAdvice = "积雪可能影响交通，减少不必要外出。"
-    ),
-    DebugWeatherScenario(
-        title = "夜间晴",
-        subtitle = "深色天空、夜间图标",
-        temperature = "18",
-        feelsLike = "17",
-        tempMax = "23",
-        tempMin = "16",
-        condition = "晴",
-        iconCode = "150",
-        windDir = "南风",
-        windScale = "1",
-        windSpeed = "6",
-        visibility = "20",
-        airQualityIndex = "48",
-        airQualityCategory = "优",
-        primaryPollutant = "无",
-        uvIndex = "0",
-        clothingAdvice = "夜间气温下降，外出可加薄外套。",
-        travelAdvice = "夜间能见度较好，注意温差。"
-    )
-)
-
 @Composable
 private fun DebugWeatherDialog(
-    selectedScenario: DebugWeatherScenario?,
-    onScenarioSelected: (DebugWeatherScenario?) -> Unit,
+    selectedOverride: DebugWeatherOverride?,
+    onOverrideSelected: (DebugWeatherOverride?) -> Unit,
     onDismiss: () -> Unit
 ) {
+    val initialOverride = selectedOverride ?: DebugWeatherPresets.defaultOverride()
+    var selectedWeather by remember(selectedOverride) { mutableStateOf(initialOverride.weather) }
+    var selectedTime by remember(selectedOverride) { mutableStateOf(initialOverride.time) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("调试天气") },
+        title = { Text("调试时间与天气") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    text = "只改变当前页面显示，不写入缓存，也不会影响真实刷新结果。",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                DebugWeatherOption(
-                    title = "恢复真实天气",
-                    subtitle = "回到缓存或接口返回的数据",
-                    selected = selectedScenario == null,
-                    onClick = { onScenarioSelected(null) }
-                )
-                debugWeatherScenarios.forEach { scenario ->
+            LazyColumn(
+                modifier = Modifier.height(430.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                item {
+                    Text(
+                        text = "选择一个时间段和一种天气，组合后只影响当前页面预览，不写入缓存。",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                item { DebugSectionTitle("时间") }
+                items(DebugWeatherPresets.timePresets, key = { preset -> preset.key }) { preset ->
                     DebugWeatherOption(
-                        title = scenario.title,
-                        subtitle = scenario.subtitle,
-                        selected = selectedScenario == scenario,
-                        onClick = { onScenarioSelected(scenario) }
+                        title = preset.title,
+                        subtitle = preset.subtitle,
+                        selected = selectedTime == preset,
+                        onClick = { selectedTime = preset }
+                    )
+                }
+                item { DebugSectionTitle("天气") }
+                items(DebugWeatherPresets.weatherPresets, key = { preset -> preset.key }) { preset ->
+                    DebugWeatherOption(
+                        title = preset.title,
+                        subtitle = preset.subtitle,
+                        selected = selectedWeather == preset,
+                        onClick = { selectedWeather = preset }
                     )
                 }
             }
         },
+        dismissButton = {
+            TextButton(onClick = { onOverrideSelected(null) }) {
+                Text("恢复真实")
+            }
+        },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("关闭")
+            Row {
+                TextButton(onClick = onDismiss) {
+                    Text("关闭")
+                }
+                TextButton(
+                    onClick = {
+                        onOverrideSelected(DebugWeatherOverride(selectedWeather, selectedTime))
+                    }
+                ) {
+                    Text("应用组合")
+                }
             }
         }
+    )
+}
+
+@Composable
+private fun DebugSectionTitle(text: String) {
+    Text(
+        modifier = Modifier.padding(top = 4.dp),
+        text = text,
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.SemiBold,
+        color = MaterialTheme.colorScheme.primary
     )
 }
 
@@ -1627,17 +1612,29 @@ private fun lastWeatherUpdateLabel(state: UiState<HomeWeatherData>?, data: HomeW
 @Composable
 private fun HomeBackdropScrim(
     sceneSpec: WeatherSceneSpec,
-    modifier: Modifier = Modifier
+    lightContext: WeatherLightContext,
+    modifier: Modifier = Modifier,
+    darkenScale: Float = 1f
 ) {
-    val topAlpha = if (sceneSpec.category == WeatherIconUtils.WeatherCategory.NIGHT) 0.44f else 0.26f
-    val bottomAlpha = if (sceneSpec.category == WeatherIconUtils.WeatherCategory.NIGHT) 0.54f else 0.34f
+    val night = lightContext.isNight || sceneSpec.category == WeatherIconUtils.WeatherCategory.NIGHT
+    val warmPhase = lightContext.phase == WeatherLightContext.Phase.DAWN || lightContext.phase == WeatherLightContext.Phase.DUSK
+    val topAlpha = when {
+        night -> 0.44f
+        warmPhase -> 0.22f
+        else -> 0.26f
+    }
+    val bottomAlpha = when {
+        night -> 0.54f
+        warmPhase -> 0.30f
+        else -> 0.34f
+    }
     Canvas(modifier = modifier) {
         drawRect(
             brush = Brush.verticalGradient(
                 listOf(
-                    Color(0xFF06151A).copy(alpha = topAlpha),
+                    Color(0xFF06151A).copy(alpha = topAlpha * darkenScale),
                     Color.Transparent,
-                    Color(0xFF06151A).copy(alpha = bottomAlpha)
+                    Color(0xFF06151A).copy(alpha = bottomAlpha * darkenScale)
                 )
             )
         )
@@ -1647,7 +1644,7 @@ private fun HomeBackdropScrim(
                     Color.White.copy(alpha = if (sceneSpec.hasCelestialGlow()) 0.20f else 0.10f),
                     Color.Transparent
                 ),
-                center = Offset(size.width * 0.72f, size.height * 0.12f),
+                center = Offset(size.width * (0.16f + lightContext.dayProgress * 0.68f).coerceIn(0.12f, 0.86f), size.height * 0.12f),
                 radius = size.width * 0.86f
             )
         )
@@ -1686,32 +1683,52 @@ private fun deepenWeatherColor(color: Color, amount: Float): Color {
     )
 }
 
-private fun weatherScenePrimaryTextColor(sceneSpec: WeatherSceneSpec, fallback: Color, effect: ThemeWeatherEffect): Color {
-    return if (effect.usesImmersiveForeground(sceneSpec)) {
+private fun weatherScenePrimaryTextColor(
+    sceneSpec: WeatherSceneSpec,
+    lightContext: WeatherLightContext,
+    fallback: Color,
+    effect: ThemeWeatherEffect
+): Color {
+    return if (effect.usesImmersiveForeground(sceneSpec, lightContext)) {
         Color.White
     } else {
         fallback
     }
 }
 
-private fun weatherSceneSecondaryTextColor(sceneSpec: WeatherSceneSpec, fallback: Color, effect: ThemeWeatherEffect): Color {
-    return if (effect.usesImmersiveForeground(sceneSpec)) {
+private fun weatherSceneSecondaryTextColor(
+    sceneSpec: WeatherSceneSpec,
+    lightContext: WeatherLightContext,
+    fallback: Color,
+    effect: ThemeWeatherEffect
+): Color {
+    return if (effect.usesImmersiveForeground(sceneSpec, lightContext)) {
         Color.White.copy(alpha = 0.78f)
     } else {
         fallback
     }
 }
 
-private fun weatherSceneFloatingSurfaceColor(sceneSpec: WeatherSceneSpec, fallback: Color, effect: ThemeWeatherEffect): Color {
-    return if (effect.usesImmersiveForeground(sceneSpec)) {
+private fun weatherSceneFloatingSurfaceColor(
+    sceneSpec: WeatherSceneSpec,
+    lightContext: WeatherLightContext,
+    fallback: Color,
+    effect: ThemeWeatherEffect
+): Color {
+    return if (effect.usesImmersiveForeground(sceneSpec, lightContext)) {
         Color.White.copy(alpha = 0.18f)
     } else {
         fallback.copy(alpha = 0.34f)
     }
 }
 
-private fun weatherSceneStrokeColor(sceneSpec: WeatherSceneSpec, foreground: Color, effect: ThemeWeatherEffect): Color {
-    return if (effect.usesImmersiveForeground(sceneSpec)) {
+private fun weatherSceneStrokeColor(
+    sceneSpec: WeatherSceneSpec,
+    lightContext: WeatherLightContext,
+    foreground: Color,
+    effect: ThemeWeatherEffect
+): Color {
+    return if (effect.usesImmersiveForeground(sceneSpec, lightContext)) {
         Color.White.copy(alpha = 0.20f)
     } else {
         foreground.copy(alpha = 0.18f)

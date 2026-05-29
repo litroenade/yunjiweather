@@ -26,6 +26,9 @@ local.properties
 *.class
 lint-results*.html
 lint-results*.xml
+/index.html
+/script.js
+/styles.css
 
 # OS files
 .DS_Store
@@ -34,3 +37,5 @@ Thumbs.db
 # Codex local verification output
 .codex-check/
 artifacts/
+
+docs/

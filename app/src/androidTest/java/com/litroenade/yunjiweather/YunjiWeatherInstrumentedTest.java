@@ -15,6 +15,7 @@ import com.litroenade.yunjiweather.data.local.AppDatabase;
 import com.litroenade.yunjiweather.ui.splash.SplashActivity;
 import com.litroenade.yunjiweather.widget.WeatherAppWidgetProvider;
 import com.litroenade.yunjiweather.widget.WeatherWidgetSnapshot;
+import com.litroenade.yunjiweather.widget.WeatherWidgetSnapshotLoader;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -95,6 +96,16 @@ public class YunjiWeatherInstrumentedTest {
         );
 
         assertNotNull(WeatherAppWidgetProvider.createRemoteViews(appContext, snapshot));
+    }
+
+    @Test
+    public void weatherWidgetSnapshotLoaderCanUseHiltEntryPoint() {
+        Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
+
+        WeatherWidgetSnapshot snapshot = WeatherWidgetSnapshotLoader.fromContext(appContext).load();
+
+        assertNotNull(snapshot);
+        assertNotNull(snapshot.getCityName());
     }
 
     private static void assertTableDoesNotExist(SupportSQLiteDatabase database, String tableName) {

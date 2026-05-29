@@ -13,11 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.litroenade.yunjiweather.ui.compose.InfoCard
+import com.litroenade.yunjiweather.widget.WeatherWidgetLayoutMode
 
 @Composable
 fun DesktopWeatherScreen(
     modifier: Modifier = Modifier,
-    onRequestWidget: () -> Unit
+    onRequestWidget: (WeatherWidgetLayoutMode) -> Unit
 ) {
     LazyColumn(
         modifier = modifier.padding(horizontal = 18.dp),
@@ -32,15 +33,18 @@ fun DesktopWeatherScreen(
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
-                    text = "小组件读取本地默认城市天气缓存；首页刷新成功后会同步更新小组件数据。",
+                    text = "小组件读取本地默认城市天气缓存；首页刷新和后台同步成功后会更新桌面数据。",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = onRequestWidget
-                ) {
-                    Text("添加到桌面")
+                WidgetPresetButton("紧凑卡片", "只显示城市、温度和天气概况。") {
+                    onRequestWidget(WeatherWidgetLayoutMode.COMPACT)
+                }
+                WidgetPresetButton("标准卡片", "显示天气概况和更新时间。") {
+                    onRequestWidget(WeatherWidgetLayoutMode.STANDARD)
+                }
+                WidgetPresetButton("详细卡片", "显示湿度、风力、空气质量和生活建议。") {
+                    onRequestWidget(WeatherWidgetLayoutMode.EXPANDED)
                 }
             }
         }
@@ -58,5 +62,19 @@ fun DesktopWeatherScreen(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun WidgetPresetButton(
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit
+) {
+    Button(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onClick
+    ) {
+        Text("$title · $subtitle")
     }
 }

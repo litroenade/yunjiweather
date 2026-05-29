@@ -348,7 +348,7 @@ private enum class MineInfoDialog(
 ) {
     DataSource(
         "数据来源",
-        "天气、空气质量和城市搜索默认使用 Open-Meteo，可无 API Key 运行。配置 QWeather 后，会增强生活指数和官方天气预警能力；未配置 QWeather 时不会伪造官方预警。"
+        "天气、空气质量和城市搜索统一使用 Open-Meteo 与本地缓存，可无 API Key 运行。生活建议使用缓存和本地规则，天气预警只展示设备本地已有缓存，不伪造官方预警。"
     ),
     Developer(
         "开发与验证说明",

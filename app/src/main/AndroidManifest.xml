@@ -1,10 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
     <application
+            android:name=".YunJiWeatherApplication"
             android:allowBackup="false"
             android:dataExtractionRules="@xml/data_extraction_rules"
             android:fullBackupContent="@xml/backup_rules"
@@ -17,6 +22,9 @@
                 android:name=".MainActivity"
                 android:exported="false"/>
         <activity
+                android:name=".ui.compose.screens.CustomThemeCropActivity"
+                android:exported="false"/>
+        <activity
                 android:name=".ui.splash.SplashActivity"
                 android:exported="true">
             <intent-filter>
@@ -27,14 +35,48 @@
         </activity>
         <receiver
                 android:name=".widget.WeatherAppWidgetProvider"
-                android:exported="true">
+                android:exported="true"
+                android:label="@string/widget_weather_standard_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
             </intent-filter>
             <meta-data
                     android:name="android.appwidget.provider"
                     android:resource="@xml/weather_app_widget_info"/>
         </receiver>
+        <receiver
+                android:name=".widget.WeatherCompactAppWidgetProvider"
+                android:exported="true"
+                android:label="@string/widget_weather_compact_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+            <meta-data
+                    android:name="android.appwidget.provider"
+                    android:resource="@xml/weather_app_widget_compact_info"/>
+        </receiver>
+        <receiver
+                android:name=".widget.WeatherDetailedAppWidgetProvider"
+                android:exported="true"
+                android:label="@string/widget_weather_expanded_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+            </intent-filter>
+            <meta-data
+                    android:name="android.appwidget.provider"
+                    android:resource="@xml/weather_app_widget_expanded_info"/>
+        </receiver>
+        <provider
+                android:name="androidx.startup.InitializationProvider"
+                android:authorities="${applicationId}.androidx-startup"
+                tools:node="merge">
+            <meta-data
+                    android:name="androidx.work.WorkManagerInitializer"
+                    tools:node="remove"/>
+        </provider>
     </application>
 
 </manifest>

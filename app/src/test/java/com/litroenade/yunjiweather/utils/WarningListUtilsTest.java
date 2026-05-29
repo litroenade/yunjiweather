@@ -39,26 +39,26 @@ public class WarningListUtilsTest {
     }
 
     @Test
-    public void createNoQWeatherText_reportsNoLocalCache() {
-        String text = WarningListUtils.createNoQWeatherText("北京", Collections.emptyList());
+    public void createLocalCacheText_reportsNoLocalCache() {
+        String text = WarningListUtils.createLocalCacheText("北京", Collections.emptyList());
 
-        assertEquals("未配置 QWeather API，北京 暂无本地预警缓存。", text);
+        assertEquals("北京 暂无本地预警缓存。", text);
     }
 
     @Test
-    public void createNoQWeatherText_reportsCachedWarnings() {
-        String text = WarningListUtils.createNoQWeatherText("深圳", Arrays.asList(
+    public void createLocalCacheText_reportsCachedWarnings() {
+        String text = WarningListUtils.createLocalCacheText("深圳", Arrays.asList(
                 warning("w-1", false),
                 warning("w-2", true)
         ));
 
-        assertEquals("未配置 QWeather API，已显示 深圳 2 条本地预警缓存。", text);
+        assertEquals("已显示 深圳 2 条本地预警缓存。", text);
     }
 
     private static WarningEntity warning(String warningId, boolean isRead) {
         WarningEntity warning = new WarningEntity(
                 warningId,
-                "101010100",
+                "openmeteo:1816670",
                 "暴雨蓝色预警",
                 "暴雨",
                 "蓝色",

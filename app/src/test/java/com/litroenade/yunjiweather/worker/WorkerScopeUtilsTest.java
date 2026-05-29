@@ -11,7 +11,9 @@ public class WorkerScopeUtilsTest {
     public void workNames_areStableWithoutUserScope() {
         assertEquals("weather_alert_check", WorkerScopeUtils.weatherAlertWorkName());
         assertEquals("daily_weather_reminder", WorkerScopeUtils.dailyWeatherWorkName());
+        assertEquals("weather_widget_refresh", WorkerScopeUtils.weatherWidgetRefreshWorkName());
         assertFalse(WorkerScopeUtils.weatherAlertWorkName().contains("user"));
         assertFalse(WorkerScopeUtils.dailyWeatherWorkName().contains("user"));
+        assertFalse(WorkerScopeUtils.weatherWidgetRefreshWorkName().contains("user"));
     }
 }

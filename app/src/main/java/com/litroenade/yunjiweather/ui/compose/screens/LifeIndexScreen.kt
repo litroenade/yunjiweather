@@ -37,7 +37,7 @@ fun LifeIndexScreen(
     viewModel: LifeIndexViewModel = viewModel()
 ) {
     val indexItems by viewModel.getIndexItems().observeAsState(emptyList())
-    val stateText by viewModel.getStateText().observeAsState("正在读取生活指数")
+    val stateText by viewModel.getStateText().observeAsState("正在读取生活建议")
     val todayCalendar = remember { LunarCalendarUtils.today() }
 
     LazyColumn(
@@ -49,7 +49,7 @@ fun LifeIndexScreen(
     ) {
         item {
             ScreenHeader(
-                title = "生活指数",
+                title = "生活建议",
                 subtitle = stateText,
                 action = {
                     OutlinedButton(onClick = viewModel::refresh) {
@@ -63,7 +63,7 @@ fun LifeIndexScreen(
         }
         if (indexItems.isEmpty()) {
             item {
-                MessageCard("暂无指数", "当前没有可展示的生活建议。", "刷新", viewModel::refresh)
+                MessageCard("暂无建议", "当前没有可展示的本地生活建议。", "刷新", viewModel::refresh)
             }
         } else {
             items(indexItems) { item ->

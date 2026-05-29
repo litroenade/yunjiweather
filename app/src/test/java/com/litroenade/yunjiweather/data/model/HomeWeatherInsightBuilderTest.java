@@ -80,7 +80,7 @@ public class HomeWeatherInsightBuilderTest {
     }
 
     @Test
-    public void buildHandlesQWeatherWindScaleRangeWithoutCrashing() {
+    public void buildHandlesWindScaleRangeWithoutCrashing() {
         HomeWeatherInsight insight = HomeWeatherInsightBuilder.build(
                 homeWeather("多云", "42", "优", "适合出行。", "1-3"),
                 Collections.emptyList()

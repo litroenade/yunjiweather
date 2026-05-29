@@ -7,35 +7,31 @@ import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 
-import com.google.gson.Gson;
-import com.litroenade.yunjiweather.data.api.WeatherApiService;
-import com.litroenade.yunjiweather.data.api.WeatherGatewayFactory;
-import com.litroenade.yunjiweather.data.entity.CityEntity;
-import com.litroenade.yunjiweather.data.local.AppDatabase;
-import com.litroenade.yunjiweather.data.local.LifeIndexCacheGateway;
 import com.litroenade.yunjiweather.data.model.LifeIndexDefaults;
 import com.litroenade.yunjiweather.data.model.LifeIndexItem;
-import com.litroenade.yunjiweather.data.repository.CityRepository;
-import com.litroenade.yunjiweather.data.repository.LifeIndexRepository;
-import com.litroenade.yunjiweather.utils.DateTimeUtils;
+import com.litroenade.yunjiweather.domain.usecase.LoadLifeIndexUseCase;
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.inject.Inject;
+
+import dagger.hilt.android.lifecycle.HiltViewModel;
+
+@HiltViewModel
 public class LifeIndexViewModel extends AndroidViewModel {
 
-    private CityRepository cityRepository;
-    private LifeIndexRepository lifeIndexRepository;
+    private final LoadLifeIndexUseCase loadLifeIndexUseCase;
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final MutableLiveData<List<LifeIndexItem>> indexItems = new MutableLiveData<>();
     private final MutableLiveData<String> stateText = new MutableLiveData<>();
 
-    public LifeIndexViewModel(@NonNull Application application) {
+    @Inject
+    public LifeIndexViewModel(@NonNull Application application, LoadLifeIndexUseCase loadLifeIndexUseCase) {
         super(application);
-        if (initializeDependencies()) {
-            refresh();
-        }
+        this.loadLifeIndexUseCase = loadLifeIndexUseCase;
+        refresh();
     }
 
     public LiveData<List<LifeIndexItem>> getIndexItems() {
@@ -47,61 +43,15 @@ public class LifeIndexViewModel extends AndroidViewModel {
     }
 
     public void refresh() {
-        if (cityRepository == null || lifeIndexRepository == null) {
-            publishLocalFallback("生活服务初始化失败，请重启应用后再试。");
-            return;
-        }
         executorService.execute(() -> {
             try {
-                CityEntity city = cityRepository.resolveDefaultCity(System.currentTimeMillis());
-                long nowTime = System.currentTimeMillis();
-                LifeIndexRepository.LoadResult result = lifeIndexRepository.load(city.locationId, city.cityName, nowTime);
-                indexItems.postValue(result.getItems());
-                stateText.postValue(createStateText(city.cityName, result));
+                LoadLifeIndexUseCase.Result result = loadLifeIndexUseCase.execute(System.currentTimeMillis());
+                indexItems.postValue(result.getLoadResult().getItems());
+                stateText.postValue(result.getStateText());
             } catch (RuntimeException exception) {
-                publishLocalFallback("生活指数加载失败，已显示本地建议。原因：" + readableMessage(exception));
+                publishLocalFallback("生活建议加载失败，已显示通用本地建议：" + readableMessage(exception));
             }
         });
-    }
-
-    private boolean initializeDependencies() {
-        try {
-            Application application = getApplication();
-            AppDatabase database = AppDatabase.getInstance(application);
-            WeatherApiService apiService = WeatherGatewayFactory.createQWeatherServiceOrNull();
-            cityRepository = new CityRepository(database.cityDao());
-            lifeIndexRepository = new LifeIndexRepository(
-                    apiService,
-                    new LifeIndexCacheGateway(database.weatherCacheDao(), new Gson())
-            );
-            return true;
-        } catch (RuntimeException exception) {
-            publishLocalFallback("生活服务初始化失败，已显示本地建议。原因：" + readableMessage(exception));
-            return false;
-        }
-    }
-
-    private String createStateText(String cityName, LifeIndexRepository.LoadResult result) {
-        if (result.getSource() == LifeIndexRepository.LoadSource.REMOTE) {
-            return "已更新 " + cityName + " 今日生活指数。";
-        }
-        if (result.getSource() == LifeIndexRepository.LoadSource.CACHE_NO_API) {
-            return "未配置 QWeather API，已显示缓存生活指数。" + DateTimeUtils.formatCacheUpdateTime(result.getCacheUpdateTime());
-        }
-        if (result.getSource() == LifeIndexRepository.LoadSource.CACHE_UNSUPPORTED_LOCATION) {
-            return "当前城市暂不支持 QWeather 实时生活指数，已显示缓存。"
-                    + DateTimeUtils.formatCacheUpdateTime(result.getCacheUpdateTime());
-        }
-        if (result.getSource() == LifeIndexRepository.LoadSource.CACHE_ERROR) {
-            return "生活指数刷新失败，已显示缓存生活指数。" + DateTimeUtils.formatCacheUpdateTime(result.getCacheUpdateTime());
-        }
-        if ("当前城市没有 QWeather 城市 ID".equals(result.getErrorMessage())) {
-            return "当前城市暂不支持 QWeather 实时生活指数，已显示本地建议。";
-        }
-        if (result.getErrorMessage() == null || result.getErrorMessage().trim().isEmpty()) {
-            return "未配置 QWeather API，已显示本地生活建议。";
-        }
-        return "生活指数刷新失败，已显示本地建议。原因：" + result.getErrorMessage();
     }
 
     private void publishLocalFallback(String message) {

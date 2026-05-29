@@ -11,8 +11,8 @@ import com.litroenade.yunjiweather.data.entity.WeatherCacheEntity;
 import com.litroenade.yunjiweather.data.entity.WarningEntity;
 
 /**
- * Single local database for the account-free app. Destructive migration is intentional
- * because the login/user-scoped schema was removed during the Compose rewrite.
+ * 无账号版本只保留单一本地数据库。
+ * 登录和用户维度表已移除，允许破坏性迁移是为了避免旧用户字段数据污染新结构。
  */
 @Database(
         entities = {

@@ -8,7 +8,7 @@ import java.util.Objects;
 public final class DefaultCityUtils {
 
     public static final String DEFAULT_CITY_NAME = "北京";
-    public static final String DEFAULT_LOCATION_ID = "101010100";
+    public static final String DEFAULT_LOCATION_ID = "openmeteo:1816670";
 
     private DefaultCityUtils() {
     }

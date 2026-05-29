@@ -10,14 +10,16 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import com.litroenade.yunjiweather.ui.compose.theme.LocalThemeSkin
 import com.litroenade.yunjiweather.ui.compose.theme.effects.ThemeWeatherEffectCatalog
 
 @Composable
 internal fun WeatherAnimation(
     sceneSpec: WeatherSceneSpec,
-    motionScale: Float = 1f,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    lightContext: WeatherLightContext = WeatherLightContext.now("", ""),
+    motionScale: Float = 1f
 ) {
     val skin = LocalThemeSkin.current
     val effect = ThemeWeatherEffectCatalog.getEffect(skin.key)
@@ -35,12 +37,12 @@ internal fun WeatherAnimation(
         label = "weather-animation-progress"
     )
 
-    Canvas(modifier = modifier) {
+    Canvas(modifier = modifier.testTag("weather-hero-animation")) {
         if (size.width <= 0f || size.height <= 0f) {
             return@Canvas
         }
         with(effect) {
-            drawHero(sceneSpec, progress, skin)
+            drawHero(sceneSpec, lightContext, progress, skin)
         }
     }
 }
@@ -48,8 +50,9 @@ internal fun WeatherAnimation(
 @Composable
 internal fun WeatherAtmosphere(
     sceneSpec: WeatherSceneSpec,
-    immersion: Float = 1f,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    lightContext: WeatherLightContext = WeatherLightContext.now("", ""),
+    immersion: Float = 1f
 ) {
     val skin = LocalThemeSkin.current
     val effect = ThemeWeatherEffectCatalog.getEffect(skin.key)
@@ -65,12 +68,12 @@ internal fun WeatherAtmosphere(
         label = "weather-atmosphere-progress"
     )
 
-    Canvas(modifier = modifier) {
+    Canvas(modifier = modifier.testTag("weather-atmosphere-animation")) {
         if (size.width <= 0f || size.height <= 0f) {
             return@Canvas
         }
         with(effect) {
-            drawAtmosphere(sceneSpec, progress, immersion, skin)
+            drawAtmosphere(sceneSpec, lightContext, progress, immersion, skin)
         }
     }
 }

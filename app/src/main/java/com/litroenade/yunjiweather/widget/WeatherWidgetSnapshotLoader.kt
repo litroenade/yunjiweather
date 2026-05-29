@@ -4,15 +4,15 @@ import android.content.Context
 import com.google.gson.Gson
 import com.litroenade.yunjiweather.data.entity.CityEntity
 import com.litroenade.yunjiweather.data.entity.WeatherCacheEntity
-import com.litroenade.yunjiweather.data.local.AppDatabase
 import com.litroenade.yunjiweather.data.local.WeatherCacheTypes
 import com.litroenade.yunjiweather.data.model.HomeWeatherData
 import com.litroenade.yunjiweather.utils.DateTimeUtils
 import com.litroenade.yunjiweather.utils.DefaultCityUtils
+import dagger.hilt.android.EntryPointAccessors
 
 /**
- * Builds the small widget's read-only snapshot from Room cache only. The widget never
- * performs a network refresh by itself, so launcher updates stay cheap and predictable.
+ * 小组件只读取本地数据库缓存快照，不直接发起网络请求。
+ * 后台刷新由统一任务调度，避免桌面频繁唤醒导致启动器卡顿或耗电。
  */
 class WeatherWidgetSnapshotLoader(
     private val cityReader: DefaultCityReader,
@@ -41,7 +41,11 @@ class WeatherWidgetSnapshotLoader(
                 conditionText = data.condition,
                 rangeText = "${data.tempMin}° / ${data.tempMax}°",
                 updateText = DateTimeUtils.formatMinuteTime(cache.updateTime),
-                isAvailable = true
+                isAvailable = true,
+                humidityText = "Humidity ${data.humidity}%",
+                windText = "${data.windDir} ${data.windScale}",
+                airQualityText = "AQI ${data.airQualityIndex} ${data.airQualityCategory}",
+                adviceText = data.travelAdvice
             )
         } catch (exception: RuntimeException) {
             unavailable(cityName)
@@ -53,7 +57,7 @@ class WeatherWidgetSnapshotLoader(
             cityName = cityName,
             temperatureText = "打开查看实时天气",
             conditionText = "暂无缓存",
-            rangeText = "城市、预警、生活指数",
+            rangeText = "城市、预警、生活建议",
             updateText = "",
             isAvailable = false
         )
@@ -70,11 +74,14 @@ class WeatherWidgetSnapshotLoader(
     companion object {
         @JvmStatic
         fun fromContext(context: Context): WeatherWidgetSnapshotLoader {
-            val database = AppDatabase.getInstance(context.applicationContext)
+            val entryPoint = EntryPointAccessors.fromApplication(
+                context.applicationContext,
+                WeatherWidgetEntryPoint::class.java
+            )
             return WeatherWidgetSnapshotLoader(
-                DefaultCityReader { database.cityDao().findDefaultCity() },
+                DefaultCityReader { entryPoint.cityDao().findDefaultCity() },
                 HomeWeatherCacheReader { locationId ->
-                    database.weatherCacheDao().findByLocationAndType(locationId, WeatherCacheTypes.HOME)
+                    entryPoint.weatherCacheDao().findByLocationAndType(locationId, WeatherCacheTypes.HOME)
                 },
                 Gson()
             )

@@ -25,14 +25,13 @@ public final class WarningListUtils {
         return result;
     }
 
-    public static String createNoQWeatherText(String cityName, List<WarningEntity> cachedWarnings) {
+    public static String createLocalCacheText(String cityName, List<WarningEntity> cachedWarnings) {
         String targetCityName = requireText(cityName, "cityName");
         Objects.requireNonNull(cachedWarnings, "cachedWarnings");
         if (cachedWarnings.isEmpty()) {
-            return "未配置 QWeather API，" + targetCityName + " 暂无本地预警缓存。";
+            return targetCityName + " 暂无本地预警缓存。";
         }
-        return "未配置 QWeather API，已显示 " + targetCityName + " "
-                + cachedWarnings.size() + " 条本地预警缓存。";
+        return "已显示 " + targetCityName + " " + cachedWarnings.size() + " 条本地预警缓存。";
     }
 
     private static WarningEntity copyWarning(WarningEntity warning) {

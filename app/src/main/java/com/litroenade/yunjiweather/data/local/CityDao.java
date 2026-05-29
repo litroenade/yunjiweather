@@ -30,6 +30,9 @@ public interface CityDao {
     @Query("UPDATE city SET isDefault = 1, updateTime = :updateTime WHERE locationId = :locationId")
     void setDefaultCity(String locationId, long updateTime);
 
+    @Query("UPDATE city SET sortOrder = :sortOrder, updateTime = :updateTime WHERE locationId = :locationId")
+    void updateSortOrder(String locationId, int sortOrder, long updateTime);
+
     @Query("DELETE FROM city WHERE locationId = :locationId")
     void deleteByLocationId(String locationId);
 

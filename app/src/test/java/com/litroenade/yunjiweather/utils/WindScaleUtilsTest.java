@@ -27,7 +27,7 @@ public class WindScaleUtilsTest {
     }
 
     @Test
-    public void parseDisplayScale_returnsFirstLevelForQWeatherRange() {
+    public void parseDisplayScale_returnsFirstLevelForRangeText() {
         assertEquals(1, WindScaleUtils.parseDisplayScale("1-3"));
         assertEquals(5, WindScaleUtils.parseDisplayScale("5-6"));
     }
