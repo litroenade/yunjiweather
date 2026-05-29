@@ -139,9 +139,9 @@ public final class SettingsPreferencesDataSource implements SettingsRepository {
     }
 
     public String getCustomThemeCropAnchor() {
-        String anchor = getCustomThemeCropAnchor(CustomThemeWeatherKey.FALLBACK);
-        String normalizedAnchor = CustomThemeCropAnchor.normalize(anchor);
-        repairStringIfNeeded(KEY_CUSTOM_THEME_CROP_ANCHOR, anchor, normalizedAnchor);
+        String legacyAnchor = getStringSetting(KEY_CUSTOM_THEME_CROP_ANCHOR, CustomThemeCropAnchor.CENTER);
+        String normalizedAnchor = getCustomThemeCropAnchor(CustomThemeWeatherKey.FALLBACK);
+        repairStringIfNeeded(KEY_CUSTOM_THEME_CROP_ANCHOR, legacyAnchor, normalizedAnchor);
         return normalizedAnchor;
     }
 

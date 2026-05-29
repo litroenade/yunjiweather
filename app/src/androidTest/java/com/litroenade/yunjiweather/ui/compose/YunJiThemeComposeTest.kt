@@ -13,6 +13,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
+import com.litroenade.yunjiweather.data.model.CustomThemeWeatherKey
 import com.litroenade.yunjiweather.ui.compose.theme.effects.ThemeWeatherEffectCatalog
 import com.litroenade.yunjiweather.ui.compose.screens.PersonalizationPanel
 import com.litroenade.yunjiweather.ui.compose.theme.YunJiTheme
@@ -100,8 +101,8 @@ class YunJiThemeComposeTest {
 
     @Test
     fun customThemeEditorAppliesDraftOnlyAfterUserConfirms() {
-        var appliedImageUri = ""
-        var appliedCropAnchor = ""
+        var appliedImageUris = emptyMap<String, String>()
+        var appliedCropAnchors = emptyMap<String, String>()
 
         composeRule.setContent {
             YunJiTheme(
@@ -112,23 +113,23 @@ class YunJiThemeComposeTest {
                     themes = VisualThemeCatalog.getThemes(),
                     selectedTheme = VisualThemeUtils.THEME_CUSTOM_1,
                     customThemeImageUri = "",
-                    draftCustomThemeImageUri = "file:///tmp/yunji-custom-theme.image",
-                    draftCustomThemeCropAnchor = "bottom",
+                    draftCustomThemeImageUris = mapOf(CustomThemeWeatherKey.FALLBACK to "file:///tmp/yunji-custom-theme.image"),
+                    draftCustomThemeCropAnchors = mapOf(CustomThemeWeatherKey.FALLBACK to "bottom"),
                     customThemeEditorMessage = "图片已导入，调整裁剪位置后点击应用。",
                     onThemeSelected = {},
-                    onApplyCustomThemeDraft = { imageUri, cropAnchor ->
-                        appliedImageUri = imageUri
-                        appliedCropAnchor = cropAnchor
+                    onApplyCustomThemeDraft = { imageUris, cropAnchors ->
+                        appliedImageUris = imageUris
+                        appliedCropAnchors = cropAnchors
                     }
                 )
             }
         }
 
-        composeRule.onNodeWithText("草稿预览").assertExists()
-        composeRule.onNodeWithText("应用自定义主题").performClick()
+        composeRule.onNodeWithText("待保存").assertExists()
+        composeRule.onNodeWithText("保存并应用").performClick()
         composeRule.runOnIdle {
-            assertEquals("file:///tmp/yunji-custom-theme.image", appliedImageUri)
-            assertEquals("bottom", appliedCropAnchor)
+            assertEquals("file:///tmp/yunji-custom-theme.image", appliedImageUris[CustomThemeWeatherKey.FALLBACK])
+            assertEquals("bottom", appliedCropAnchors[CustomThemeWeatherKey.FALLBACK])
         }
     }
 
