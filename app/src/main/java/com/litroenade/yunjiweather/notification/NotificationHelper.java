@@ -63,66 +63,60 @@ public final class NotificationHelper {
     @SuppressLint("MissingPermission")
     public static boolean showWarningNotification(Context context, WarningEntity warning) {
         createWarningChannel(context);
-        if (!PermissionUtils.hasNotificationPermission(context)) {
-            return false;
+        if (PermissionUtils.hasNotificationPermission(context)) {
+            Intent intent = new Intent(context, MainActivity.class);
+            PendingIntent pendingIntent = PendingIntent.getActivity(
+                    context,
+                    warning.warningId.hashCode(),
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
+
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(context, WARNING_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_notifications_black_24dp)
+                    .setContentTitle(warning.title)
+                    .setContentText(warning.content)
+                    .setStyle(new NotificationCompat.BigTextStyle().bigText(warning.content))
+                    .setContentIntent(pendingIntent)
+                    .setAutoCancel(true)
+                    .setPriority(NotificationCompat.PRIORITY_HIGH);
+
+            try {
+                NotificationManagerCompat.from(context).notify(warning.warningId.hashCode(), builder.build());
+                return true;
+            } catch (SecurityException exception) {
+                Log.w(TAG, "系统拒绝发送天气预警通知", exception);
+            }
         }
-
-        Intent intent = new Intent(context, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(
-                context,
-                warning.warningId.hashCode(),
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
-
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, WARNING_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notifications_black_24dp)
-                .setContentTitle(warning.title)
-                .setContentText(warning.content)
-                .setStyle(new NotificationCompat.BigTextStyle().bigText(warning.content))
-                .setContentIntent(pendingIntent)
-                .setAutoCancel(true)
-                .setPriority(NotificationCompat.PRIORITY_HIGH);
-
-        try {
-            NotificationManagerCompat.from(context).notify(warning.warningId.hashCode(), builder.build());
-            return true;
-        } catch (SecurityException exception) {
-            Log.w(TAG, "系统拒绝发送天气预警通知", exception);
-            return false;
-        }
+        return false;
     }
 
     @SuppressLint("MissingPermission")
-    public static boolean showDailyWeatherNotification(Context context, String title, String content) {
+    public static void showDailyWeatherNotification(Context context, String title, String content) {
         createDailyReminderChannel(context);
-        if (!PermissionUtils.hasNotificationPermission(context)) {
-            return false;
-        }
+        if (PermissionUtils.hasNotificationPermission(context)) {
+            Intent intent = new Intent(context, MainActivity.class);
+            PendingIntent pendingIntent = PendingIntent.getActivity(
+                    context,
+                    DAILY_CHANNEL_ID.hashCode(),
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+            );
 
-        Intent intent = new Intent(context, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(
-                context,
-                DAILY_CHANNEL_ID.hashCode(),
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-        );
+            NotificationCompat.Builder builder = new NotificationCompat.Builder(context, DAILY_CHANNEL_ID)
+                    .setSmallIcon(R.drawable.ic_notifications_black_24dp)
+                    .setContentTitle(title)
+                    .setContentText(content)
+                    .setStyle(new NotificationCompat.BigTextStyle().bigText(content))
+                    .setContentIntent(pendingIntent)
+                    .setAutoCancel(true)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT);
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, DAILY_CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notifications_black_24dp)
-                .setContentTitle(title)
-                .setContentText(content)
-                .setStyle(new NotificationCompat.BigTextStyle().bigText(content))
-                .setContentIntent(pendingIntent)
-                .setAutoCancel(true)
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-
-        try {
-            NotificationManagerCompat.from(context).notify(DAILY_CHANNEL_ID.hashCode(), builder.build());
-            return true;
-        } catch (SecurityException exception) {
-            Log.w(TAG, "系统拒绝发送每日天气提醒", exception);
-            return false;
+            try {
+                NotificationManagerCompat.from(context).notify(DAILY_CHANNEL_ID.hashCode(), builder.build());
+            } catch (SecurityException exception) {
+                Log.w(TAG, "系统拒绝发送每日天气提醒", exception);
+            }
         }
     }
 }

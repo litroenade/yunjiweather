@@ -12,6 +12,7 @@ import androidx.room.PrimaryKey;
                 @Index(value = {"locationId"})
         }
 )
+@SuppressWarnings("FieldMayBeFinal")
 public class WarningEntity {
 
     @PrimaryKey(autoGenerate = true)

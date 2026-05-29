@@ -2,6 +2,7 @@ package com.litroenade.yunjiweather.data.api.model;
 
 import java.util.List;
 
+@SuppressWarnings("unused")
 public final class OpenMeteoGeocodingResponse {
     public List<Location> results;
 

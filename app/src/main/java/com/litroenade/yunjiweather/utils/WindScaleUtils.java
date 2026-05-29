@@ -22,10 +22,6 @@ public final class WindScaleUtils {
         return 12;
     }
 
-    public static String toWindScaleText(double speedKmh) {
-        return String.valueOf(toWindScale(speedKmh));
-    }
-
     public static int parseDisplayScale(String value) {
         if (value == null || value.trim().isEmpty()) {
             throw new IllegalArgumentException("windScale must not be empty");

@@ -36,7 +36,7 @@ public abstract class AppDatabase extends RoomDatabase {
                                     AppDatabase.class,
                                     "yunji_weather.db"
                             )
-                            .fallbackToDestructiveMigration()
+                            .fallbackToDestructiveMigration(true)
                             .build();
                 }
             }

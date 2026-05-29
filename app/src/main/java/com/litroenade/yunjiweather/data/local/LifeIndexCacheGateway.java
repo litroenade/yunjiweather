@@ -1,5 +1,8 @@
 package com.litroenade.yunjiweather.data.local;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.litroenade.yunjiweather.data.entity.WeatherCacheEntity;
@@ -28,7 +31,13 @@ public final class LifeIndexCacheGateway implements LifeIndexStore {
     }
 
     @Override
-    public void save(String locationId, String cityName, List<LifeIndexItem> items, long updateTime, long expireTime) {
+    public void save(
+            @NonNull String locationId,
+            @NonNull String cityName,
+            @NonNull List<LifeIndexItem> items,
+            long updateTime,
+            long expireTime
+    ) {
         Objects.requireNonNull(items, "items");
         WeatherCacheEntity entity = new WeatherCacheEntity(
                 requireText(locationId, "locationId"),
@@ -42,7 +51,8 @@ public final class LifeIndexCacheGateway implements LifeIndexStore {
     }
 
     @Override
-    public CacheRecord readValid(String locationId, long nowTime) {
+    @Nullable
+    public CacheRecord readValid(@NonNull String locationId, long nowTime) {
         WeatherCacheEntity entity = weatherCacheDao.findByLocationAndType(locationId, WEATHER_TYPE_INDEX);
         if (entity == null || DateTimeUtils.isCacheExpired(nowTime, entity.expireTime)) {
             return null;

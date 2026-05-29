@@ -11,6 +11,7 @@ import androidx.room.PrimaryKey;
                 @Index(value = {"locationId"}, unique = true)
         }
 )
+@SuppressWarnings("FieldMayBeFinal")
 public class CityEntity {
 
     @PrimaryKey(autoGenerate = true)

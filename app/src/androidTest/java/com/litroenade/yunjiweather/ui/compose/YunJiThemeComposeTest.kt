@@ -20,6 +20,8 @@ import com.litroenade.yunjiweather.ui.compose.theme.YunJiTheme
 import com.litroenade.yunjiweather.utils.VisualThemeCatalog
 import com.litroenade.yunjiweather.utils.VisualThemeUtils
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 
@@ -96,7 +98,7 @@ class YunJiThemeComposeTest {
         composeRule.onAllNodesWithText("默认主题").assertCountEquals(2)
         composeRule.onNodeWithText("全景天气").assertExists()
         assertEquals(VisualThemeUtils.THEME_CUSTOM_1, VisualThemeCatalog.getThemes().last().key)
-        assertEquals(null, VisualThemeCatalog.getThemes().firstOrNull { it.key == VisualThemeUtils.THEME_FANTASY })
+        assertNull(VisualThemeCatalog.getThemes().firstOrNull { it.key == VisualThemeUtils.THEME_FANTASY })
     }
 
     @Test
@@ -115,7 +117,7 @@ class YunJiThemeComposeTest {
                     customThemeImageUri = "",
                     draftCustomThemeImageUris = mapOf(CustomThemeWeatherKey.FALLBACK to "file:///tmp/yunji-custom-theme.image"),
                     draftCustomThemeCropAnchors = mapOf(CustomThemeWeatherKey.FALLBACK to "bottom"),
-                    customThemeEditorMessage = "图片已导入，调整裁剪位置后点击应用。",
+                    customThemeEditorMessage = "默认图已导入，确认后点击保存。",
                     onThemeSelected = {},
                     onApplyCustomThemeDraft = { imageUris, cropAnchors ->
                         appliedImageUris = imageUris
@@ -138,7 +140,7 @@ class YunJiThemeComposeTest {
         val effect = ThemeWeatherEffectCatalog.getEffect(VisualThemeUtils.THEME_PANORAMA)
 
         assertEquals(VisualThemeUtils.THEME_PANORAMA, effect.key)
-        assertEquals(false, effect.drawsHeroIcon)
+        assertFalse(effect.drawsHeroIcon)
 
         composeRule.setContent {
             YunJiTheme(

@@ -48,10 +48,10 @@ fun AlertScreen(
     respectStatusBar: Boolean = true,
     viewModel: AlertViewModel = viewModel()
 ) {
-    val warnings by viewModel.getWarnings().observeAsState(emptyList())
-    val stateText by viewModel.getAlertStateText().observeAsState("正在读取预警")
-    val loading by viewModel.getLoading().observeAsState(false)
-    val message by viewModel.getMessage().observeAsState("")
+    val warnings by viewModel.warnings.observeAsState(emptyList())
+    val stateText by viewModel.alertStateText.observeAsState("正在读取预警")
+    val loading by viewModel.loading.observeAsState(false)
+    val message by viewModel.message.observeAsState("")
     var selectedWarning by remember { mutableStateOf<WarningEntity?>(null) }
 
     LazyColumn(

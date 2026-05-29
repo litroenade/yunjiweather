@@ -146,12 +146,12 @@ fun HomeScreen(
     onDisplayedWeatherIconCodeChanged: (String?) -> Unit = {},
     viewModel: HomeViewModel = viewModel()
 ) {
-    val uiState by viewModel.getUiState().observeAsState()
-    val message by viewModel.getMessage().observeAsState("")
-    val cityPages by viewModel.getCityPages().observeAsState(emptyList())
-    val selectedCityPage by viewModel.getSelectedCityPage().observeAsState(0)
-    val activeWarnings by viewModel.getActiveWarnings().observeAsState(emptyList())
-    val isRefreshing by viewModel.getRefreshing().observeAsState(false)
+    val uiState by viewModel.uiState.observeAsState()
+    val message by viewModel.message.observeAsState("")
+    val cityPages by viewModel.cityPages.observeAsState(emptyList())
+    val selectedCityPage by viewModel.selectedCityPage.observeAsState(0)
+    val activeWarnings by viewModel.activeWarnings.observeAsState(emptyList())
+    val isRefreshing by viewModel.refreshing.observeAsState(false)
     val pullToRefreshState = rememberPullToRefreshState()
     var debugWeatherOverride by remember { mutableStateOf<DebugWeatherOverride?>(null) }
     var showDebugWeatherDialog by remember { mutableStateOf(false) }
@@ -241,24 +241,6 @@ fun HomeScreen(
     val weatherSceneSpec = remember(displayedWeatherData?.iconCode) {
         WeatherSceneSpec.fromIconCode(displayedWeatherData?.iconCode ?: "100")
     }
-    val customThemeImage = remember(customThemeOptions, weatherSceneSpec) {
-        customThemeOptions.imageForScene(weatherSceneSpec)
-    }
-    val useCustomBackdrop = themeSkin.key == VisualThemeUtils.THEME_CUSTOM_1 &&
-        customThemeImage.uri.isNotBlank()
-    val customImageAnalysis by rememberCustomThemeImageAnalysis(
-        if (useCustomBackdrop) customThemeImage.uri else ""
-    )
-    val customForeground = if (useCustomBackdrop && customImageAnalysis.ready) {
-        customImageAnalysis.primaryText
-    } else {
-        null
-    }
-    val customSecondaryForeground = if (useCustomBackdrop && customImageAnalysis.ready) {
-        customImageAnalysis.secondaryText
-    } else {
-        null
-    }
     var visualMinuteOfDay by remember { mutableIntStateOf(currentMinuteOfDay()) }
     LaunchedEffect(Unit) {
         while (true) {
@@ -278,6 +260,24 @@ fun HomeScreen(
         debugWeatherOverride?.lightContext(sunrise, sunset)
             ?: WeatherLightContext.fromMinuteOfDay(sunrise, sunset, effectiveMinuteOfDay)
     }
+    val customThemeImage = remember(customThemeOptions, weatherSceneSpec, lightContext) {
+        customThemeOptions.imageForScene(weatherSceneSpec, lightContext)
+    }
+    val useCustomBackdrop = themeSkin.key == VisualThemeUtils.THEME_CUSTOM_1 &&
+        customThemeImage.uri.isNotBlank()
+    val customImageAnalysis by rememberCustomThemeImageAnalysis(
+        if (useCustomBackdrop) customThemeImage.uri else ""
+    )
+    val customForeground = if (useCustomBackdrop && customImageAnalysis.ready) {
+        customImageAnalysis.primaryText
+    } else {
+        null
+    }
+    val customSecondaryForeground = if (useCustomBackdrop && customImageAnalysis.ready) {
+        customImageAnalysis.secondaryText
+    } else {
+        null
+    }
     val backgroundBrush = if (displayedWeatherData?.iconCode.isNullOrBlank()) {
         Brush.verticalGradient(
             listOf(
@@ -295,7 +295,7 @@ fun HomeScreen(
             .then(citySwipeModifier)
             .background(backgroundBrush)
     ) {
-        val backdropImageResId = themeWeatherEffect.homeBackdropImageResId
+        val backdropImageResId = themeWeatherEffect.homeBackdropImageResId(weatherSceneSpec, lightContext)
         if (useCustomBackdrop) {
             UriImage(
                 uriString = customThemeImage.uri,

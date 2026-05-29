@@ -14,11 +14,11 @@ data class CityWeatherSummary(
 ) {
     init {
         requireText(locationId, "locationId")
-        requireNullableText(temperature, "temperature")
-        requireNullableText(condition, "condition")
-        requireNullableText(tempMax, "tempMax")
-        requireNullableText(tempMin, "tempMin")
-        requireNullableText(errorMessage, "errorMessage")
+        requireOptionalText(temperature, "temperature")
+        requireOptionalText(condition, "condition")
+        requireOptionalText(tempMax, "tempMax")
+        requireOptionalText(tempMin, "tempMin")
+        requireOptionalText(errorMessage, "errorMessage")
     }
 
     companion object {
@@ -50,7 +50,7 @@ data class CityWeatherSummary(
             require(value.trim().isNotEmpty()) { "$fieldName must not be empty" }
         }
 
-        private fun requireNullableText(value: String, fieldName: String) {
+        private fun requireOptionalText(value: String, fieldName: String) {
             require(value.isEmpty() || value.trim().isNotEmpty()) { "$fieldName must not be blank" }
         }
     }

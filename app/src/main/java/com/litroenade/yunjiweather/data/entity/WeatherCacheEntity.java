@@ -12,6 +12,7 @@ import androidx.room.PrimaryKey;
                 @Index(value = {"locationId", "weatherType"}, unique = true)
         }
 )
+@SuppressWarnings("FieldMayBeFinal")
 public class WeatherCacheEntity {
 
     @PrimaryKey(autoGenerate = true)

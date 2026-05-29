@@ -3,5 +3,5 @@
   "folder": "panorama",
   "name": "全景天气",
   "status": "available",
-  "description": "沉浸式动态天气，强化真实光影、雨雪和风场层次。"
+  "description": "内置白天、雨天、雪天、夜间全景底图，并叠加真实光影、雨雪和风场动效。"
 }

@@ -61,13 +61,13 @@ fun CityScreen(
     onDefaultCityChanged: () -> Unit = {},
     viewModel: CityViewModel = viewModel()
 ) {
-    val cities by viewModel.getCities().observeAsState(emptyList())
-    val searchResults by viewModel.getSearchResults().observeAsState(emptyList())
-    val summaries by viewModel.getCitySummaries().observeAsState(emptyMap())
-    val defaultCity by viewModel.getDefaultCity().observeAsState("未设置")
-    val message by viewModel.getMessage().observeAsState("")
-    val busy by viewModel.getBusy().observeAsState(false)
-    val defaultCityChangeVersion by viewModel.getDefaultCityChangeVersion().observeAsState(0L)
+    val cities by viewModel.cities.observeAsState(emptyList())
+    val searchResults by viewModel.searchResults.observeAsState(emptyList())
+    val summaries by viewModel.citySummaries.observeAsState(emptyMap())
+    val defaultCity by viewModel.defaultCity.observeAsState("未设置")
+    val message by viewModel.message.observeAsState("")
+    val busy by viewModel.busy.observeAsState(false)
+    val defaultCityChangeVersion by viewModel.defaultCityChangeVersion.observeAsState(0L)
     var query by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(defaultCityChangeVersion) {

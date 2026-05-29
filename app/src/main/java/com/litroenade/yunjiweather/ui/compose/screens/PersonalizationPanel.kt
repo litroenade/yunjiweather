@@ -274,7 +274,7 @@ private fun SelectedThemePanel(
         }
         if (needsCustomImage) {
             Button(onClick = { onPickCustomThemeImage(CustomThemeWeatherKey.FALLBACK) }) {
-                Text("选择图片")
+                Text("选择底图")
             }
         } else if (theme.isSelectable && !selected) {
             Button(onClick = { onThemeSelected(theme.key) }) {
@@ -330,10 +330,10 @@ private fun CustomThemeControls(
                     )
                     Text(
                         text = when {
-                            customThemeImporting -> "正在导入本地图片"
-                            hasDraft -> "已有未保存图片，确认后保存为自定义主题"
-                            !hasSavedImages -> "为不同天气上传图片，保存后会成为可应用主题"
-                            else -> "当前自定义主题会按天气自动切换背景"
+                            customThemeImporting -> "正在导入本地底图"
+                            hasDraft -> "已有未保存底图，确认后保存为自定义主题"
+                            !hasSavedImages -> "上传不同场景的静态底图；雨雪、光影和时间变化由主题引擎叠加"
+                            else -> "当前自定义主题按天气/夜间切换底图，动效实时叠加"
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -847,7 +847,7 @@ private fun ThemePreviewBackdrop(
             VisualThemeUtils.THEME_PANORAMA -> {
                 if (includeImage) {
                     Image(
-                        painter = painterResource(R.drawable.theme_panorama_preview),
+                        painter = painterResource(R.drawable.theme_panorama_day),
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop

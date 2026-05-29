@@ -66,12 +66,12 @@ class CustomThemeCropActivity : ComponentActivity() {
                         }
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "裁剪自定义主题",
+                                text = "裁剪静态底图",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = Color.White
                             )
                             Text(
-                                text = "拖动和缩放图片，保留适合首页全屏铺满的区域",
+                                text = "动效由主题引擎叠加，这里只裁剪全屏背景底图",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color.White.copy(alpha = 0.68f)
                             )

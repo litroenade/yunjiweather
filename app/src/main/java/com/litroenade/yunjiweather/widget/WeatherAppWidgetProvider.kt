@@ -33,7 +33,7 @@ open class WeatherAppWidgetProvider : AppWidgetProvider() {
             pendingResult.finish()
         }
         appWidgetIds.forEach { appWidgetId ->
-            updateWidget(context, appWidgetManager, appWidgetId, fixedLayoutMode, finisher::markFinished)
+            refreshWidget(context, appWidgetManager, appWidgetId, fixedLayoutMode, finisher::markFinished)
         }
     }
 
@@ -43,7 +43,7 @@ open class WeatherAppWidgetProvider : AppWidgetProvider() {
         appWidgetId: Int,
         newOptions: Bundle
     ) {
-        updateWidget(context, appWidgetManager, appWidgetId, fixedLayoutMode)
+        refreshWidget(context, appWidgetManager, appWidgetId, fixedLayoutMode)
     }
 
     override fun onEnabled(context: Context) {
@@ -71,7 +71,7 @@ open class WeatherAppWidgetProvider : AppWidgetProvider() {
                 val componentName = ComponentName(context.applicationContext, providerClass)
                 val widgetIds = appWidgetManager.getAppWidgetIds(componentName)
                 widgetIds.forEach { appWidgetId ->
-                    updateWidget(
+                    refreshWidget(
                         context.applicationContext,
                         appWidgetManager,
                         appWidgetId,
@@ -81,33 +81,12 @@ open class WeatherAppWidgetProvider : AppWidgetProvider() {
             }
         }
 
-        @JvmStatic
-        fun updateWidget(
-            context: Context,
-            appWidgetManager: AppWidgetManager,
-            appWidgetId: Int
-        ) {
-            updateWidget(context, appWidgetManager, appWidgetId, WeatherWidgetLayoutMode.STANDARD) {
-            }
-        }
-
-        @JvmStatic
-        fun updateWidget(
-            context: Context,
-            appWidgetManager: AppWidgetManager,
-            appWidgetId: Int,
-            fixedLayoutMode: WeatherWidgetLayoutMode
-        ) {
-            updateWidget(context, appWidgetManager, appWidgetId, fixedLayoutMode) {
-            }
-        }
-
-        private fun updateWidget(
+        private fun refreshWidget(
             context: Context,
             appWidgetManager: AppWidgetManager,
             appWidgetId: Int,
             fixedLayoutMode: WeatherWidgetLayoutMode,
-            onFinished: () -> Unit
+            onFinished: () -> Unit = {}
         ) {
             executor.execute {
                 try {

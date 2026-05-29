@@ -175,16 +175,31 @@ public final class OpenMeteoRemoteGateway implements WeatherRepository.RemoteGat
         return result;
     }
 
-    @SafeVarargs
-    private static int minRequiredSize(String fieldName, List<?>... lists) throws IOException {
-        int minSize = Integer.MAX_VALUE;
-        for (List<?> list : lists) {
-            if (list == null || list.isEmpty()) {
-                throw new IOException("Open-Meteo 接口缺少字段：" + fieldName);
-            }
-            minSize = Math.min(minSize, list.size());
+    private static int minRequiredSize(String fieldName, List<?> first, List<?> second, List<?> third) throws IOException {
+        return Math.min(
+                requiredSize(first, fieldName),
+                Math.min(requiredSize(second, fieldName), requiredSize(third, fieldName))
+        );
+    }
+
+    private static int minRequiredSize(
+            String fieldName,
+            List<?> first,
+            List<?> second,
+            List<?> third,
+            List<?> fourth
+    ) throws IOException {
+        return Math.min(
+                minRequiredSize(fieldName, first, second, third),
+                requiredSize(fourth, fieldName)
+        );
+    }
+
+    private static int requiredSize(List<?> list, String fieldName) throws IOException {
+        if (list == null || list.isEmpty()) {
+            throw new IOException("Open-Meteo missing required field: " + fieldName);
         }
-        return minSize;
+        return list.size();
     }
 
     private static <T> T requireNonNull(T value, String fieldName) throws IOException {

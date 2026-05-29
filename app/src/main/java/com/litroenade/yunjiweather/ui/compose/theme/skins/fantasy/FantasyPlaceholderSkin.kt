@@ -1,6 +1,5 @@
 package com.litroenade.yunjiweather.ui.compose.theme.skins.fantasy
 
-import com.litroenade.yunjiweather.ui.compose.theme.skins.ThemeSkin
 import com.litroenade.yunjiweather.ui.compose.theme.skins.panorama.PanoramaWeatherSkin
 import com.litroenade.yunjiweather.utils.VisualThemeUtils
 

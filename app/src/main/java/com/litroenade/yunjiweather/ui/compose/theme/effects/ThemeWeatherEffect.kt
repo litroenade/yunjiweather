@@ -9,8 +9,9 @@ import com.litroenade.yunjiweather.ui.compose.theme.skins.ThemeSkin
 internal interface ThemeWeatherEffect {
     val key: String
     val drawsHeroIcon: Boolean
-    val homeBackdropImageResId: Int?
-        @DrawableRes get() = null
+
+    @DrawableRes
+    fun homeBackdropImageResId(sceneSpec: WeatherSceneSpec, lightContext: WeatherLightContext): Int?
 
     fun homeBackdropAlpha(sceneSpec: WeatherSceneSpec, lightContext: WeatherLightContext): Float = 0f
 

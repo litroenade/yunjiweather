@@ -79,8 +79,8 @@ class WeatherWidgetSnapshotLoader(
                 WeatherWidgetEntryPoint::class.java
             )
             return WeatherWidgetSnapshotLoader(
-                DefaultCityReader { entryPoint.cityDao().findDefaultCity() },
-                HomeWeatherCacheReader { locationId ->
+                { entryPoint.cityDao().findDefaultCity() },
+                { locationId ->
                     entryPoint.weatherCacheDao().findByLocationAndType(locationId, WeatherCacheTypes.HOME)
                 },
                 Gson()

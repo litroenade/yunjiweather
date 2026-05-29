@@ -42,7 +42,7 @@ object LifeIndexDefaults {
     @JvmStatic
     fun completeWithFallbacks(remoteItems: List<LifeIndexItem>): List<LifeIndexItem> {
         val result = createDefaultMap()
-        remoteItems.filterNotNull().forEach { item ->
+        remoteItems.forEach { item ->
             val normalizedName = normalizeName(item.name)
             if (result.containsKey(normalizedName)) {
                 result[normalizedName] = item

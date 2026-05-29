@@ -18,9 +18,17 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 internal object PanoramaWeatherEffect : ThemeWeatherEffect {
-    override val key: String = VisualThemeUtils.THEME_PANORAMA
-    override val drawsHeroIcon: Boolean = false
-    override val homeBackdropImageResId: Int = R.drawable.theme_panorama_preview
+    override val key = VisualThemeUtils.THEME_PANORAMA
+    override val drawsHeroIcon = false
+
+    override fun homeBackdropImageResId(sceneSpec: WeatherSceneSpec, lightContext: WeatherLightContext): Int {
+        return when {
+            lightContext.isNight || sceneSpec.category == WeatherIconUtils.WeatherCategory.NIGHT -> R.drawable.theme_panorama_night
+            sceneSpec.precipitation == WeatherSceneSpec.Precipitation.RAIN -> R.drawable.theme_panorama_rain
+            sceneSpec.precipitation == WeatherSceneSpec.Precipitation.SNOW -> R.drawable.theme_panorama_snow
+            else -> R.drawable.theme_panorama_day
+        }
+    }
 
     override fun homeBackdropAlpha(sceneSpec: WeatherSceneSpec, lightContext: WeatherLightContext): Float {
         return when {

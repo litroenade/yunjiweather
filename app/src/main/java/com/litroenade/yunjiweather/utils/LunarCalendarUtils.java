@@ -12,6 +12,7 @@ public final class LunarCalendarUtils {
     private static final int BASE_DAY = 31;
     private static final int MIN_YEAR = 1900;
     private static final int MAX_YEAR = 2100;
+    private static final int CALENDAR_MONTH_OFFSET = 1;
 
     private static final int[] LUNAR_INFO = {
             0x04bd8, 0x04ae0, 0x0a570, 0x054d5, 0x0d260, 0x0d950, 0x16554, 0x056a0, 0x09ad0, 0x055d2,
@@ -58,7 +59,7 @@ public final class LunarCalendarUtils {
         calendar.setTimeInMillis(timeMillis);
         return fromGregorian(
                 calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH) + 1,
+                fromCalendarMonth(calendar.get(Calendar.MONTH)),
                 calendar.get(Calendar.DAY_OF_MONTH)
         );
     }
@@ -67,9 +68,10 @@ public final class LunarCalendarUtils {
         validateGregorianRange(year, month, day);
         Calendar calendar = Calendar.getInstance(CHINA_TIME_ZONE);
         calendar.clear();
-        calendar.set(year, month - 1, day, 12, 0, 0);
+        int calendarMonth = toCalendarMonth(month);
+        calendar.set(year, calendarMonth, day, 12, 0, 0);
         if (calendar.get(Calendar.YEAR) != year
-                || calendar.get(Calendar.MONTH) != month - 1
+                || calendar.get(Calendar.MONTH) != calendarMonth
                 || calendar.get(Calendar.DAY_OF_MONTH) != day) {
             throw new IllegalArgumentException("公历日期不合法");
         }
@@ -91,7 +93,7 @@ public final class LunarCalendarUtils {
         Calendar reference = Calendar.getInstance(CHINA_TIME_ZONE);
         reference.setTimeInMillis(referenceTimeMillis);
         int referenceYear = reference.get(Calendar.YEAR);
-        int referenceMonth = reference.get(Calendar.MONTH) + 1;
+        int referenceMonth = fromCalendarMonth(reference.get(Calendar.MONTH));
         int month = parseNumber(parts[0], "月份");
         int day = parseNumber(parts[1], "日期");
         int year = referenceYear;
@@ -105,7 +107,7 @@ public final class LunarCalendarUtils {
 
     private static LunarDayInfo fromCalendar(Calendar calendar) {
         int year = calendar.get(Calendar.YEAR);
-        int month = calendar.get(Calendar.MONTH) + 1;
+        int month = fromCalendarMonth(calendar.get(Calendar.MONTH));
         int day = calendar.get(Calendar.DAY_OF_MONTH);
         int offset = daysBetween(baseCalendar(), calendar);
         int lunarYear = BASE_YEAR;
@@ -141,13 +143,6 @@ public final class LunarCalendarUtils {
         int lunarDay = offset + 1;
         String lunarText = "农历" + (leap ? "闰" : "") + LUNAR_MONTH_NAMES[lunarMonth - 1] + formatLunarDay(lunarDay);
         return new LunarDayInfo(
-                year,
-                month,
-                day,
-                lunarYear,
-                lunarMonth,
-                lunarDay,
-                leap,
                 formatGregorian(year, month, day),
                 WEEKDAY_NAMES[calendar.get(Calendar.DAY_OF_WEEK) - 1],
                 lunarText,
@@ -158,8 +153,16 @@ public final class LunarCalendarUtils {
     private static Calendar baseCalendar() {
         Calendar calendar = Calendar.getInstance(CHINA_TIME_ZONE);
         calendar.clear();
-        calendar.set(BASE_YEAR, BASE_MONTH - 1, BASE_DAY, 12, 0, 0);
+        calendar.set(BASE_YEAR, toCalendarMonth(BASE_MONTH), BASE_DAY, 12, 0, 0);
         return calendar;
+    }
+
+    private static int toCalendarMonth(int displayMonth) {
+        return displayMonth - CALENDAR_MONTH_OFFSET;
+    }
+
+    private static int fromCalendarMonth(int calendarMonth) {
+        return calendarMonth + CALENDAR_MONTH_OFFSET;
     }
 
     private static int daysBetween(Calendar start, Calendar end) {
@@ -264,38 +267,17 @@ public final class LunarCalendarUtils {
     }
 
     public static final class LunarDayInfo {
-        private final int gregorianYear;
-        private final int gregorianMonth;
-        private final int gregorianDay;
-        private final int lunarYear;
-        private final int lunarMonth;
-        private final int lunarDay;
-        private final boolean leapMonth;
         private final String gregorianText;
         private final String weekdayText;
         private final String lunarText;
         private final String festivalText;
 
         private LunarDayInfo(
-                int gregorianYear,
-                int gregorianMonth,
-                int gregorianDay,
-                int lunarYear,
-                int lunarMonth,
-                int lunarDay,
-                boolean leapMonth,
                 String gregorianText,
                 String weekdayText,
                 String lunarText,
                 String festivalText
         ) {
-            this.gregorianYear = gregorianYear;
-            this.gregorianMonth = gregorianMonth;
-            this.gregorianDay = gregorianDay;
-            this.lunarYear = lunarYear;
-            this.lunarMonth = lunarMonth;
-            this.lunarDay = lunarDay;
-            this.leapMonth = leapMonth;
             this.gregorianText = gregorianText;
             this.weekdayText = weekdayText;
             this.lunarText = lunarText;

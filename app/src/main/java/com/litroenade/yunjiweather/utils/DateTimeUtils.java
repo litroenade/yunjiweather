@@ -9,6 +9,7 @@ import java.util.TimeZone;
 public final class DateTimeUtils {
 
     private static final TimeZone CHINA_TIME_ZONE = TimeZone.getTimeZone("Asia/Shanghai");
+    private static final String OPEN_METEO_LOCAL_TIME_PATTERN = "yyyy-MM-dd'T'HH:mm";
 
     private DateTimeUtils() {
     }
@@ -28,7 +29,7 @@ public final class DateTimeUtils {
     }
 
     public static long parseOpenMeteoLocalTime(String value) {
-        return parseTime(value, "yyyy-MM-dd'T'HH:mm", CHINA_TIME_ZONE);
+        return parseChinaTime(value);
     }
 
     public static String formatOpenMeteoHour(String value) {
@@ -39,15 +40,19 @@ public final class DateTimeUtils {
         return value.substring(5).replace("-", "/");
     }
 
-    private static long parseTime(String value, String pattern, TimeZone timeZone) {
+    private static long parseChinaTime(String value) {
         if (value == null || value.trim().isEmpty()) {
             throw new IllegalArgumentException("时间不能为空");
         }
-        SimpleDateFormat formatter = new SimpleDateFormat(pattern, Locale.CHINA);
+        SimpleDateFormat formatter = new SimpleDateFormat(OPEN_METEO_LOCAL_TIME_PATTERN, Locale.CHINA);
         formatter.setLenient(false);
-        formatter.setTimeZone(timeZone);
+        formatter.setTimeZone(CHINA_TIME_ZONE);
         try {
-            return formatter.parse(value.trim()).getTime();
+            Date parsedDate = formatter.parse(value.trim());
+            if (parsedDate == null) {
+                throw new IllegalArgumentException("Invalid time format: " + value);
+            }
+            return parsedDate.getTime();
         } catch (ParseException exception) {
             throw new IllegalArgumentException("时间格式不正确：" + value, exception);
         }

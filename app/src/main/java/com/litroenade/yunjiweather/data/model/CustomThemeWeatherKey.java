@@ -41,15 +41,15 @@ public final class CustomThemeWeatherKey {
     public static String displayName(String key) {
         switch (normalize(key)) {
             case SUNNY:
-                return "晴天";
+                return "晴天底图";
             case CLOUDY:
-                return "多云/阴天";
+                return "多云/阴天底图";
             case RAIN:
-                return "雨天";
+                return "雨天底图";
             case SNOW:
-                return "雪天";
+                return "雪天底图";
             case NIGHT:
-                return "夜间";
+                return "夜间底图";
             case FALLBACK:
             default:
                 return "默认图";

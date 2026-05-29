@@ -25,13 +25,17 @@ public final class PermissionUtils {
     }
 
     public static void requestNotificationPermission(Activity activity) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermission(activity)) {
-            ActivityCompat.requestPermissions(
-                    activity,
-                    new String[]{Manifest.permission.POST_NOTIFICATIONS},
-                    REQUEST_NOTIFICATION_PERMISSION
-            );
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return;
         }
+        if (hasNotificationPermission(activity)) {
+            return;
+        }
+        ActivityCompat.requestPermissions(
+                activity,
+                new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                REQUEST_NOTIFICATION_PERMISSION
+        );
     }
 
 }

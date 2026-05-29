@@ -1,7 +1,6 @@
 package com.litroenade.yunjiweather.ui.compose.theme.skins.custom
 
 import androidx.compose.ui.graphics.Color
-import com.litroenade.yunjiweather.ui.compose.theme.skins.ThemeSkin
 import com.litroenade.yunjiweather.ui.compose.theme.skins.official.OfficialWeatherSkin
 import com.litroenade.yunjiweather.utils.VisualThemeUtils
 

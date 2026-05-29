@@ -23,8 +23,13 @@ import kotlin.math.min
 import kotlin.math.sin
 
 internal object OfficialWeatherEffect : ThemeWeatherEffect {
-    override val key: String = VisualThemeUtils.THEME_SKY
-    override val drawsHeroIcon: Boolean = true
+    override val key = VisualThemeUtils.THEME_SKY
+    override val drawsHeroIcon = true
+
+    @Suppress("SameReturnValue", "UNUSED_PARAMETER")
+    override fun homeBackdropImageResId(sceneSpec: WeatherSceneSpec, lightContext: WeatherLightContext): Int? {
+        return null
+    }
 
     override fun DrawScope.drawAtmosphere(
         sceneSpec: WeatherSceneSpec,

@@ -16,7 +16,6 @@ import com.litroenade.yunjiweather.data.repository.CityRepository;
 import com.litroenade.yunjiweather.domain.usecase.LoadHomeWeatherPageUseCase;
 import com.litroenade.yunjiweather.widget.WeatherAppWidgetProvider;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -150,7 +149,7 @@ public class HomeViewModel extends AndroidViewModel {
                 publishHomeWeatherResult(result);
                 message.postValue("已定位到 " + city.cityName);
                 refreshing.postValue(false);
-            } catch (IOException | RuntimeException exception) {
+            } catch (RuntimeException exception) {
                 message.postValue("定位城市解析失败：" + exception.getMessage());
                 try {
                     LoadHomeWeatherPageUseCase.Result fallbackResult = loadHomeWeatherPageUseCase.loadDefaultPage(
@@ -224,7 +223,7 @@ public class HomeViewModel extends AndroidViewModel {
         }
     }
 
-    private CityEntity resolveCityByCoordinate(double latitude, double longitude) throws IOException {
+    private CityEntity resolveCityByCoordinate(double latitude, double longitude) {
         return cityLookupGateway.reverseLookup(latitude, longitude, System.currentTimeMillis());
     }
 

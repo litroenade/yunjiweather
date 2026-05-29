@@ -1,5 +1,8 @@
 package com.litroenade.yunjiweather.data.repository;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.litroenade.yunjiweather.common.UiState;
 import com.litroenade.yunjiweather.data.model.HomeWeatherData;
 import com.litroenade.yunjiweather.utils.DateTimeUtils;
@@ -25,7 +28,13 @@ public class WeatherRepository implements HomeWeatherSource, HomeWeatherCacheSou
     }
 
     @Override
-    public UiState<HomeWeatherData> loadHomeWeather(String locationId, String cityName, double latitude, double longitude) {
+    @NonNull
+    public UiState<HomeWeatherData> loadHomeWeather(
+            @NonNull String locationId,
+            @NonNull String cityName,
+            double latitude,
+            double longitude
+    ) {
         long nowTime = clock.now();
         try {
             HomeWeatherData data = remoteGateway.fetchHomeWeather(locationId, cityName, latitude, longitude);
@@ -48,7 +57,8 @@ public class WeatherRepository implements HomeWeatherSource, HomeWeatherCacheSou
     }
 
     @Override
-    public UiState<HomeWeatherData> loadCachedHomeWeather(String locationId) {
+    @Nullable
+    public UiState<HomeWeatherData> loadCachedHomeWeather(@NonNull String locationId) {
         long nowTime = clock.now();
         CacheRecord<HomeWeatherData> cacheRecord = cacheGateway.readHomeWeather(locationId);
         if (cacheRecord == null || cacheRecord.getData() == null) {
@@ -61,9 +71,10 @@ public class WeatherRepository implements HomeWeatherSource, HomeWeatherCacheSou
         );
     }
 
+    @NonNull
     public UiState<HomeWeatherData> loadHomeWeatherPreferCache(
-            String locationId,
-            String cityName,
+            @NonNull String locationId,
+            @NonNull String cityName,
             double latitude,
             double longitude
     ) {

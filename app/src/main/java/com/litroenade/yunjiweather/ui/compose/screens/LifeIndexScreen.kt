@@ -36,8 +36,8 @@ fun LifeIndexScreen(
     respectStatusBar: Boolean = true,
     viewModel: LifeIndexViewModel = viewModel()
 ) {
-    val indexItems by viewModel.getIndexItems().observeAsState(emptyList())
-    val stateText by viewModel.getStateText().observeAsState("正在读取生活建议")
+    val indexItems by viewModel.indexItems.observeAsState(emptyList())
+    val stateText by viewModel.stateText.observeAsState("正在读取生活建议")
     val todayCalendar = remember { LunarCalendarUtils.today() }
 
     LazyColumn(

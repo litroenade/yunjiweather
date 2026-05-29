@@ -1,5 +1,6 @@
 package com.litroenade.yunjiweather.data.api.model;
 
+@SuppressWarnings("unused")
 public final class OpenMeteoAirQualityResponse {
     public String timezone;
     public Current current;

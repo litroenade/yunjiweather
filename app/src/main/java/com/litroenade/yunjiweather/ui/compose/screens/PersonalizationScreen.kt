@@ -23,7 +23,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.litroenade.yunjiweather.data.local.prefs.CustomThemeImageStore
-import com.litroenade.yunjiweather.data.model.CustomThemeCropAnchor
 import com.litroenade.yunjiweather.data.model.CustomThemeWeatherKey
 import com.litroenade.yunjiweather.ui.compose.InfoCard
 import com.litroenade.yunjiweather.ui.mine.MineViewModel
@@ -37,13 +36,13 @@ fun PersonalizationScreen(
     viewModel: MineViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val selectedTheme by viewModel.getVisualTheme().observeAsState(viewModel.getCurrentVisualTheme())
-    val customThemeImageUri by viewModel.getCustomThemeImageUri().observeAsState("")
-    val customThemeCropAnchor by viewModel.getCustomThemeCropAnchor().observeAsState("center")
-    val customThemeImageUris by viewModel.getCustomThemeImageUris().observeAsState(emptyMap())
-    val customThemeCropAnchors by viewModel.getCustomThemeCropAnchors().observeAsState(emptyMap())
-    val message by viewModel.getMessage().observeAsState("")
-    val themes = remember(viewModel) { viewModel.getVisualThemes() }
+    val selectedTheme by viewModel.visualTheme.observeAsState(viewModel.currentVisualTheme)
+    val customThemeImageUri by viewModel.customThemeImageUri.observeAsState("")
+    val customThemeCropAnchor by viewModel.customThemeCropAnchor.observeAsState("center")
+    val customThemeImageUris by viewModel.customThemeImageUris.observeAsState(emptyMap())
+    val customThemeCropAnchors by viewModel.customThemeCropAnchors.observeAsState(emptyMap())
+    val message by viewModel.message.observeAsState("")
+    val themes = remember(viewModel) { viewModel.visualThemes }
     val scope = rememberCoroutineScope()
     val draftCustomThemeImageUris = remember { mutableStateMapOf<String, String>() }
     val draftCustomThemeCropAnchors = remember { mutableStateMapOf<String, String>() }
@@ -54,12 +53,12 @@ fun PersonalizationScreen(
         if (result.resultCode == Activity.RESULT_OK) {
             val croppedUri = CustomThemeCropActivity.resultUri(result.data)
             if (croppedUri == null) {
-                customThemeEditorMessage = "图片裁剪失败：没有返回裁剪结果"
+                customThemeEditorMessage = "底图裁剪失败：没有返回裁剪结果"
                 return@rememberLauncherForActivityResult
             }
             val weatherKey = pendingCustomThemeWeatherKey
             customThemeImporting = true
-            customThemeEditorMessage = "正在导入${CustomThemeWeatherKey.displayName(weatherKey)}图片..."
+            customThemeEditorMessage = "正在导入${CustomThemeWeatherKey.displayName(weatherKey)}..."
             scope.launch {
                 val importResult = withContext(Dispatchers.IO) {
                     runCatching {
@@ -73,18 +72,18 @@ fun PersonalizationScreen(
                     draftCustomThemeImageUris[weatherKey] = importedUri
                     draftCustomThemeCropAnchors[weatherKey] = customThemeCropAnchors[weatherKey]
                         ?: customThemeCropAnchor
-                    customThemeEditorMessage = "${CustomThemeWeatherKey.displayName(weatherKey)}图片已导入，确认后点击保存。"
+                    customThemeEditorMessage = "${CustomThemeWeatherKey.displayName(weatherKey)}已导入，确认后点击保存。"
                 }.onFailure { throwable ->
-                    customThemeEditorMessage = "图片导入失败：${throwable.message ?: "无法读取图片"}"
+                    customThemeEditorMessage = "底图导入失败：${throwable.message ?: "无法读取图片"}"
                 }
             }
         } else {
-            customThemeEditorMessage = "图片裁剪已取消"
+            customThemeEditorMessage = "底图裁剪已取消"
         }
     }
     val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri == null) {
-            customThemeEditorMessage = "图片选择已取消"
+            customThemeEditorMessage = "底图选择已取消"
             return@rememberLauncherForActivityResult
         }
         cropImageLauncher.launch(CustomThemeCropActivity.createIntent(context, uri))

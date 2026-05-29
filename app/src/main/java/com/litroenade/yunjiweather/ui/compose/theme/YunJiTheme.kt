@@ -62,7 +62,7 @@ val LocalYunJiVisualTheme = staticCompositionLocalOf {
     )
 }
 
-val LocalThemeSkin = staticCompositionLocalOf<ThemeSkin> {
+val LocalThemeSkin = staticCompositionLocalOf {
     OfficialWeatherSkin.skin
 }
 

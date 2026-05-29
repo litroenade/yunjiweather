@@ -90,7 +90,7 @@ public class CityViewModel extends AndroidViewModel {
         busy.setValue(true);
         executorService.execute(() -> {
             try {
-                CityEntity city = createCity(cityName, false);
+                CityEntity city = createCity(cityName);
                 if (city == null) {
                     message.postValue("请输入城市名称");
                     return;
@@ -240,13 +240,13 @@ public class CityViewModel extends AndroidViewModel {
         });
     }
 
-    private CityEntity createCity(String cityName, boolean isDefault) throws IOException {
+    private CityEntity createCity(String cityName) throws IOException {
         if (cityName == null || cityName.trim().isEmpty()) {
             return null;
         }
         return cityLookupGateway.searchCity(
                 cityName,
-                isDefault,
+                false,
                 cityRepository.count() + 1,
                 System.currentTimeMillis()
         );

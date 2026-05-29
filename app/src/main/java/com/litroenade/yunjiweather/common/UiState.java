@@ -1,5 +1,6 @@
 package com.litroenade.yunjiweather.common;
 
+@SuppressWarnings("unused")
 public final class UiState<T> {
 
     public enum Status {

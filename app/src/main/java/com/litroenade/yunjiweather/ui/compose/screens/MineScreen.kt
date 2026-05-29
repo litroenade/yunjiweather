@@ -2,7 +2,6 @@ package com.litroenade.yunjiweather.ui.compose.screens
 
 import android.app.Activity
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -47,19 +46,19 @@ fun MineScreen(
     viewModel: MineViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val localSpaceText by viewModel.getLocalSpaceText().observeAsState("本机天气空间")
-    val defaultCity by viewModel.getDefaultCity().observeAsState("默认城市读取中")
-    val warningEnabled by viewModel.getWarningEnabled().observeAsState(true)
-    val dailyReminderEnabled by viewModel.getDailyReminderEnabled().observeAsState(false)
-    val animationEnabled by viewModel.getAnimationEnabled().observeAsState(true)
-    val darkModeEnabled by viewModel.getDarkModeEnabled().observeAsState(false)
-    val developerToolsEnabled by viewModel.getDeveloperToolsEnabled().observeAsState(false)
-    val temperatureUnit by viewModel.getTemperatureUnit().observeAsState(WeatherDisplayUtils.TEMPERATURE_CELSIUS)
-    val windUnit by viewModel.getWindUnit().observeAsState(WeatherDisplayUtils.WIND_SCALE)
-    val selectedTheme by viewModel.getVisualTheme().observeAsState(viewModel.getCurrentVisualTheme())
-    val dataUpdateTime by viewModel.getDataUpdateTime().observeAsState("暂无更新")
-    val localStorageSummary by viewModel.getLocalStorageSummary().observeAsState("")
-    val message by viewModel.getMessage().observeAsState("")
+    val localSpaceText by viewModel.localSpaceText.observeAsState("本机天气空间")
+    val defaultCity by viewModel.defaultCity.observeAsState("默认城市读取中")
+    val warningEnabled by viewModel.warningEnabled.observeAsState(true)
+    val dailyReminderEnabled by viewModel.dailyReminderEnabled.observeAsState(false)
+    val animationEnabled by viewModel.animationEnabled.observeAsState(true)
+    val darkModeEnabled by viewModel.darkModeEnabled.observeAsState(false)
+    val developerToolsEnabled by viewModel.developerToolsEnabled.observeAsState(false)
+    val temperatureUnit by viewModel.temperatureUnit.observeAsState(WeatherDisplayUtils.TEMPERATURE_CELSIUS)
+    val windUnit by viewModel.windUnit.observeAsState(WeatherDisplayUtils.WIND_SCALE)
+    val selectedTheme by viewModel.visualTheme.observeAsState(viewModel.currentVisualTheme)
+    val dataUpdateTime by viewModel.dataUpdateTime.observeAsState("暂无更新")
+    val localStorageSummary by viewModel.localStorageSummary.observeAsState("")
+    val message by viewModel.message.observeAsState("")
     val selectedThemeName = remember(selectedTheme) {
         VisualThemeCatalog.getThemeOrDefault(selectedTheme).displayName
     }

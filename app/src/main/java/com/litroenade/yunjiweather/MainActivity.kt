@@ -82,38 +82,38 @@ class MainActivity : ComponentActivity() {
                     locationPermissionLauncher.launch(LocationPermissionResult.RUNTIME_PERMISSIONS)
                 }
             }
-            val darkModeEnabled by mineViewModel.getDarkModeEnabled().observeAsState(
+            val darkModeEnabled by mineViewModel.darkModeEnabled.observeAsState(
                 false
             )
-            val visualThemeKey by mineViewModel.getVisualTheme().observeAsState(
+            val visualThemeKey by mineViewModel.visualTheme.observeAsState(
                 VisualThemeUtils.THEME_SKY
             )
-            val customThemeImageUri by mineViewModel.getCustomThemeImageUri().observeAsState(
+            val customThemeImageUri by mineViewModel.customThemeImageUri.observeAsState(
                 ""
             )
-            val customThemeCropAnchor by mineViewModel.getCustomThemeCropAnchor().observeAsState(
+            val customThemeCropAnchor by mineViewModel.customThemeCropAnchor.observeAsState(
                 CustomThemeCropAnchor.CENTER
             )
-            val customThemeImageUris by mineViewModel.getCustomThemeImageUris().observeAsState(emptyMap())
-            val customThemeCropAnchors by mineViewModel.getCustomThemeCropAnchors().observeAsState(emptyMap())
-            val animationEnabled by mineViewModel.getAnimationEnabled().observeAsState(
+            val customThemeImageUris by mineViewModel.customThemeImageUris.observeAsState(emptyMap())
+            val customThemeCropAnchors by mineViewModel.customThemeCropAnchors.observeAsState(emptyMap())
+            val animationEnabled by mineViewModel.animationEnabled.observeAsState(
                 true
             )
-            val temperatureUnit by mineViewModel.getTemperatureUnit().observeAsState(
+            val temperatureUnit by mineViewModel.temperatureUnit.observeAsState(
                 WeatherDisplayUtils.TEMPERATURE_CELSIUS
             )
-            val windUnit by mineViewModel.getWindUnit().observeAsState(
+            val windUnit by mineViewModel.windUnit.observeAsState(
                 WeatherDisplayUtils.WIND_SCALE
             )
-            val developerToolsEnabled by mineViewModel.getDeveloperToolsEnabled().observeAsState(
+            val developerToolsEnabled by mineViewModel.developerToolsEnabled.observeAsState(
                 false
             )
-            val homeModuleOrder by mineViewModel.getHomeModuleOrder().observeAsState(
+            val homeModuleOrder by mineViewModel.homeModuleOrder.observeAsState(
                 HomeModuleCatalog.getAvailableModules(visualThemeKey)
             )
-            val homeModuleEnabled by mineViewModel.getHomeModuleEnabled().observeAsState(emptyMap())
+            val homeModuleEnabled by mineViewModel.homeModuleEnabled.observeAsState(emptyMap())
             var displayedWeatherIconCode by remember { mutableStateOf<String?>(null) }
-            val homeUiState by homeViewModel.getUiState().observeAsState()
+            val homeUiState by homeViewModel.uiState.observeAsState()
             val weatherIconCode = displayedWeatherIconCode ?: homeUiState?.data?.iconCode
             val useLightSystemBarIcons = remember(weatherIconCode, darkModeEnabled) {
                 if (weatherIconCode.isNullOrBlank()) {
