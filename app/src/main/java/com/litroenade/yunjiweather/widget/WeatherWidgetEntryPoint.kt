@@ -2,6 +2,7 @@ package com.litroenade.yunjiweather.widget
 
 import com.litroenade.yunjiweather.data.local.CityDao
 import com.litroenade.yunjiweather.data.local.WeatherCacheDao
+import com.litroenade.yunjiweather.data.repository.SettingsRepository
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
@@ -12,4 +13,6 @@ interface WeatherWidgetEntryPoint {
     fun cityDao(): CityDao
 
     fun weatherCacheDao(): WeatherCacheDao
+
+    fun settingsRepository(): SettingsRepository
 }

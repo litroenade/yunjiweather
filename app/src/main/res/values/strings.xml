@@ -1,9 +1,9 @@
 <resources>
     <string name="app_name">云迹天气</string>
     <string name="widget_weather_name">云迹天气桌面天气</string>
-    <string name="widget_weather_compact_name">云迹天气 · 紧凑</string>
-    <string name="widget_weather_standard_name">云迹天气 · 标准</string>
-    <string name="widget_weather_expanded_name">云迹天气 · 详细</string>
+    <string name="widget_weather_compact_name">云迹天气 · 天气时钟</string>
+    <string name="widget_weather_standard_name">云迹天气 · 基础天气</string>
+    <string name="widget_weather_expanded_name">云迹天气 · 生活建议</string>
     <string name="widget_weather_temperature_placeholder">打开查看实时天气</string>
     <string name="widget_weather_summary_placeholder">城市、预警、生活指数</string>
 </resources>

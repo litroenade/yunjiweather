@@ -115,11 +115,17 @@ public class CityViewModel extends AndroidViewModel {
     }
 
     public void searchCities(String cityName) {
+        String normalizedCityName = cityName == null ? "" : cityName.trim();
+        if (normalizedCityName.isEmpty()) {
+            searchResults.setValue(Collections.emptyList());
+            message.setValue("请输入城市名称");
+            return;
+        }
         busy.setValue(true);
         executorService.execute(() -> {
             try {
                 List<CityEntity> results = cityLookupGateway.searchCities(
-                        cityName,
+                        normalizedCityName,
                         cityRepository.count() + 1,
                         System.currentTimeMillis()
                 );

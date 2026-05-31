@@ -1,0 +1,6 @@
+<resources>
+    <style name="WidgetWeatherText">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+</resources>

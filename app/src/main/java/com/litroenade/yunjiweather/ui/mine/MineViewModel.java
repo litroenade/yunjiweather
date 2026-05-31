@@ -10,6 +10,7 @@ import androidx.lifecycle.MutableLiveData;
 import com.litroenade.yunjiweather.data.entity.CityEntity;
 import com.litroenade.yunjiweather.data.local.AppDatabase;
 import com.litroenade.yunjiweather.data.model.CustomThemeCropAnchor;
+import com.litroenade.yunjiweather.data.model.CustomThemeProfile;
 import com.litroenade.yunjiweather.data.repository.CityRepository;
 import com.litroenade.yunjiweather.data.repository.SettingsRepository;
 import com.litroenade.yunjiweather.ui.compose.home.modules.HomeModuleCatalog;
@@ -53,6 +54,7 @@ public class MineViewModel extends AndroidViewModel {
     private final MutableLiveData<String> customThemeCropAnchor = new MutableLiveData<>();
     private final MutableLiveData<Map<String, String>> customThemeImageUris = new MutableLiveData<>();
     private final MutableLiveData<Map<String, String>> customThemeCropAnchors = new MutableLiveData<>();
+    private final MutableLiveData<CustomThemeProfile> customThemeProfile = new MutableLiveData<>();
     private final MutableLiveData<List<HomeModuleDefinition>> homeModuleOrder = new MutableLiveData<>();
     private final MutableLiveData<Map<String, Boolean>> homeModuleEnabled = new MutableLiveData<>();
     private final MutableLiveData<String> dataUpdateTime = new MutableLiveData<>();
@@ -127,6 +129,10 @@ public class MineViewModel extends AndroidViewModel {
 
     public LiveData<Map<String, String>> getCustomThemeCropAnchors() {
         return customThemeCropAnchors;
+    }
+
+    public LiveData<CustomThemeProfile> getCustomThemeProfile() {
+        return customThemeProfile;
     }
 
     public String getCurrentVisualTheme() {
@@ -239,15 +245,26 @@ public class MineViewModel extends AndroidViewModel {
             return;
         }
         for (Map.Entry<String, String> entry : imageUris.entrySet()) {
+            String cropAnchor = CustomThemeCropAnchor.CENTER;
+            if (cropAnchors != null && cropAnchors.get(entry.getKey()) != null) {
+                cropAnchor = cropAnchors.get(entry.getKey());
+            }
             settingsRepository.setCustomThemeImage(
                     entry.getKey(),
                     entry.getValue(),
-                    cropAnchors == null ? CustomThemeCropAnchor.CENTER : cropAnchors.get(entry.getKey())
+                    cropAnchor
             );
         }
         settingsRepository.setVisualTheme(VisualThemeUtils.THEME_CUSTOM_1);
         reloadSettings();
         message.setValue("自定义主题已保存并应用");
+    }
+
+    public void setCustomThemeProfile(CustomThemeProfile profile) {
+        settingsRepository.setCustomThemeProfile(profile);
+        settingsRepository.setVisualTheme(VisualThemeUtils.THEME_CUSTOM_1);
+        reloadSettings();
+        message.setValue("自定义主题包已保存并应用");
     }
 
     public void clearCustomThemeImage() {
@@ -257,6 +274,16 @@ public class MineViewModel extends AndroidViewModel {
         }
         reloadSettings();
         message.setValue("自定义主题图片已移除");
+    }
+
+    public void clearCustomThemeImage(String weatherKey) {
+        settingsRepository.clearCustomThemeImage(weatherKey);
+        if (settingsRepository.getCustomThemeProfile().getAssets().isEmpty()
+                && VisualThemeUtils.THEME_CUSTOM_1.equals(settingsRepository.getVisualTheme())) {
+            settingsRepository.setVisualTheme(VisualThemeUtils.THEME_SKY);
+        }
+        reloadSettings();
+        message.setValue("自定义主题场景素材已移除");
     }
 
     public void setHomeModuleEnabled(HomeModuleDefinition module, boolean enabled) {
@@ -277,6 +304,13 @@ public class MineViewModel extends AndroidViewModel {
         settingsRepository.moveHomeModule(themeKey, module.getKey(), 1, HomeModuleCatalog.getAvailableModuleKeys(themeKey));
         reloadHomeBlockLayout();
         message.setValue("首页模块已下移：" + module.getDisplayName());
+    }
+
+    public void moveHomeModuleTo(HomeModuleDefinition module, int targetIndex) {
+        String themeKey = settingsRepository.getVisualTheme();
+        settingsRepository.moveHomeModuleTo(themeKey, module.getKey(), targetIndex, HomeModuleCatalog.getAvailableModuleKeys(themeKey));
+        reloadHomeBlockLayout();
+        message.setValue("首页模块顺序已调整：" + module.getDisplayName());
     }
 
     public void resetHomeBlockLayout() {
@@ -312,6 +346,7 @@ public class MineViewModel extends AndroidViewModel {
         customThemeCropAnchor.setValue(settingsRepository.getCustomThemeCropAnchor());
         customThemeImageUris.setValue(settingsRepository.getCustomThemeImageUris());
         customThemeCropAnchors.setValue(settingsRepository.getCustomThemeCropAnchors());
+        customThemeProfile.setValue(settingsRepository.getCustomThemeProfile());
         reloadHomeBlockLayout();
     }
 

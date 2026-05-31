@@ -21,6 +21,7 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequest
 import androidx.work.WorkManager
 import com.litroenade.yunjiweather.data.model.CustomThemeCropAnchor
+import com.litroenade.yunjiweather.data.model.CustomThemeProfile
 import com.litroenade.yunjiweather.notification.NotificationHelper
 import com.litroenade.yunjiweather.ui.compose.YunJiApp
 import com.litroenade.yunjiweather.ui.compose.WeatherSceneSpec
@@ -96,6 +97,7 @@ class MainActivity : ComponentActivity() {
             )
             val customThemeImageUris by mineViewModel.customThemeImageUris.observeAsState(emptyMap())
             val customThemeCropAnchors by mineViewModel.customThemeCropAnchors.observeAsState(emptyMap())
+            val customThemeProfile by mineViewModel.customThemeProfile.observeAsState(CustomThemeProfile.empty())
             val animationEnabled by mineViewModel.animationEnabled.observeAsState(
                 true
             )
@@ -134,7 +136,8 @@ class MainActivity : ComponentActivity() {
                 customThemeImageUri = customThemeImageUri,
                 customThemeCropAnchor = customThemeCropAnchor,
                 customThemeImageUris = customThemeImageUris,
-                customThemeCropAnchors = customThemeCropAnchors
+                customThemeCropAnchors = customThemeCropAnchors,
+                customThemeProfile = customThemeProfile
             ) {
                 YunJiApp(
                     animationEnabled = animationEnabled,

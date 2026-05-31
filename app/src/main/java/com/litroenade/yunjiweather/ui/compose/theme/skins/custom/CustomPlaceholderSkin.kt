@@ -14,8 +14,8 @@ object CustomPlaceholderSkin {
         homeImmersion = 0.82f,
         heroAnimationScale = 0.9f,
         atmosphereAlpha = 0.52f,
-        previewTop = Color(0xFF2E3440),
-        previewMiddle = Color(0xFF4C566A),
-        previewBottom = Color(0xFF88C0D0)
+        previewTop = Color(0xFF8DCEF0),
+        previewMiddle = Color(0xFFBEE6EF),
+        previewBottom = Color(0xFFEAF7F4)
     )
 }

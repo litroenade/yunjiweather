@@ -27,6 +27,7 @@ import com.litroenade.yunjiweather.data.model.LifeIndexItem
 import com.litroenade.yunjiweather.ui.compose.InfoCard
 import com.litroenade.yunjiweather.ui.compose.MessageCard
 import com.litroenade.yunjiweather.ui.compose.ScreenHeader
+import com.litroenade.yunjiweather.ui.compose.theme.YunJiUiTokens
 import com.litroenade.yunjiweather.ui.index.LifeIndexViewModel
 import com.litroenade.yunjiweather.utils.LunarCalendarUtils
 
@@ -43,8 +44,11 @@ fun LifeIndexScreen(
     LazyColumn(
         modifier = modifier
             .then(if (respectStatusBar) Modifier.statusBarsPadding() else Modifier)
-            .padding(horizontal = 18.dp),
-        contentPadding = PaddingValues(top = 18.dp, bottom = 18.dp),
+            .padding(horizontal = YunJiUiTokens.ScreenHorizontalPadding),
+        contentPadding = PaddingValues(
+            top = YunJiUiTokens.PageHeaderVerticalPadding,
+            bottom = YunJiUiTokens.PageHeaderVerticalPadding
+        ),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {

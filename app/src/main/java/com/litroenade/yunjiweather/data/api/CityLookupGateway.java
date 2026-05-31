@@ -48,12 +48,20 @@ public final class CityLookupGateway {
         String normalizedCityName = normalizePresetCityName(cityName);
         switch (normalizedCityName) {
             case "北京":
+            case "beijing":
+            case "bj":
                 return new CityEntity("北京", "openmeteo:1816670", "北京", "中国", 39.9042, 116.4074, isDefault, 0, nowTime, nowTime);
             case "上海":
+            case "shanghai":
+            case "sh":
                 return new CityEntity("上海", "openmeteo:1796236", "上海", "中国", 31.2304, 121.4737, isDefault, 1, nowTime, nowTime);
             case "广州":
+            case "guangzhou":
+            case "gz":
                 return new CityEntity("广州", "openmeteo:1809858", "广东", "中国", 23.1291, 113.2644, isDefault, 2, nowTime, nowTime);
             case "深圳":
+            case "shenzhen":
+            case "sz":
                 return new CityEntity("深圳", "openmeteo:1795565", "广东", "中国", 22.5431, 114.0579, isDefault, 3, nowTime, nowTime);
         }
         return null;
@@ -64,7 +72,23 @@ public final class CityLookupGateway {
         if (normalized.endsWith("市")) {
             normalized = normalized.substring(0, normalized.length() - 1);
         }
-        return normalized;
+        String asciiKeyword = normalized
+                .toLowerCase(Locale.ROOT)
+                .replace(" ", "")
+                .replace("-", "")
+                .replace("_", "");
+        switch (asciiKeyword) {
+            case "beijingshi":
+                return "beijing";
+            case "shanghaishi":
+                return "shanghai";
+            case "guangzhoushi":
+                return "guangzhou";
+            case "shenzhenshi":
+                return "shenzhen";
+            default:
+                return asciiKeyword.matches("[a-z]+") ? asciiKeyword : normalized;
+        }
     }
 
     private static CityEntity createCoordinateCity(double latitude, double longitude, long nowTime) {

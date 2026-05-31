@@ -9,7 +9,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.litroenade.yunjiweather.data.model.CustomThemeAsset
+import com.litroenade.yunjiweather.data.model.CustomThemeProfile
 import com.litroenade.yunjiweather.ui.compose.theme.skins.ThemeSkin
 import com.litroenade.yunjiweather.ui.compose.theme.skins.ThemeSkinCatalog
 import com.litroenade.yunjiweather.ui.compose.theme.skins.official.OfficialWeatherSkin
@@ -22,7 +27,58 @@ private val YunJiShapes = Shapes(
     large = RoundedCornerShape(18.dp)
 )
 
-private val YunJiTypography = Typography()
+private val YunJiTypography = Typography(
+    headlineSmall = TextStyle(
+        fontSize = 23.sp,
+        lineHeight = 29.sp,
+        fontWeight = FontWeight.SemiBold
+    ),
+    titleLarge = TextStyle(
+        fontSize = 20.sp,
+        lineHeight = 26.sp,
+        fontWeight = FontWeight.SemiBold
+    ),
+    titleMedium = TextStyle(
+        fontSize = 17.sp,
+        lineHeight = 23.sp,
+        fontWeight = FontWeight.Medium
+    ),
+    titleSmall = TextStyle(
+        fontSize = 15.sp,
+        lineHeight = 21.sp,
+        fontWeight = FontWeight.Medium
+    ),
+    bodyLarge = TextStyle(
+        fontSize = 15.sp,
+        lineHeight = 23.sp,
+        fontWeight = FontWeight.Normal
+    ),
+    bodyMedium = TextStyle(
+        fontSize = 14.sp,
+        lineHeight = 20.sp,
+        fontWeight = FontWeight.Normal
+    ),
+    bodySmall = TextStyle(
+        fontSize = 12.sp,
+        lineHeight = 17.sp,
+        fontWeight = FontWeight.Normal
+    ),
+    labelLarge = TextStyle(
+        fontSize = 13.sp,
+        lineHeight = 17.sp,
+        fontWeight = FontWeight.Medium
+    ),
+    labelMedium = TextStyle(
+        fontSize = 12.sp,
+        lineHeight = 15.sp,
+        fontWeight = FontWeight.Medium
+    ),
+    labelSmall = TextStyle(
+        fontSize = 10.sp,
+        lineHeight = 13.sp,
+        fontWeight = FontWeight.Medium
+    )
+)
 
 @Immutable
 data class WeatherGradient(
@@ -74,6 +130,7 @@ fun YunJiTheme(
     customThemeCropAnchor: String = "center",
     customThemeImageUris: Map<String, String> = emptyMap(),
     customThemeCropAnchors: Map<String, String> = emptyMap(),
+    customThemeProfile: CustomThemeProfile = CustomThemeProfile.empty(),
     content: @Composable () -> Unit
 ) {
     val skin = ThemeSkinCatalog.getRuntimeSkin(visualThemeKey)
@@ -95,9 +152,11 @@ fun YunJiTheme(
                     imagesByWeatherKey = customThemeImageUris.mapValues { entry ->
                         CustomThemeImage(
                             uri = entry.value,
-                            cropAnchor = customThemeCropAnchors[entry.key] ?: customThemeCropAnchor
+                            cropAnchor = customThemeCropAnchors[entry.key] ?: customThemeCropAnchor,
+                            mediaType = mediaTypeFromUri(entry.value)
                         )
-                    }
+                    },
+                    profile = customThemeProfile
                 )
             ) {
                 content()
@@ -143,4 +202,8 @@ private fun defaultWeatherGradient(
     } else {
         WeatherGradient(skin.lightGradientTop, skin.lightGradientMiddle, background)
     }
+}
+
+private fun mediaTypeFromUri(uri: String): String {
+    return if (uri.trim().lowercase().endsWith(".gif")) CustomThemeAsset.MEDIA_GIF else CustomThemeAsset.MEDIA_IMAGE
 }

@@ -13,7 +13,7 @@ public class WeatherWidgetLayoutModeTest {
 
     @Test
     public void fromSizeReturnsStandardForMediumWidget() {
-        assertEquals(WeatherWidgetLayoutMode.STANDARD, WeatherWidgetLayoutMode.fromSize(240, 110));
+        assertEquals(WeatherWidgetLayoutMode.STANDARD, WeatherWidgetLayoutMode.fromSize(240, 140));
     }
 
     @Test

@@ -25,6 +25,20 @@ public class CityLookupGatewayTest {
     }
 
     @Test
+    public void searchCities_acceptsChineseSuffixAndPinyinAliases() throws IOException {
+        CityLookupGateway gateway = new CityLookupGateway(null);
+
+        CityEntity beijing = gateway.searchCities("北京市", 7, 1234L).get(0);
+        CityEntity shenzhen = gateway.searchCities("Shen Zhen", 8, 1234L).get(0);
+
+        assertEquals("北京", beijing.cityName);
+        assertEquals(7, beijing.sortOrder);
+        assertEquals("深圳", shenzhen.cityName);
+        assertEquals("openmeteo:1795565", shenzhen.locationId);
+        assertEquals(8, shenzhen.sortOrder);
+    }
+
+    @Test
     public void reverseLookup_returnsCoordinateCity() {
         CityLookupGateway gateway = new CityLookupGateway(null);
 

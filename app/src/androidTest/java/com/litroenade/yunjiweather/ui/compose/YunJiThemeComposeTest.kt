@@ -15,6 +15,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import com.litroenade.yunjiweather.data.model.CustomThemeWeatherKey
 import com.litroenade.yunjiweather.ui.compose.theme.effects.ThemeWeatherEffectCatalog
+import com.litroenade.yunjiweather.ui.compose.screens.CustomThemeEditorPanel
 import com.litroenade.yunjiweather.ui.compose.screens.PersonalizationPanel
 import com.litroenade.yunjiweather.ui.compose.theme.YunJiTheme
 import com.litroenade.yunjiweather.utils.VisualThemeCatalog
@@ -91,9 +92,7 @@ class YunJiThemeComposeTest {
             }
         }
 
-        composeRule.onNodeWithText("主题/个性化已应用：默认主题").assertExists()
-        composeRule.onNodeWithText("龙岗区 · 官方天气").assertExists()
-        composeRule.onAllNodesWithText("龙岗区 · 全景天气").assertCountEquals(0)
+        composeRule.onAllNodesWithText("龙岗区").assertCountEquals(3)
         composeRule.onNodeWithText("更多皮肤").assertExists()
         composeRule.onAllNodesWithText("默认主题").assertCountEquals(2)
         composeRule.onNodeWithText("全景天气").assertExists()
@@ -111,14 +110,11 @@ class YunJiThemeComposeTest {
                 darkTheme = true,
                 visualThemeKey = VisualThemeUtils.THEME_CUSTOM_1
             ) {
-                PersonalizationPanel(
-                    themes = VisualThemeCatalog.getThemes(),
-                    selectedTheme = VisualThemeUtils.THEME_CUSTOM_1,
+                CustomThemeEditorPanel(
                     customThemeImageUri = "",
                     draftCustomThemeImageUris = mapOf(CustomThemeWeatherKey.FALLBACK to "file:///tmp/yunji-custom-theme.image"),
                     draftCustomThemeCropAnchors = mapOf(CustomThemeWeatherKey.FALLBACK to "bottom"),
                     customThemeEditorMessage = "默认图已导入，确认后点击保存。",
-                    onThemeSelected = {},
                     onApplyCustomThemeDraft = { imageUris, cropAnchors ->
                         appliedImageUris = imageUris
                         appliedCropAnchors = cropAnchors

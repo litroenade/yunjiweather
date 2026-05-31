@@ -3,7 +3,11 @@ package com.litroenade.yunjiweather.utils;
 import android.content.SharedPreferences;
 
 import com.litroenade.yunjiweather.data.local.prefs.SettingsPreferencesDataSource;
+import com.litroenade.yunjiweather.data.model.CustomThemeAsset;
 import com.litroenade.yunjiweather.data.model.CustomThemeCropAnchor;
+import com.litroenade.yunjiweather.data.model.CustomThemeProfile;
+import com.litroenade.yunjiweather.data.model.CustomThemeRule;
+import com.litroenade.yunjiweather.data.model.CustomThemeWeatherKey;
 import com.litroenade.yunjiweather.ui.compose.home.modules.HomeModuleCatalog;
 import com.litroenade.yunjiweather.ui.compose.theme.mixins.ThemeMixinCatalog;
 import com.litroenade.yunjiweather.ui.compose.theme.profiles.ThemeProfileCatalog;
@@ -12,6 +16,7 @@ import com.litroenade.yunjiweather.ui.compose.theme.skins.ThemeSkinCatalog;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -214,6 +219,54 @@ public class VisualThemeUtilsTest {
     }
 
     @Test
+    public void settingsManager_persistsCompleteCustomThemeProfile() {
+        SettingsPreferencesDataSource settingsManager = new SettingsPreferencesDataSource(new MemorySharedPreferences());
+        CustomThemeProfile profile = CustomThemeProfile.create(
+                Arrays.asList(
+                        new CustomThemeAsset("fallback", "file:///fallback.jpg", CustomThemeAsset.MEDIA_IMAGE, CustomThemeCropAnchor.CENTER, "默认图"),
+                        new CustomThemeAsset("rain-night", "file:///rain-night.gif", CustomThemeAsset.MEDIA_GIF, CustomThemeCropAnchor.BOTTOM, "雨夜")
+                ),
+                Arrays.asList(
+                        CustomThemeRule.fallback("fallback"),
+                        new CustomThemeRule("rain-night", CustomThemeWeatherKey.RAIN, CustomThemeRule.LIGHT_NIGHT, 18 * 60, 23 * 60, 80)
+                ),
+                Arrays.asList(HomeBlock.WEATHER_METRICS.getKey(), HomeBlock.HOURLY_FORECAST.getKey()),
+                Collections.singleton(HomeBlock.AIR_SUN.getKey())
+        );
+
+        settingsManager.setCustomThemeProfile(profile);
+
+        CustomThemeProfile restored = settingsManager.getCustomThemeProfile();
+        assertEquals(2, restored.getAssets().size());
+        assertEquals(CustomThemeAsset.MEDIA_GIF, restored.getAssets().get(1).getMediaType());
+        assertEquals(CustomThemeRule.LIGHT_NIGHT, restored.getRules().get(1).getLightMode());
+        assertEquals(Arrays.asList(HomeBlock.WEATHER_METRICS.getKey(), HomeBlock.HOURLY_FORECAST.getKey()),
+                restored.getHomeModuleOrder());
+        assertEquals(true, restored.getDisabledHomeModules().contains(HomeBlock.AIR_SUN.getKey()));
+    }
+
+    @Test
+    public void settingsManager_buildsCustomThemeProfileFromLegacyWeatherSlots() {
+        MemorySharedPreferences preferences = new MemorySharedPreferences();
+        preferences.edit()
+                .putString("custom_theme_image_uri_fallback", "file:///fallback.jpg")
+                .putString("custom_theme_crop_anchor_fallback", CustomThemeCropAnchor.TOP)
+                .putString("custom_theme_image_uri_rain", "file:///rain.gif")
+                .putString("custom_theme_crop_anchor_rain", CustomThemeCropAnchor.BOTTOM)
+                .apply();
+        SettingsPreferencesDataSource settingsManager = new SettingsPreferencesDataSource(preferences);
+
+        CustomThemeProfile profile = settingsManager.getCustomThemeProfile();
+
+        assertEquals(2, profile.getAssets().size());
+        assertEquals("legacy-fallback", profile.getAssets().get(0).getId());
+        assertEquals("file:///fallback.jpg", profile.getAssets().get(0).getUri());
+        assertEquals(CustomThemeCropAnchor.TOP, profile.getAssets().get(0).getCropAnchor());
+        assertEquals("legacy-rain", profile.getAssets().get(1).getId());
+        assertEquals(CustomThemeWeatherKey.RAIN, profile.getRules().get(1).getWeatherKey());
+    }
+
+    @Test
     public void settingsManager_repairsUnsupportedCustomThemeCropAnchorToCenter() {
         MemorySharedPreferences preferences = new MemorySharedPreferences();
         preferences.edit().putString("custom_theme_crop_anchor", "diagonal").apply();
@@ -328,6 +381,23 @@ public class VisualThemeUtilsTest {
     }
 
     @Test
+    public void settingsManager_persistsCustomThemeModuleLayoutBeforeAnyImage() {
+        SettingsPreferencesDataSource settingsManager = new SettingsPreferencesDataSource(new MemorySharedPreferences());
+        List<String> customKeys = HomeModuleCatalog.getAvailableModuleKeys(VisualThemeUtils.THEME_CUSTOM_1);
+
+        settingsManager.setHomeModuleEnabled(VisualThemeUtils.THEME_CUSTOM_1, HomeBlock.HOURLY_FORECAST.getKey(), false);
+        settingsManager.moveHomeModule(VisualThemeUtils.THEME_CUSTOM_1, HomeBlock.DAILY_FORECAST.getKey(), -1, customKeys);
+
+        CustomThemeProfile profile = settingsManager.getCustomThemeProfile();
+        List<String> updatedOrder = settingsManager.getHomeModuleOrder(VisualThemeUtils.THEME_CUSTOM_1, customKeys);
+
+        assertEquals(true, profile.getDisabledHomeModules().contains(HomeBlock.HOURLY_FORECAST.getKey()));
+        assertEquals(false, settingsManager.isHomeModuleEnabled(VisualThemeUtils.THEME_CUSTOM_1, HomeBlock.HOURLY_FORECAST.getKey()));
+        assertEquals(HomeBlock.DAILY_FORECAST.getKey(), updatedOrder.get(updatedOrder.size() - 2));
+        assertEquals(HomeBlock.HOURLY_FORECAST.getKey(), updatedOrder.get(updatedOrder.size() - 1));
+    }
+
+    @Test
     public void settingsManager_resetsHomeBlockLayoutForTheme() {
         SettingsPreferencesDataSource settingsManager = new SettingsPreferencesDataSource(new MemorySharedPreferences());
         settingsManager.setHomeBlockEnabled(VisualThemeUtils.THEME_SKY, HomeBlock.WEATHER_INSIGHT, false);
@@ -354,6 +424,24 @@ public class VisualThemeUtilsTest {
     @Test(expected = IllegalArgumentException.class)
     public void setVisualTheme_rejectsUnsupportedTheme() {
         new SettingsPreferencesDataSource(new MemorySharedPreferences()).setVisualTheme("external-fanart");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setCustomThemeImage_rejectsUnsupportedWeatherKey() {
+        new SettingsPreferencesDataSource(new MemorySharedPreferences()).setCustomThemeImage(
+                "storm_but_not_catalogued",
+                "file:///storm.jpg",
+                CustomThemeCropAnchor.CENTER
+        );
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void setCustomThemeImage_rejectsUnsupportedCropAnchor() {
+        new SettingsPreferencesDataSource(new MemorySharedPreferences()).setCustomThemeImage(
+                CustomThemeWeatherKey.SUNNY,
+                "file:///sunny.jpg",
+                "diagonal"
+        );
     }
 
     private static final class MemorySharedPreferences implements SharedPreferences {

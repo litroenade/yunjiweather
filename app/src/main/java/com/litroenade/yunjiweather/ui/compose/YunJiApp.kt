@@ -5,6 +5,13 @@ import android.content.ComponentName
 import android.content.Context
 import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
@@ -12,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -29,6 +37,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -43,6 +52,7 @@ import com.litroenade.yunjiweather.ui.compose.screens.MineScreen
 import com.litroenade.yunjiweather.ui.compose.screens.PersonalizationBlockEditor
 import com.litroenade.yunjiweather.ui.compose.screens.PersonalizationScreen
 import com.litroenade.yunjiweather.ui.compose.theme.LocalYunJiVisualTheme
+import com.litroenade.yunjiweather.ui.compose.theme.YunJiUiTokens
 import com.litroenade.yunjiweather.ui.compose.home.modules.HomeModuleCatalog
 import com.litroenade.yunjiweather.ui.compose.home.modules.HomeModuleDefinition
 import com.litroenade.yunjiweather.ui.home.HomeViewModel
@@ -71,6 +81,7 @@ fun YunJiApp(
 ) {
     var activeTarget by rememberSaveable { mutableStateOf<WeatherNavigationTarget?>(null) }
     var showPersonalizationBlockEditor by rememberSaveable { mutableStateOf(false) }
+    var showCityEditor by rememberSaveable { mutableStateOf(false) }
     var noticeText by rememberSaveable { mutableStateOf("") }
     val context = LocalContext.current
     val visualTheme = LocalYunJiVisualTheme.current
@@ -88,63 +99,144 @@ fun YunJiApp(
         if (activePage != WeatherNavigationTarget.PERSONALIZATION) {
             showPersonalizationBlockEditor = false
         }
+        if (activePage != WeatherNavigationTarget.MANAGE_CITIES) {
+            showCityEditor = false
+        }
     }
 
     BackHandler(enabled = activeTarget != null || showPersonalizationBlockEditor) {
         if (showPersonalizationBlockEditor) {
             showPersonalizationBlockEditor = false
+        } else if (showCityEditor) {
+            showCityEditor = false
         } else {
             closePageAndRefresh()
         }
     }
 
-    if (activePage == null) {
-        Scaffold(
-            modifier = modifier
-                .fillMaxSize()
-                .background(visualTheme.background),
-            containerColor = Color.Transparent,
-            contentWindowInsets = WindowInsets(0.dp)
-        ) { innerPadding ->
-            HomeScreen(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
-                animationEnabled = animationEnabled,
-                developerToolsEnabled = developerToolsEnabled,
-                temperatureUnit = temperatureUnit,
-                windUnit = windUnit,
-                homeModules = homeModules,
-                homeModuleEnabled = homeModuleEnabled,
-                viewModel = homeViewModel,
-                onDisplayedWeatherIconCodeChanged = onDisplayedWeatherIconCodeChanged,
-                onManageCities = { activeTarget = WeatherNavigationTarget.MANAGE_CITIES },
-                onSearchCity = { activeTarget = WeatherNavigationTarget.SEARCH_CITY },
-                onSettings = { activeTarget = WeatherNavigationTarget.SETTINGS },
-                onPersonalization = { activeTarget = WeatherNavigationTarget.PERSONALIZATION },
-                onDesktopWeather = { activeTarget = WeatherNavigationTarget.DESKTOP_WEATHER },
-                onOpenAlerts = { activeTarget = WeatherNavigationTarget.ALERTS },
-                onOpenLifeIndex = { activeTarget = WeatherNavigationTarget.LIFE_INDEX }
-            )
+    AnimatedContent(
+        targetState = activePage,
+        label = "root-page-transition",
+        transitionSpec = {
+            val slideDuration = if (animationEnabled) 280 else 0
+            val fadeDuration = if (animationEnabled) 220 else 0
+            if (initialState == null && targetState != null) {
+                (slideInHorizontally(animationSpec = tween(slideDuration)) { width -> width / 5 } + fadeIn(tween(fadeDuration))) togetherWith
+                        (slideOutHorizontally(animationSpec = tween(slideDuration)) { width -> -width / 10 } + fadeOut(tween(fadeDuration)))
+            } else if (initialState != null && targetState == null) {
+                (slideInHorizontally(animationSpec = tween(slideDuration)) { width -> -width / 10 } + fadeIn(tween(fadeDuration))) togetherWith
+                        (slideOutHorizontally(animationSpec = tween(slideDuration)) { width -> width / 5 } + fadeOut(tween(fadeDuration)))
+            } else {
+                fadeIn(tween(fadeDuration)) togetherWith fadeOut(tween(fadeDuration))
+            }
         }
-    } else {
+    ) { targetPage ->
+        if (targetPage == null) {
+            Scaffold(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(visualTheme.background),
+                containerColor = Color.Transparent,
+                contentWindowInsets = WindowInsets(0.dp)
+            ) { innerPadding ->
+                HomeScreen(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    animationEnabled = animationEnabled,
+                    developerToolsEnabled = developerToolsEnabled,
+                    temperatureUnit = temperatureUnit,
+                    windUnit = windUnit,
+                    homeModules = homeModules,
+                    homeModuleEnabled = homeModuleEnabled,
+                    viewModel = homeViewModel,
+                    onDisplayedWeatherIconCodeChanged = onDisplayedWeatherIconCodeChanged,
+                    onManageCities = { activeTarget = WeatherNavigationTarget.MANAGE_CITIES },
+                    onSearchCity = { activeTarget = WeatherNavigationTarget.SEARCH_CITY },
+                    onSettings = { activeTarget = WeatherNavigationTarget.SETTINGS },
+                    onPersonalization = { activeTarget = WeatherNavigationTarget.PERSONALIZATION },
+                    onDesktopWeather = { activeTarget = WeatherNavigationTarget.DESKTOP_WEATHER },
+                    onOpenAlerts = { activeTarget = WeatherNavigationTarget.ALERTS },
+                    onOpenLifeIndex = { activeTarget = WeatherNavigationTarget.LIFE_INDEX }
+                )
+            }
+            return@AnimatedContent
+        }
+        val activePage = targetPage
+        val immersivePage = activePage == WeatherNavigationTarget.MANAGE_CITIES ||
+                activePage == WeatherNavigationTarget.DESKTOP_WEATHER ||
+                activePage == WeatherNavigationTarget.PERSONALIZATION
+        val pageTitleColor = when {
+            activePage == WeatherNavigationTarget.DESKTOP_WEATHER -> Color.White
+            activePage == WeatherNavigationTarget.PERSONALIZATION -> Color.White
+            activePage == WeatherNavigationTarget.MANAGE_CITIES &&
+                    MaterialTheme.colorScheme.background.luminance() < 0.35f -> Color.White
+            else -> MaterialTheme.colorScheme.onBackground
+        }
+        val pageSubtitleColor = if (pageTitleColor == Color.White) {
+            Color.White.copy(alpha = 0.72f)
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        }
+        val pageBack = if (activePage == WeatherNavigationTarget.MANAGE_CITIES && showCityEditor) {
+            { showCityEditor = false }
+        } else {
+            closePageAndRefresh
+        }
         WeatherPageScaffold(
-            title = activePageTitle(activePage),
-            subtitle = activePageSubtitle(activePage),
-            onBack = closePageAndRefresh,
+            title = if (activePage == WeatherNavigationTarget.MANAGE_CITIES && showCityEditor) {
+                "编辑城市"
+            } else {
+                activePageTitle(activePage)
+            },
+            subtitle = when (activePage) {
+                WeatherNavigationTarget.MANAGE_CITIES,
+                WeatherNavigationTarget.DESKTOP_WEATHER,
+                WeatherNavigationTarget.PERSONALIZATION -> null
+                else -> activePageSubtitle(activePage)
+            },
+            onBack = pageBack,
             modifier = modifier,
-            action = if (activePage == WeatherNavigationTarget.PERSONALIZATION) {
-                {
-                    IconButton(onClick = { showPersonalizationBlockEditor = true }) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_settings_24),
-                            contentDescription = "调整首页模块",
-                            tint = MaterialTheme.colorScheme.onBackground
-                        )
+            immersive = immersivePage,
+            backIconResId = if (activePage == WeatherNavigationTarget.MANAGE_CITIES && showCityEditor) {
+                R.drawable.ic_close_24
+            } else {
+                R.drawable.ic_arrow_back_24
+            },
+            titleColor = pageTitleColor,
+            subtitleColor = pageSubtitleColor,
+            action = when (activePage) {
+                WeatherNavigationTarget.PERSONALIZATION -> {
+                    {
+                        IconButton(
+                            modifier = Modifier.size(YunJiUiTokens.PageHeaderIconButtonSize),
+                            onClick = { showPersonalizationBlockEditor = true }
+                        ) {
+                            Icon(
+                                modifier = Modifier.size(YunJiUiTokens.PageHeaderIconSize),
+                                painter = painterResource(R.drawable.ic_settings_24),
+                                contentDescription = "调整首页模块",
+                                tint = pageTitleColor
+                            )
+                        }
                     }
                 }
-            } else {
-                null
+                WeatherNavigationTarget.MANAGE_CITIES -> {
+                    {
+                        IconButton(
+                            modifier = Modifier.size(YunJiUiTokens.PageHeaderIconButtonSize),
+                            onClick = { showCityEditor = !showCityEditor }
+                        ) {
+                            Icon(
+                                modifier = Modifier.size(YunJiUiTokens.PageHeaderIconSize),
+                                painter = painterResource(if (showCityEditor) R.drawable.ic_check_24 else R.drawable.ic_settings_24),
+                                contentDescription = if (showCityEditor) "完成编辑城市" else "编辑城市",
+                                tint = pageTitleColor
+                            )
+                        }
+                    }
+                }
+                else -> null
             }
         ) { pageModifier ->
             when (activePage) {
@@ -153,18 +245,21 @@ fun YunJiApp(
                     temperatureUnit = temperatureUnit,
                     respectStatusBar = false,
                     showHeader = false,
+                    editing = showCityEditor,
                     locationUiState = locationUiState,
-                    onRequestLocation = onRequestLocation,
                     onDefaultCityChanged = homeViewModel::refresh
                 )
 
                 WeatherNavigationTarget.DESKTOP_WEATHER -> DesktopWeatherScreen(
                     modifier = pageModifier,
+                    locationUiState = locationUiState,
+                    onRequestLocation = onRequestLocation,
                     onRequestWidget = { mode -> noticeText = requestWeatherWidgetPin(context, mode) }
                 )
 
                 WeatherNavigationTarget.PERSONALIZATION -> PersonalizationScreen(
-                    modifier = pageModifier
+                    modifier = pageModifier,
+                    onOpenHomeBlockEditor = { showPersonalizationBlockEditor = true }
                 )
 
                 WeatherNavigationTarget.SETTINGS -> MineScreen(
@@ -208,7 +303,6 @@ fun YunJiApp(
                         respectStatusBar = false,
                         autoFocusSearch = true,
                         locationUiState = locationUiState,
-                        onRequestLocation = onRequestLocation,
                         onDefaultCityChanged = {
                             activeTarget = null
                             homeViewModel.refresh()

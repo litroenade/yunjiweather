@@ -1,5 +1,6 @@
 package com.litroenade.yunjiweather.data.repository;
 
+import com.litroenade.yunjiweather.data.model.CustomThemeProfile;
 import com.litroenade.yunjiweather.utils.HomeBlock;
 
 import java.util.List;
@@ -51,6 +52,10 @@ public interface SettingsRepository {
 
     Map<String, String> getCustomThemeCropAnchors();
 
+    CustomThemeProfile getCustomThemeProfile();
+
+    void setCustomThemeProfile(CustomThemeProfile profile);
+
     void setCustomThemeImage(String weatherKey, String imageUri, String cropAnchor);
 
     void clearCustomThemeImage(String weatherKey);
@@ -72,6 +77,8 @@ public interface SettingsRepository {
     void setHomeModuleEnabled(String themeKey, String moduleKey, boolean enabled);
 
     void moveHomeModule(String themeKey, String moduleKey, int direction, List<String> availableModuleKeys);
+
+    void moveHomeModuleTo(String themeKey, String moduleKey, int targetIndex, List<String> availableModuleKeys);
 
     void resetHomeBlockLayout(String themeKey);
 }

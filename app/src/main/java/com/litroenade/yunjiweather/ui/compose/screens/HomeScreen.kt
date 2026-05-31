@@ -260,8 +260,8 @@ fun HomeScreen(
         debugWeatherOverride?.lightContext(sunrise, sunset)
             ?: WeatherLightContext.fromMinuteOfDay(sunrise, sunset, effectiveMinuteOfDay)
     }
-    val customThemeImage = remember(customThemeOptions, weatherSceneSpec, lightContext) {
-        customThemeOptions.imageForScene(weatherSceneSpec, lightContext)
+    val customThemeImage = remember(customThemeOptions, weatherSceneSpec, lightContext, effectiveMinuteOfDay) {
+        customThemeOptions.imageForScene(weatherSceneSpec, lightContext, effectiveMinuteOfDay)
     }
     val useCustomBackdrop = themeSkin.key == VisualThemeUtils.THEME_CUSTOM_1 &&
         customThemeImage.uri.isNotBlank()
@@ -305,7 +305,8 @@ fun HomeScreen(
                     .graphicsLayer {
                         translationX = -cityDragOffset * 0.16f
                     }
-                    .alpha(0.86f)
+                    .alpha(0.86f),
+                mediaType = customThemeImage.mediaType
             )
             HomeBackdropScrim(
                 sceneSpec = weatherSceneSpec,

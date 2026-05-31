@@ -3,7 +3,11 @@ package com.litroenade.yunjiweather.data.local.prefs;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.litroenade.yunjiweather.data.model.CustomThemeAsset;
 import com.litroenade.yunjiweather.data.model.CustomThemeCropAnchor;
+import com.litroenade.yunjiweather.data.model.CustomThemeProfile;
+import com.litroenade.yunjiweather.data.model.CustomThemeProfileCodec;
+import com.litroenade.yunjiweather.data.model.CustomThemeRule;
 import com.litroenade.yunjiweather.data.model.CustomThemeWeatherKey;
 import com.litroenade.yunjiweather.data.repository.SettingsRepository;
 import com.litroenade.yunjiweather.utils.HomeBlock;
@@ -33,6 +37,7 @@ public final class SettingsPreferencesDataSource implements SettingsRepository {
     private static final String KEY_DAILY_REMINDER_ENABLED = "daily_reminder_enabled";
     private static final String KEY_VISUAL_THEME = "visual_theme";
     private static final String KEY_DEVELOPER_TOOLS_ENABLED = "developer_tools_enabled";
+    private static final String KEY_CUSTOM_THEME_PROFILE = "custom_theme_profile";
     private static final String KEY_CUSTOM_THEME_IMAGE_URI = "custom_theme_image_uri";
     private static final String KEY_CUSTOM_THEME_CROP_ANCHOR = "custom_theme_crop_anchor";
     private static final String KEY_CUSTOM_THEME_IMAGE_URI_PREFIX = "custom_theme_image_uri_";
@@ -131,7 +136,7 @@ public final class SettingsPreferencesDataSource implements SettingsRepository {
     }
 
     public String getCustomThemeImageUri() {
-        return getCustomThemeImageUri(CustomThemeWeatherKey.FALLBACK);
+        return getCustomThemeImageUris().getOrDefault(CustomThemeWeatherKey.FALLBACK, "");
     }
 
     public void setCustomThemeImageUri(String imageUri) {
@@ -140,7 +145,8 @@ public final class SettingsPreferencesDataSource implements SettingsRepository {
 
     public String getCustomThemeCropAnchor() {
         String legacyAnchor = getStringSetting(KEY_CUSTOM_THEME_CROP_ANCHOR, CustomThemeCropAnchor.CENTER);
-        String normalizedAnchor = getCustomThemeCropAnchor(CustomThemeWeatherKey.FALLBACK);
+        String normalizedAnchor = getCustomThemeCropAnchors()
+                .getOrDefault(CustomThemeWeatherKey.FALLBACK, CustomThemeCropAnchor.CENTER);
         repairStringIfNeeded(KEY_CUSTOM_THEME_CROP_ANCHOR, legacyAnchor, normalizedAnchor);
         return normalizedAnchor;
     }
@@ -150,17 +156,45 @@ public final class SettingsPreferencesDataSource implements SettingsRepository {
     }
 
     public Map<String, String> getCustomThemeImageUris() {
-        Map<String, String> result = new HashMap<>();
-        for (String weatherKey : CustomThemeWeatherKey.orderedKeys()) {
-            String imageUri = getCustomThemeImageUri(weatherKey);
-            if (!imageUri.isEmpty()) {
-                result.put(weatherKey, imageUri);
-            }
-        }
-        return result;
+        return customThemeImageUrisFromProfile(getCustomThemeProfile());
     }
 
     public Map<String, String> getCustomThemeCropAnchors() {
+        return customThemeCropAnchorsFromProfile(getCustomThemeProfile());
+    }
+
+    public CustomThemeProfile getCustomThemeProfile() {
+        String encodedProfile = getStringSetting(KEY_CUSTOM_THEME_PROFILE, "");
+        CustomThemeProfile profile = CustomThemeProfileCodec.decode(encodedProfile);
+        if (!profile.isEmpty()) {
+            String repairedProfile = CustomThemeProfileCodec.encode(profile);
+            repairStringIfNeeded(KEY_CUSTOM_THEME_PROFILE, encodedProfile, repairedProfile);
+            return profile;
+        }
+        return legacyCustomThemeProfile();
+    }
+
+    public void setCustomThemeProfile(CustomThemeProfile profile) {
+        CustomThemeProfile normalizedProfile = profile == null ? CustomThemeProfile.empty() : profile;
+        SharedPreferences.Editor editor = preferences.edit()
+                .putString(KEY_CUSTOM_THEME_PROFILE, CustomThemeProfileCodec.encode(normalizedProfile));
+        clearLegacyCustomThemeKeys(editor);
+        Map<String, String> imageUris = customThemeImageUrisFromProfile(normalizedProfile);
+        Map<String, String> cropAnchors = customThemeCropAnchorsFromProfile(normalizedProfile);
+        for (String weatherKey : imageUris.keySet()) {
+            editor.putString(customThemeImageUriKey(weatherKey), imageUris.get(weatherKey))
+                    .putString(customThemeCropAnchorKey(weatherKey),
+                            cropAnchors.getOrDefault(weatherKey, CustomThemeCropAnchor.CENTER));
+        }
+        if (imageUris.containsKey(CustomThemeWeatherKey.FALLBACK)) {
+            editor.putString(KEY_CUSTOM_THEME_IMAGE_URI, imageUris.get(CustomThemeWeatherKey.FALLBACK))
+                    .putString(KEY_CUSTOM_THEME_CROP_ANCHOR,
+                            cropAnchors.getOrDefault(CustomThemeWeatherKey.FALLBACK, CustomThemeCropAnchor.CENTER));
+        }
+        editor.apply();
+    }
+
+    private Map<String, String> getLegacyCustomThemeCropAnchors() {
         Map<String, String> result = new HashMap<>();
         for (String weatherKey : CustomThemeWeatherKey.orderedKeys()) {
             result.put(weatherKey, getCustomThemeCropAnchor(weatherKey));
@@ -169,39 +203,36 @@ public final class SettingsPreferencesDataSource implements SettingsRepository {
     }
 
     public void setCustomThemeImage(String weatherKey, String imageUri, String cropAnchor) {
+        CustomThemeWeatherKey.validate(weatherKey);
+        CustomThemeCropAnchor.validate(cropAnchor);
         String normalizedWeatherKey = CustomThemeWeatherKey.normalize(weatherKey);
         String normalizedImageUri = imageUri == null ? "" : imageUri.trim();
         String normalizedCropAnchor = CustomThemeCropAnchor.normalize(cropAnchor);
-        SharedPreferences.Editor editor = preferences.edit()
-                .putString(customThemeImageUriKey(normalizedWeatherKey), normalizedImageUri)
-                .putString(customThemeCropAnchorKey(normalizedWeatherKey), normalizedCropAnchor);
-        if (CustomThemeWeatherKey.FALLBACK.equals(normalizedWeatherKey)) {
-            editor.putString(KEY_CUSTOM_THEME_IMAGE_URI, normalizedImageUri)
-                    .putString(KEY_CUSTOM_THEME_CROP_ANCHOR, normalizedCropAnchor);
-        }
-        editor.apply();
+        setCustomThemeProfile(upsertLegacyWeatherAsset(
+                getCustomThemeProfile(),
+                normalizedWeatherKey,
+                normalizedImageUri,
+                normalizedCropAnchor
+        ));
     }
 
     public void clearCustomThemeImage(String weatherKey) {
+        CustomThemeWeatherKey.validate(weatherKey);
         String normalizedWeatherKey = CustomThemeWeatherKey.normalize(weatherKey);
-        SharedPreferences.Editor editor = preferences.edit()
-                .remove(customThemeImageUriKey(normalizedWeatherKey))
-                .remove(customThemeCropAnchorKey(normalizedWeatherKey));
-        if (CustomThemeWeatherKey.FALLBACK.equals(normalizedWeatherKey)) {
-            editor.remove(KEY_CUSTOM_THEME_IMAGE_URI)
-                    .remove(KEY_CUSTOM_THEME_CROP_ANCHOR);
-        }
-        editor.apply();
+        setCustomThemeProfile(upsertLegacyWeatherAsset(
+                getCustomThemeProfile(),
+                normalizedWeatherKey,
+                "",
+                CustomThemeCropAnchor.CENTER
+        ));
     }
 
     public void clearCustomThemeImages() {
         SharedPreferences.Editor editor = preferences.edit()
+                .remove(KEY_CUSTOM_THEME_PROFILE)
                 .remove(KEY_CUSTOM_THEME_IMAGE_URI)
                 .remove(KEY_CUSTOM_THEME_CROP_ANCHOR);
-        for (String weatherKey : CustomThemeWeatherKey.orderedKeys()) {
-            editor.remove(customThemeImageUriKey(weatherKey))
-                    .remove(customThemeCropAnchorKey(weatherKey));
-        }
+        clearLegacyCustomThemeKeys(editor);
         editor.apply();
     }
 
@@ -233,6 +264,12 @@ public final class SettingsPreferencesDataSource implements SettingsRepository {
     public List<String> getHomeModuleOrder(String themeKey, List<String> availableModuleKeys) {
         String normalizedThemeKey = VisualThemeUtils.normalizeThemeKey(themeKey);
         List<String> sanitizedAvailableKeys = sanitizeModuleKeys(availableModuleKeys);
+        if (VisualThemeUtils.THEME_CUSTOM_1.equals(normalizedThemeKey)) {
+            List<String> profileOrder = getCustomThemeProfile().getHomeModuleOrder();
+            if (!profileOrder.isEmpty()) {
+                return decodeHomeModuleOrder(encodeStringList(profileOrder), sanitizedAvailableKeys);
+            }
+        }
         String preferenceKey = homeModuleOrderKey(normalizedThemeKey);
         String encodedOrder = getStringSetting(preferenceKey, "");
         if (encodedOrder.isEmpty()) {
@@ -245,12 +282,32 @@ public final class SettingsPreferencesDataSource implements SettingsRepository {
     }
 
     public boolean isHomeModuleEnabled(String themeKey, String moduleKey) {
+        String normalizedThemeKey = VisualThemeUtils.normalizeThemeKey(themeKey);
+        if (VisualThemeUtils.THEME_CUSTOM_1.equals(normalizedThemeKey)) {
+            return !getCustomThemeProfile().getDisabledHomeModules().contains(normalizeModuleKey(moduleKey));
+        }
         return !getDisabledHomeModules(themeKey).contains(normalizeModuleKey(moduleKey));
     }
 
     public void setHomeModuleEnabled(String themeKey, String moduleKey, boolean enabled) {
         String normalizedThemeKey = VisualThemeUtils.normalizeThemeKey(themeKey);
         String normalizedModuleKey = normalizeModuleKey(moduleKey);
+        if (VisualThemeUtils.THEME_CUSTOM_1.equals(normalizedThemeKey)) {
+            CustomThemeProfile profile = getCustomThemeProfile();
+            Set<String> disabledModules = new LinkedHashSet<>(profile.getDisabledHomeModules());
+            if (enabled) {
+                disabledModules.remove(normalizedModuleKey);
+            } else {
+                disabledModules.add(normalizedModuleKey);
+            }
+            setCustomThemeProfile(CustomThemeProfile.create(
+                    profile.getAssets(),
+                    profile.getRules(),
+                    profile.getHomeModuleOrder(),
+                    disabledModules
+            ));
+            return;
+        }
         Set<String> disabledModules = getDisabledHomeModules(normalizedThemeKey);
         if (enabled) {
             disabledModules.remove(normalizedModuleKey);
@@ -279,11 +336,38 @@ public final class SettingsPreferencesDataSource implements SettingsRepository {
             return;
         }
         int targetIndex = Math.max(0, Math.min(order.size() - 1, currentIndex + direction));
-        if (targetIndex == currentIndex) {
+        moveHomeModuleTo(normalizedThemeKey, normalizedModuleKey, targetIndex, availableModuleKeys);
+    }
+
+    public void moveHomeModuleTo(
+            String themeKey,
+            String moduleKey,
+            int targetIndex,
+            List<String> availableModuleKeys
+    ) {
+        String normalizedThemeKey = VisualThemeUtils.normalizeThemeKey(themeKey);
+        String normalizedModuleKey = normalizeModuleKey(moduleKey);
+        List<String> order = new ArrayList<>(getHomeModuleOrder(normalizedThemeKey, availableModuleKeys));
+        int currentIndex = order.indexOf(normalizedModuleKey);
+        if (currentIndex < 0) {
+            return;
+        }
+        int normalizedTargetIndex = Math.max(0, Math.min(order.size() - 1, targetIndex));
+        if (normalizedTargetIndex == currentIndex) {
             return;
         }
         order.remove(currentIndex);
-        order.add(targetIndex, normalizedModuleKey);
+        order.add(normalizedTargetIndex, normalizedModuleKey);
+        if (VisualThemeUtils.THEME_CUSTOM_1.equals(normalizedThemeKey)) {
+            CustomThemeProfile profile = getCustomThemeProfile();
+            setCustomThemeProfile(CustomThemeProfile.create(
+                    profile.getAssets(),
+                    profile.getRules(),
+                    order,
+                    profile.getDisabledHomeModules()
+            ));
+            return;
+        }
         preferences.edit()
                 .putString(homeModuleOrderKey(normalizedThemeKey), encodeStringList(order))
                 .apply();
@@ -291,10 +375,221 @@ public final class SettingsPreferencesDataSource implements SettingsRepository {
 
     public void resetHomeBlockLayout(String themeKey) {
         String normalizedThemeKey = VisualThemeUtils.normalizeThemeKey(themeKey);
+        if (VisualThemeUtils.THEME_CUSTOM_1.equals(normalizedThemeKey)) {
+            CustomThemeProfile profile = getCustomThemeProfile();
+            setCustomThemeProfile(CustomThemeProfile.create(
+                    profile.getAssets(),
+                    profile.getRules(),
+                    new ArrayList<>(),
+                    new LinkedHashSet<>()
+            ));
+            return;
+        }
         preferences.edit()
                 .remove(homeModuleOrderKey(normalizedThemeKey))
                 .remove(homeModuleDisabledKey(normalizedThemeKey))
                 .apply();
+    }
+
+    private CustomThemeProfile legacyCustomThemeProfile() {
+        List<CustomThemeAsset> assets = new ArrayList<>();
+        List<CustomThemeRule> rules = new ArrayList<>();
+        for (String weatherKey : CustomThemeWeatherKey.orderedKeys()) {
+            String imageUri = getCustomThemeImageUri(weatherKey);
+            if (imageUri.isEmpty()) {
+                continue;
+            }
+            String assetId = legacyAssetId(weatherKey);
+            assets.add(new CustomThemeAsset(
+                    assetId,
+                    imageUri,
+                    mediaTypeFromUri(imageUri),
+                    getCustomThemeCropAnchor(weatherKey),
+                    CustomThemeWeatherKey.displayName(weatherKey)
+            ));
+            rules.add(legacyRule(weatherKey, assetId));
+        }
+        return CustomThemeProfile.create(assets, rules, new ArrayList<>(), new LinkedHashSet<>());
+    }
+
+    private static Map<String, String> customThemeImageUrisFromProfile(CustomThemeProfile profile) {
+        Map<String, String> result = new HashMap<>();
+        Map<String, Integer> priorities = new HashMap<>();
+        Map<String, CustomThemeAsset> assetsById = profile.assetsById();
+        for (CustomThemeRule rule : profile.getRules()) {
+            CustomThemeAsset asset = assetsById.get(rule.getAssetId());
+            if (asset == null || asset.isEmpty()) {
+                continue;
+            }
+            String weatherKey = projectedWeatherKey(rule);
+            int priority = rule.getPriority();
+            if (!result.containsKey(weatherKey) || priority > priorities.get(weatherKey)) {
+                result.put(weatherKey, asset.getUri());
+                priorities.put(weatherKey, priority);
+            }
+        }
+        return result;
+    }
+
+    private static Map<String, String> customThemeCropAnchorsFromProfile(CustomThemeProfile profile) {
+        Map<String, String> result = new HashMap<>();
+        Map<String, Integer> priorities = new HashMap<>();
+        Map<String, CustomThemeAsset> assetsById = profile.assetsById();
+        for (CustomThemeRule rule : profile.getRules()) {
+            CustomThemeAsset asset = assetsById.get(rule.getAssetId());
+            if (asset == null || asset.isEmpty()) {
+                continue;
+            }
+            String weatherKey = projectedWeatherKey(rule);
+            int priority = rule.getPriority();
+            if (!result.containsKey(weatherKey) || priority > priorities.get(weatherKey)) {
+                result.put(weatherKey, asset.getCropAnchor());
+                priorities.put(weatherKey, priority);
+            }
+        }
+        if (!result.containsKey(CustomThemeWeatherKey.FALLBACK)) {
+            result.put(CustomThemeWeatherKey.FALLBACK, CustomThemeCropAnchor.CENTER);
+        }
+        return result;
+    }
+
+    private static CustomThemeProfile upsertLegacyWeatherAsset(
+            CustomThemeProfile profile,
+            String weatherKey,
+            String imageUri,
+            String cropAnchor
+    ) {
+        String normalizedWeatherKey = CustomThemeWeatherKey.normalize(weatherKey);
+        String assetId = legacyAssetId(normalizedWeatherKey);
+        List<CustomThemeAsset> assets = new ArrayList<>();
+        for (CustomThemeAsset asset : profile.getAssets()) {
+            if (!assetId.equals(asset.getId())) {
+                assets.add(asset);
+            }
+        }
+        List<CustomThemeRule> rules = new ArrayList<>();
+        for (CustomThemeRule rule : profile.getRules()) {
+            if (!assetId.equals(rule.getAssetId())) {
+                rules.add(rule);
+            }
+        }
+        if (imageUri != null && !imageUri.trim().isEmpty()) {
+            assets.add(new CustomThemeAsset(
+                    assetId,
+                    imageUri.trim(),
+                    mediaTypeFromUri(imageUri),
+                    cropAnchor,
+                    CustomThemeWeatherKey.displayName(normalizedWeatherKey)
+            ));
+            rules.add(legacyRule(normalizedWeatherKey, assetId));
+        }
+        return CustomThemeProfile.create(assets, rules, profile.getHomeModuleOrder(), profile.getDisabledHomeModules());
+    }
+
+    private static CustomThemeRule legacyRule(String weatherKey, String assetId) {
+        if (CustomThemeWeatherKey.FALLBACK.equals(weatherKey)) {
+            return CustomThemeRule.fallback(assetId);
+        }
+        if (CustomThemeWeatherKey.NIGHT.equals(weatherKey)) {
+            return new CustomThemeRule(
+                    assetId,
+                    CustomThemeWeatherKey.FALLBACK,
+                    CustomThemeRule.LIGHT_NIGHT,
+                    CustomThemeRule.NO_TIME,
+                    CustomThemeRule.NO_TIME,
+                    40
+            );
+        }
+        if (CustomThemeWeatherKey.RAIN_NIGHT.equals(weatherKey)) {
+            return new CustomThemeRule(
+                    assetId,
+                    CustomThemeWeatherKey.RAIN,
+                    CustomThemeRule.LIGHT_NIGHT,
+                    CustomThemeRule.NO_TIME,
+                    CustomThemeRule.NO_TIME,
+                    80
+            );
+        }
+        if (CustomThemeWeatherKey.SNOW_NIGHT.equals(weatherKey)) {
+            return new CustomThemeRule(
+                    assetId,
+                    CustomThemeWeatherKey.SNOW,
+                    CustomThemeRule.LIGHT_NIGHT,
+                    CustomThemeRule.NO_TIME,
+                    CustomThemeRule.NO_TIME,
+                    80
+            );
+        }
+        if (CustomThemeWeatherKey.DAWN.equals(weatherKey)) {
+            return new CustomThemeRule(
+                    assetId,
+                    CustomThemeWeatherKey.FALLBACK,
+                    CustomThemeRule.LIGHT_ANY,
+                    5 * 60,
+                    8 * 60,
+                    50
+            );
+        }
+        if (CustomThemeWeatherKey.DUSK.equals(weatherKey)) {
+            return new CustomThemeRule(
+                    assetId,
+                    CustomThemeWeatherKey.FALLBACK,
+                    CustomThemeRule.LIGHT_ANY,
+                    17 * 60,
+                    20 * 60,
+                    50
+            );
+        }
+        return new CustomThemeRule(
+                assetId,
+                weatherKey,
+                CustomThemeRule.LIGHT_ANY,
+                CustomThemeRule.NO_TIME,
+                CustomThemeRule.NO_TIME,
+                20
+        );
+    }
+
+    private static String projectedWeatherKey(CustomThemeRule rule) {
+        if (CustomThemeWeatherKey.RAIN.equals(rule.getWeatherKey())
+                && CustomThemeRule.LIGHT_NIGHT.equals(rule.getLightMode())) {
+            return CustomThemeWeatherKey.RAIN_NIGHT;
+        }
+        if (CustomThemeWeatherKey.SNOW.equals(rule.getWeatherKey())
+                && CustomThemeRule.LIGHT_NIGHT.equals(rule.getLightMode())) {
+            return CustomThemeWeatherKey.SNOW_NIGHT;
+        }
+        if (CustomThemeWeatherKey.FALLBACK.equals(rule.getWeatherKey())
+                && rule.getStartMinute() == 5 * 60
+                && rule.getEndMinute() == 8 * 60) {
+            return CustomThemeWeatherKey.DAWN;
+        }
+        if (CustomThemeWeatherKey.FALLBACK.equals(rule.getWeatherKey())
+                && rule.getStartMinute() == 17 * 60
+                && rule.getEndMinute() == 20 * 60) {
+            return CustomThemeWeatherKey.DUSK;
+        }
+        if (CustomThemeWeatherKey.FALLBACK.equals(rule.getWeatherKey())
+                && CustomThemeRule.LIGHT_NIGHT.equals(rule.getLightMode())) {
+            return CustomThemeWeatherKey.NIGHT;
+        }
+        return rule.getWeatherKey();
+    }
+
+    private static String legacyAssetId(String weatherKey) {
+        return "legacy-" + CustomThemeWeatherKey.normalize(weatherKey);
+    }
+
+    private static String mediaTypeFromUri(String imageUri) {
+        String normalized = imageUri == null ? "" : imageUri.trim().toLowerCase();
+        return normalized.endsWith(".gif") ? CustomThemeAsset.MEDIA_GIF : CustomThemeAsset.MEDIA_IMAGE;
+    }
+
+    private static void clearLegacyCustomThemeKeys(SharedPreferences.Editor editor) {
+        for (String weatherKey : CustomThemeWeatherKey.orderedKeys()) {
+            editor.remove(customThemeImageUriKey(weatherKey))
+                    .remove(customThemeCropAnchorKey(weatherKey));
+        }
     }
 
     private void ensureDefaultSettings() {

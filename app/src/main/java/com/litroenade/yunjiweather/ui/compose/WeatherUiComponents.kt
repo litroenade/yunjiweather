@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.litroenade.yunjiweather.ui.compose.theme.LocalYunJiVisualTheme
+import com.litroenade.yunjiweather.ui.compose.theme.YunJiUiTokens
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -41,7 +42,7 @@ internal fun ScreenHeader(
         ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleLarge,
+                style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = LocalYunJiVisualTheme.current.headerAccent,
                 maxLines = 1,
@@ -67,6 +68,7 @@ internal fun SectionTitle(text: String, modifier: Modifier = Modifier) {
         text = text,
         modifier = modifier,
         style = MaterialTheme.typography.titleMedium,
+        fontSize = YunJiUiTokens.SectionTitleSize,
         fontWeight = FontWeight.SemiBold,
         color = MaterialTheme.colorScheme.onBackground,
         maxLines = 1,

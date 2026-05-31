@@ -33,6 +33,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.litroenade.yunjiweather.ui.compose.InfoCard
 import com.litroenade.yunjiweather.ui.compose.ScreenHeader
 import com.litroenade.yunjiweather.ui.compose.SectionTitle
+import com.litroenade.yunjiweather.ui.compose.theme.YunJiUiTokens
 import com.litroenade.yunjiweather.ui.mine.MineViewModel
 import com.litroenade.yunjiweather.utils.PermissionUtils
 import com.litroenade.yunjiweather.utils.VisualThemeCatalog
@@ -75,8 +76,11 @@ fun MineScreen(
     }
     LazyColumn(
         modifier = listModifier
-            .padding(horizontal = 18.dp),
-        contentPadding = PaddingValues(top = 18.dp, bottom = 18.dp),
+            .padding(horizontal = YunJiUiTokens.ScreenHorizontalPadding),
+        contentPadding = PaddingValues(
+            top = YunJiUiTokens.PageHeaderVerticalPadding,
+            bottom = YunJiUiTokens.PageHeaderVerticalPadding
+        ),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         if (showHeader) {

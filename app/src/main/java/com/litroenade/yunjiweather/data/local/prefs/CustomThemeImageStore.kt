@@ -2,6 +2,7 @@ package com.litroenade.yunjiweather.data.local.prefs
 
 import android.content.Context
 import android.net.Uri
+import com.litroenade.yunjiweather.data.model.CustomThemeAsset
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -16,13 +17,31 @@ object CustomThemeImageStore {
         if (!directory.exists() && !directory.mkdirs()) {
             throw IOException("无法创建自定义主题图片目录")
         }
-        val destination = File(directory, "custom_theme_${System.currentTimeMillis()}.image")
-        appContext.contentResolver.openInputStream(sourceUri)?.use { input ->
-            FileOutputStream(destination).use { output ->
-                input.copyTo(output)
-            }
-        } ?: throw IOException("无法读取选择的图片")
+        val destination = File.createTempFile("custom_theme_", importExtension(appContext, sourceUri), directory)
+        try {
+            appContext.contentResolver.openInputStream(sourceUri)?.use { input ->
+                FileOutputStream(destination).use { output ->
+                    input.copyTo(output)
+                }
+            } ?: throw IOException("无法读取选择的图片")
+        } catch (exception: IOException) {
+            destination.delete()
+            throw exception
+        } catch (exception: RuntimeException) {
+            destination.delete()
+            throw exception
+        }
         return Uri.fromFile(destination).toString()
+    }
+
+    fun mediaTypeForUri(context: Context, sourceUri: Uri): String {
+        val mimeType = context.applicationContext.contentResolver.getType(sourceUri).orEmpty().lowercase()
+        val path = sourceUri.toString().lowercase()
+        return if (mimeType == "image/gif" || path.endsWith(".gif")) {
+            CustomThemeAsset.MEDIA_GIF
+        } else {
+            CustomThemeAsset.MEDIA_IMAGE
+        }
     }
 
     fun pruneImportedImages(context: Context, keepImageUri: String) {
@@ -106,6 +125,10 @@ object CustomThemeImageStore {
 
     private fun customThemeDirectory(context: Context): File {
         return File(context.filesDir, THEME_IMAGE_DIR)
+    }
+
+    private fun importExtension(context: Context, sourceUri: Uri): String {
+        return if (mediaTypeForUri(context, sourceUri) == CustomThemeAsset.MEDIA_GIF) ".gif" else ".jpg"
     }
 
     private fun pruneImportedImages(directory: File, keepFile: File) {

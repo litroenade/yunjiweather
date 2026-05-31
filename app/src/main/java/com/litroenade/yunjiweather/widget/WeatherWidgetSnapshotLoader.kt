@@ -5,19 +5,26 @@ import com.google.gson.Gson
 import com.litroenade.yunjiweather.data.entity.CityEntity
 import com.litroenade.yunjiweather.data.entity.WeatherCacheEntity
 import com.litroenade.yunjiweather.data.local.WeatherCacheTypes
+import com.litroenade.yunjiweather.data.model.CustomThemeAsset
+import com.litroenade.yunjiweather.data.model.CustomThemeResolver
+import com.litroenade.yunjiweather.data.model.CustomThemeWeatherKey
 import com.litroenade.yunjiweather.data.model.HomeWeatherData
 import com.litroenade.yunjiweather.utils.DateTimeUtils
 import com.litroenade.yunjiweather.utils.DefaultCityUtils
+import com.litroenade.yunjiweather.utils.VisualThemeUtils
+import com.litroenade.yunjiweather.utils.WeatherIconUtils
 import dagger.hilt.android.EntryPointAccessors
+import java.util.Calendar
 
 /**
  * 小组件只读取本地数据库缓存快照，不直接发起网络请求。
  * 后台刷新由统一任务调度，避免桌面频繁唤醒导致启动器卡顿或耗电。
  */
-class WeatherWidgetSnapshotLoader(
+class WeatherWidgetSnapshotLoader @JvmOverloads constructor(
     private val cityReader: DefaultCityReader,
     private val cacheReader: HomeWeatherCacheReader,
-    private val gson: Gson
+    private val gson: Gson,
+    private val settingsReader: WidgetThemeSettingsReader = WidgetThemeSettingsReader { WidgetThemeSettings.defaults() }
 ) {
 
     fun load(): WeatherWidgetSnapshot {
@@ -35,21 +42,40 @@ class WeatherWidgetSnapshotLoader(
         return try {
             val data = gson.fromJson(cache.weatherJson, HomeWeatherData::class.java)
             data.validateForDisplay()
+            val customBackground = customBackgroundFor(data)
             WeatherWidgetSnapshot(
                 cityName = data.cityName,
                 temperatureText = "${data.temperature}°",
                 conditionText = data.condition,
-                rangeText = "${data.tempMin}° / ${data.tempMax}°",
+                rangeText = "${data.tempMax}° / ${data.tempMin}°",
                 updateText = DateTimeUtils.formatMinuteTime(cache.updateTime),
                 isAvailable = true,
-                humidityText = "Humidity ${data.humidity}%",
+                humidityText = "湿度 ${data.humidity}%",
                 windText = "${data.windDir} ${data.windScale}",
-                airQualityText = "AQI ${data.airQualityIndex} ${data.airQualityCategory}",
-                adviceText = data.travelAdvice
+                airQualityText = "空气 ${data.airQualityCategory}",
+                adviceText = data.travelAdvice,
+                clothingValue = clothingValue(data.temperature, data.clothingAdvice),
+                fishingValue = fishingValue(data.condition),
+                sunsetValue = sunsetValue(data.condition),
+                coldValue = coldValue(data.temperature),
+                customBackgroundUri = customBackground.uri,
+                customBackgroundCropAnchor = customBackground.cropAnchor,
+                customBackgroundMediaType = customBackground.mediaType
             )
         } catch (exception: RuntimeException) {
             unavailable(cityName)
         }
+    }
+
+    private fun customBackgroundFor(data: HomeWeatherData): CustomThemeAsset {
+        val settings = settingsReader.read()
+        if (settings.visualThemeKey != VisualThemeUtils.THEME_CUSTOM_1 || settings.customThemeProfile.isEmpty) {
+            return CustomThemeAsset.empty()
+        }
+        val category = WeatherIconUtils.getWeatherCategory(data.iconCode)
+        val weatherKey = CustomThemeWeatherKey.fromWeatherCategory(category)
+        val night = category == WeatherIconUtils.WeatherCategory.NIGHT
+        return CustomThemeResolver.resolve(settings.customThemeProfile, weatherKey, night, currentMinuteOfDay())
     }
 
     private fun unavailable(cityName: String): WeatherWidgetSnapshot {
@@ -63,12 +89,53 @@ class WeatherWidgetSnapshotLoader(
         )
     }
 
+    private fun clothingValue(temperature: String, advice: String): String {
+        val normalizedAdvice = advice.trim()
+        return when {
+            normalizedAdvice.contains("短袖") -> "短袖"
+            normalizedAdvice.contains("外套") -> "外套"
+            normalizedAdvice.contains("羽绒") -> "羽绒服"
+            normalizedAdvice.contains("毛衣") -> "毛衣"
+            parseTemperature(temperature) >= 26 -> "短袖"
+            parseTemperature(temperature) <= 10 -> "厚外套"
+            else -> "薄外套"
+        }
+    }
+
+    private fun fishingValue(condition: String): String {
+        return if (condition.contains("雨") || condition.contains("雪") || condition.contains("雷")) {
+            "不宜"
+        } else {
+            "适宜"
+        }
+    }
+
+    private fun sunsetValue(condition: String): String {
+        return if (condition.contains("晴") || condition.contains("少云")) {
+            "较好"
+        } else {
+            "一般"
+        }
+    }
+
+    private fun coldValue(temperature: String): String {
+        return if (parseTemperature(temperature) <= 12) "注意" else "不易"
+    }
+
+    private fun parseTemperature(temperature: String): Int {
+        return temperature.trim().toDoubleOrNull()?.toInt() ?: 20
+    }
+
     fun interface DefaultCityReader {
         fun readDefaultCity(): CityEntity?
     }
 
     fun interface HomeWeatherCacheReader {
         fun readHomeWeather(locationId: String): WeatherCacheEntity?
+    }
+
+    fun interface WidgetThemeSettingsReader {
+        fun read(): WidgetThemeSettings
     }
 
     companion object {
@@ -83,8 +150,14 @@ class WeatherWidgetSnapshotLoader(
                 { locationId ->
                     entryPoint.weatherCacheDao().findByLocationAndType(locationId, WeatherCacheTypes.HOME)
                 },
-                Gson()
+                Gson(),
+                { WidgetThemeSettings(entryPoint.settingsRepository().visualTheme, entryPoint.settingsRepository().customThemeProfile) }
             )
+        }
+
+        private fun currentMinuteOfDay(): Int {
+            val calendar = Calendar.getInstance()
+            return calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
         }
     }
 }

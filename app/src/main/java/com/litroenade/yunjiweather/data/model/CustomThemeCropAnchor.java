@@ -15,4 +15,10 @@ public final class CustomThemeCropAnchor {
         }
         return CENTER;
     }
+
+    public static void validate(String cropAnchor) {
+        if (!TOP.equals(cropAnchor) && !CENTER.equals(cropAnchor) && !BOTTOM.equals(cropAnchor)) {
+            throw new IllegalArgumentException("不支持的自定义主题裁剪位置：" + cropAnchor);
+        }
+    }
 }
