@@ -20,6 +20,7 @@ import com.litroenade.yunjiweather.ui.compose.screens.PersonalizationPanel
 import com.litroenade.yunjiweather.ui.compose.theme.YunJiTheme
 import com.litroenade.yunjiweather.utils.VisualThemeCatalog
 import com.litroenade.yunjiweather.utils.VisualThemeUtils
+import com.litroenade.yunjiweather.widget.WeatherWidgetSnapshotFactory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -87,6 +88,7 @@ class YunJiThemeComposeTest {
                 PersonalizationPanel(
                     themes = VisualThemeCatalog.getThemes(),
                     selectedTheme = VisualThemeUtils.THEME_SKY,
+                    widgetSnapshot = WeatherWidgetSnapshotFactory.unavailable("北京"),
                     onThemeSelected = {}
                 )
             }
@@ -112,6 +114,7 @@ class YunJiThemeComposeTest {
             ) {
                 CustomThemeEditorPanel(
                     customThemeImageUri = "",
+                    widgetSnapshot = WeatherWidgetSnapshotFactory.unavailable("北京"),
                     draftCustomThemeImageUris = mapOf(CustomThemeWeatherKey.FALLBACK to "file:///tmp/yunji-custom-theme.image"),
                     draftCustomThemeCropAnchors = mapOf(CustomThemeWeatherKey.FALLBACK to "bottom"),
                     customThemeEditorMessage = "默认图已导入，确认后点击保存。",

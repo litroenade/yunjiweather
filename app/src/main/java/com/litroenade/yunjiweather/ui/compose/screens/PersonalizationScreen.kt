@@ -1,6 +1,9 @@
 package com.litroenade.yunjiweather.ui.compose.screens
 
 import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -18,8 +21,8 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -30,11 +33,15 @@ import com.litroenade.yunjiweather.data.model.CustomThemeAsset
 import com.litroenade.yunjiweather.data.model.CustomThemeProfile
 import com.litroenade.yunjiweather.data.model.CustomThemeRule
 import com.litroenade.yunjiweather.data.model.CustomThemeWeatherKey
+import com.litroenade.yunjiweather.data.model.HomeWeatherData
 import com.litroenade.yunjiweather.ui.compose.InfoCard
 import com.litroenade.yunjiweather.ui.compose.theme.LocalYunJiVisualTheme
 import com.litroenade.yunjiweather.ui.compose.theme.YunJiUiTokens
 import com.litroenade.yunjiweather.ui.mine.MineViewModel
 import com.litroenade.yunjiweather.utils.VisualThemeUtils
+import com.litroenade.yunjiweather.utils.DateTimeUtils
+import com.litroenade.yunjiweather.utils.DefaultCityUtils
+import com.litroenade.yunjiweather.widget.WeatherWidgetSnapshotFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -43,7 +50,12 @@ import kotlinx.coroutines.withContext
 fun PersonalizationScreen(
     modifier: Modifier = Modifier,
     viewModel: MineViewModel = viewModel(),
-    onOpenHomeBlockEditor: () -> Unit = {}
+    onOpenHomeBlockEditor: () -> Unit = {},
+    backRequestVersion: Int = 0,
+    homeWeatherData: HomeWeatherData? = null,
+    homeWeatherUpdateTime: Long = 0L,
+    temperatureUnit: String = "\u0043",
+    onExitRequested: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val selectedTheme by viewModel.visualTheme.observeAsState(viewModel.currentVisualTheme)
@@ -55,6 +67,16 @@ fun PersonalizationScreen(
     val message by viewModel.message.observeAsState("")
     val themes = remember(viewModel) { viewModel.visualThemes }
     val visualTheme = LocalYunJiVisualTheme.current
+    val widgetSnapshot = remember(homeWeatherData, homeWeatherUpdateTime, temperatureUnit) {
+        homeWeatherData?.let { data ->
+            WeatherWidgetSnapshotFactory.fromHomeWeather(
+                data,
+                DateTimeUtils.formatMinuteTime(if (homeWeatherUpdateTime > 0L) homeWeatherUpdateTime else data.updateTime),
+                CustomThemeAsset.empty(),
+                temperatureUnit
+            )
+        } ?: WeatherWidgetSnapshotFactory.unavailable(DefaultCityUtils.DEFAULT_CITY_NAME)
+    }
     val scope = rememberCoroutineScope()
     val draftCustomThemeImageUris = remember { mutableStateMapOf<String, String>() }
     val draftCustomThemeCropAnchors = remember { mutableStateMapOf<String, String>() }
@@ -62,9 +84,11 @@ fun PersonalizationScreen(
     var customThemeEditorMessage by remember { mutableStateOf("") }
     var customThemeImporting by remember { mutableStateOf(false) }
     var showingCustomThemeEditor by rememberSaveable { mutableStateOf(false) }
-    fun importDraftImage(sourceUri: android.net.Uri, weatherKey: String, deleteCacheAfterImport: Boolean) {
+    var panelBackRequestVersion by remember { mutableStateOf(0) }
+
+    fun importDraftImage(sourceUri: Uri, weatherKey: String, deleteCacheAfterImport: Boolean) {
         customThemeImporting = true
-        customThemeEditorMessage = "正在导入${CustomThemeWeatherKey.displayName(weatherKey)}..."
+        customThemeEditorMessage = "\u6b63\u5728\u5bfc\u5165${CustomThemeWeatherKey.displayName(weatherKey)}..."
         scope.launch {
             val importResult = withContext(Dispatchers.IO) {
                 runCatching {
@@ -81,35 +105,40 @@ fun PersonalizationScreen(
                 draftCustomThemeImageUris[weatherKey] = importedUri
                 draftCustomThemeCropAnchors[weatherKey] = customThemeCropAnchors[weatherKey]
                     ?: customThemeCropAnchor
-                customThemeEditorMessage = "${CustomThemeWeatherKey.displayName(weatherKey)}已导入，确认后点击保存。"
+                customThemeEditorMessage =
+                    "${CustomThemeWeatherKey.displayName(weatherKey)}\u5df2\u5bfc\u5165\uff0c\u786e\u8ba4\u540e\u70b9\u51fb\u4fdd\u5b58\u3002"
                 if (!previousDraftUri.isNullOrBlank() && previousDraftUri != importedUri) {
                     scope.launch(Dispatchers.IO) {
                         CustomThemeImageStore.deleteImportedImage(context, previousDraftUri)
                     }
                 }
             }.onFailure { throwable ->
-                customThemeEditorMessage = "底图导入失败：${throwable.message ?: "无法读取图片"}"
+                customThemeEditorMessage =
+                    "\u5e95\u56fe\u5bfc\u5165\u5931\u8d25\uff1a${throwable.message ?: "\u65e0\u6cd5\u8bfb\u53d6\u56fe\u7247"}"
             }
         }
     }
-    fun importDraftImages(sourceUris: List<android.net.Uri>) {
+
+    fun importDraftImages(sourceUris: List<Uri>) {
         if (sourceUris.isEmpty()) {
-            customThemeEditorMessage = "底图选择已取消"
+            customThemeEditorMessage = "\u5e95\u56fe\u9009\u62e9\u5df2\u53d6\u6d88"
             return
         }
         val targetKeys = CustomThemeWeatherKey.orderedKeys()
             .filterNot { weatherKey ->
-                draftCustomThemeImageUris[weatherKey].orEmpty().isNotBlank()
-                        || customThemeImageUris[weatherKey].orEmpty().isNotBlank()
-                        || (weatherKey == CustomThemeWeatherKey.FALLBACK && customThemeImageUri.isNotBlank())
+                draftCustomThemeImageUris[weatherKey].orEmpty().isNotBlank() ||
+                    customThemeImageUris[weatherKey].orEmpty().isNotBlank() ||
+                    (weatherKey == CustomThemeWeatherKey.FALLBACK && customThemeImageUri.isNotBlank())
             }
             .take(sourceUris.size)
         if (targetKeys.isEmpty()) {
-            customThemeEditorMessage = "所有场景已有素材，请在对应槽位点替换。"
+            customThemeEditorMessage =
+                "\u6240\u6709\u573a\u666f\u5df2\u6709\u7d20\u6750\uff0c\u8bf7\u5728\u5bf9\u5e94\u69fd\u4f4d\u70b9\u51fb\u66ff\u6362\u3002"
             return
         }
         customThemeImporting = true
-        customThemeEditorMessage = "正在批量导入 ${targetKeys.size} 张自定义主题素材..."
+        customThemeEditorMessage =
+            "\u6b63\u5728\u6279\u91cf\u5bfc\u5165 ${targetKeys.size} \u5f20\u81ea\u5b9a\u4e49\u4e3b\u9898\u7d20\u6750..."
         scope.launch {
             val importResult = withContext(Dispatchers.IO) {
                 runCatching {
@@ -135,37 +164,39 @@ fun PersonalizationScreen(
                         ?: customThemeCropAnchor
                 }
                 val skippedCount = sourceUris.size - imported.size
-                val targetNames = imported.joinToString("、") { (weatherKey, _) ->
+                val targetNames = imported.joinToString("\u3001") { (weatherKey, _) ->
                     CustomThemeWeatherKey.displayName(weatherKey)
                 }
                 customThemeEditorMessage = if (skippedCount > 0) {
-                    "已批量导入到：$targetNames；另有 $skippedCount 张因无空槽未分配。"
+                    "\u5df2\u6279\u91cf\u5bfc\u5165\u5230\uff1a$targetNames\uff1b\u53e6\u6709 $skippedCount \u5f20\u56e0\u65e0\u7a7a\u69fd\u672a\u5206\u914d\u3002"
                 } else {
-                    "已批量导入到：$targetNames，确认后保存并应用。"
+                    "\u5df2\u6279\u91cf\u5bfc\u5165\u5230\uff1a$targetNames\uff0c\u786e\u8ba4\u540e\u4fdd\u5b58\u5e76\u5e94\u7528\u3002"
                 }
             }.onFailure { throwable ->
-                customThemeEditorMessage = "批量导入失败：${throwable.message ?: "无法读取图片"}"
+                customThemeEditorMessage =
+                    "\u6279\u91cf\u5bfc\u5165\u5931\u8d25\uff1a${throwable.message ?: "\u65e0\u6cd5\u8bfb\u53d6\u56fe\u7247"}"
             }
         }
     }
+
     val cropImageLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val croppedUri = CustomThemeCropActivity.resultUri(result.data)
             if (croppedUri == null) {
-                customThemeEditorMessage = "底图裁剪失败：没有返回裁剪结果"
+                customThemeEditorMessage = "\u5e95\u56fe\u88c1\u526a\u5931\u8d25\uff1a\u6ca1\u6709\u8fd4\u56de\u88c1\u526a\u7ed3\u679c"
                 return@rememberLauncherForActivityResult
             }
-            val weatherKey = pendingCustomThemeWeatherKey
-            importDraftImage(croppedUri, weatherKey, deleteCacheAfterImport = true)
+            importDraftImage(croppedUri, pendingCustomThemeWeatherKey, deleteCacheAfterImport = true)
         } else {
-            customThemeEditorMessage = "底图裁剪已取消"
+            customThemeEditorMessage = "\u5e95\u56fe\u88c1\u526a\u5df2\u53d6\u6d88"
         }
     }
     val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri == null) {
-            customThemeEditorMessage = "底图选择已取消"
+            customThemeEditorMessage = "\u5e95\u56fe\u9009\u62e9\u5df2\u53d6\u6d88"
             return@rememberLauncherForActivityResult
         }
+        persistReadPermission(context, uri)
         if (CustomThemeImageStore.mediaTypeForUri(context, uri) == CustomThemeAsset.MEDIA_GIF) {
             importDraftImage(uri, pendingCustomThemeWeatherKey, deleteCacheAfterImport = false)
         } else {
@@ -173,142 +204,152 @@ fun PersonalizationScreen(
         }
     }
     val multiImagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        uris.forEach { uri -> persistReadPermission(context, uri) }
         importDraftImages(uris.take(CustomThemeWeatherKey.orderedKeys().size))
     }
 
     LaunchedEffect(Unit) {
         viewModel.refresh()
     }
-
     BackHandler(enabled = showingCustomThemeEditor) {
         showingCustomThemeEditor = false
     }
+    LaunchedEffect(backRequestVersion) {
+        if (backRequestVersion == 0) {
+            return@LaunchedEffect
+        }
+        if (showingCustomThemeEditor) {
+            showingCustomThemeEditor = false
+        } else {
+            panelBackRequestVersion = backRequestVersion
+        }
+    }
 
-    LazyColumn(
-        modifier = modifier
-            .background(visualTheme.background),
-        contentPadding = PaddingValues(
-            bottom = 24.dp
-        ),
-        verticalArrangement = Arrangement.spacedBy(0.dp)
-    ) {
-        item {
-            val commonOnPickCustomThemeImage: (String) -> Unit = { weatherKey ->
-                pendingCustomThemeWeatherKey = weatherKey
-                imagePickerLauncher.launch(arrayOf("image/*"))
-            }
-            val commonOnPickMultipleCustomThemeImages = {
-                multiImagePickerLauncher.launch(arrayOf("image/*"))
-            }
-            val commonOnCustomThemeCropAnchorChanged: (String, String) -> Unit = { weatherKey, cropAnchor ->
-                val imageUri = customThemeImageUris[weatherKey].orEmpty().ifBlank {
-                    if (weatherKey == CustomThemeWeatherKey.FALLBACK) customThemeImageUri else ""
-                }
-                if (imageUri.isNotBlank()) {
-                    val savedImageUris = customThemeImageUris.toMutableMap()
-                    savedImageUris[weatherKey] = imageUri
-                    val savedCropAnchors = customThemeCropAnchors.toMutableMap()
-                    savedCropAnchors[weatherKey] = cropAnchor
-                    viewModel.setCustomThemeProfile(
-                        buildCustomThemeProfile(savedImageUris, savedCropAnchors, customThemeProfile)
-                    )
-                }
-            }
-            val commonOnDraftCustomThemeCropAnchorChanged: (String, String) -> Unit = { weatherKey, anchor ->
-                draftCustomThemeCropAnchors[weatherKey] = anchor
-            }
-            val commonOnApplyCustomThemeDraft: (Map<String, String>, Map<String, String>) -> Unit = { imageUris, cropAnchors ->
-                if (imageUris.isNotEmpty()) {
-                    val savedImageUris = customThemeImageUris.toMutableMap()
-                    val savedCropAnchors = customThemeCropAnchors.toMutableMap()
-                    savedImageUris.putAll(imageUris)
-                    savedCropAnchors.putAll(cropAnchors)
-                    viewModel.setCustomThemeProfile(
-                        buildCustomThemeProfile(savedImageUris, savedCropAnchors, customThemeProfile)
-                    )
-                    draftCustomThemeImageUris.clear()
-                    draftCustomThemeCropAnchors.clear()
-                    customThemeEditorMessage = ""
-                    scope.launch(Dispatchers.IO) {
-                        CustomThemeImageStore.pruneImportedImages(
-                            context,
-                            savedImageUris.values + listOf(customThemeImageUri)
-                        )
-                    }
-                }
-            }
-            val commonOnDiscardCustomThemeDraft: () -> Unit = {
-                val draftUris = draftCustomThemeImageUris.values.toList()
-                draftCustomThemeImageUris.clear()
-                draftCustomThemeCropAnchors.clear()
-                customThemeEditorMessage = ""
-                if (draftUris.isNotEmpty()) {
-                    scope.launch(Dispatchers.IO) {
-                        draftUris.forEach { draftUri ->
-                            CustomThemeImageStore.deleteImportedImage(context, draftUri)
-                        }
-                    }
-                }
-            }
-            val commonOnClearCustomThemeWeatherImage: (String) -> Unit = { weatherKey ->
-                val removedDraftUri = draftCustomThemeImageUris.remove(weatherKey)
-                draftCustomThemeCropAnchors.remove(weatherKey)
-                if (!removedDraftUri.isNullOrBlank()) {
-                    val remainingUris = draftCustomThemeImageUris.values + customThemeImageUris.values + listOf(customThemeImageUri)
-                    if (removedDraftUri !in remainingUris) {
-                        scope.launch(Dispatchers.IO) {
-                            CustomThemeImageStore.deleteImportedImage(context, removedDraftUri)
-                        }
-                    }
-                } else {
-                    val savedImageUris = customThemeImageUris.toMutableMap()
-                    if (customThemeImageUri.isNotBlank()) {
-                        savedImageUris.putIfAbsent(CustomThemeWeatherKey.FALLBACK, customThemeImageUri)
-                    }
-                    val removedSavedUri = savedImageUris.remove(weatherKey).orEmpty()
-                    viewModel.clearCustomThemeImage(weatherKey)
-                    if (removedSavedUri.isNotBlank()) {
-                        val remainingUris = savedImageUris.values + draftCustomThemeImageUris.values
-                        if (removedSavedUri !in remainingUris) {
-                            scope.launch(Dispatchers.IO) {
-                                CustomThemeImageStore.deleteImportedImage(context, removedSavedUri)
-                            }
-                        }
-                    }
-                }
-            }
-            val commonOnClearCustomThemeImage: () -> Unit = {
-                viewModel.clearCustomThemeImage()
-                draftCustomThemeImageUris.clear()
-                draftCustomThemeCropAnchors.clear()
-                customThemeEditorMessage = ""
-                scope.launch(Dispatchers.IO) {
-                    CustomThemeImageStore.deleteAllImportedImages(context)
-                }
-            }
-            if (showingCustomThemeEditor) {
-                CustomThemeEditorPanel(
-                    customThemeImageUri = customThemeImageUri,
-                    customThemeCropAnchor = customThemeCropAnchor,
-                    customThemeImageUris = customThemeImageUris,
-                    customThemeCropAnchors = customThemeCropAnchors,
-                    customThemeProfile = customThemeProfile,
-                    draftCustomThemeImageUris = draftCustomThemeImageUris,
-                    draftCustomThemeCropAnchors = draftCustomThemeCropAnchors,
-                    customThemeEditorMessage = customThemeEditorMessage,
-                    customThemeImporting = customThemeImporting,
-                    onBackToThemeStore = { showingCustomThemeEditor = false },
-                    onOpenHomeBlockEditor = onOpenHomeBlockEditor,
-                    onPickCustomThemeImage = commonOnPickCustomThemeImage,
-                    onPickMultipleCustomThemeImages = commonOnPickMultipleCustomThemeImages,
-                    onCustomThemeCropAnchorChanged = commonOnCustomThemeCropAnchorChanged,
-                    onDraftCustomThemeCropAnchorChanged = commonOnDraftCustomThemeCropAnchorChanged,
-                    onApplyCustomThemeDraft = commonOnApplyCustomThemeDraft,
-                    onDiscardCustomThemeDraft = commonOnDiscardCustomThemeDraft,
-                    onClearCustomThemeWeatherImage = commonOnClearCustomThemeWeatherImage,
-                    onClearCustomThemeImage = commonOnClearCustomThemeImage
+    val commonOnPickCustomThemeImage: (String) -> Unit = { weatherKey ->
+        pendingCustomThemeWeatherKey = weatherKey
+        imagePickerLauncher.launch(arrayOf("image/*"))
+    }
+    val commonOnPickMultipleCustomThemeImages = {
+        multiImagePickerLauncher.launch(arrayOf("image/*"))
+    }
+    val commonOnCustomThemeCropAnchorChanged: (String, String) -> Unit = { weatherKey, cropAnchor ->
+        val imageUri = customThemeImageUris[weatherKey].orEmpty().ifBlank {
+            if (weatherKey == CustomThemeWeatherKey.FALLBACK) customThemeImageUri else ""
+        }
+        if (imageUri.isNotBlank()) {
+            val savedImageUris = customThemeImageUris.toMutableMap()
+            savedImageUris[weatherKey] = imageUri
+            val savedCropAnchors = customThemeCropAnchors.toMutableMap()
+            savedCropAnchors[weatherKey] = cropAnchor
+            viewModel.setCustomThemeProfile(
+                buildCustomThemeProfile(savedImageUris, savedCropAnchors, customThemeProfile)
+            )
+        }
+    }
+    val commonOnDraftCustomThemeCropAnchorChanged: (String, String) -> Unit = { weatherKey, anchor ->
+        draftCustomThemeCropAnchors[weatherKey] = anchor
+    }
+    val commonOnApplyCustomThemeDraft: (Map<String, String>, Map<String, String>) -> Unit = { imageUris, cropAnchors ->
+        if (imageUris.isNotEmpty()) {
+            val savedImageUris = customThemeImageUris.toMutableMap()
+            val savedCropAnchors = customThemeCropAnchors.toMutableMap()
+            savedImageUris.putAll(imageUris)
+            savedCropAnchors.putAll(cropAnchors)
+            viewModel.setCustomThemeProfile(
+                buildCustomThemeProfile(savedImageUris, savedCropAnchors, customThemeProfile)
+            )
+            draftCustomThemeImageUris.clear()
+            draftCustomThemeCropAnchors.clear()
+            customThemeEditorMessage = ""
+            scope.launch(Dispatchers.IO) {
+                CustomThemeImageStore.pruneImportedImages(
+                    context,
+                    savedImageUris.values + listOf(customThemeImageUri)
                 )
-            } else {
+            }
+        }
+    }
+    val commonOnDiscardCustomThemeDraft: () -> Unit = {
+        val draftUris = draftCustomThemeImageUris.values.toList()
+        draftCustomThemeImageUris.clear()
+        draftCustomThemeCropAnchors.clear()
+        customThemeEditorMessage = ""
+        if (draftUris.isNotEmpty()) {
+            scope.launch(Dispatchers.IO) {
+                draftUris.forEach { draftUri ->
+                    CustomThemeImageStore.deleteImportedImage(context, draftUri)
+                }
+            }
+        }
+    }
+    val commonOnClearCustomThemeWeatherImage: (String) -> Unit = { weatherKey ->
+        val removedDraftUri = draftCustomThemeImageUris.remove(weatherKey)
+        draftCustomThemeCropAnchors.remove(weatherKey)
+        if (!removedDraftUri.isNullOrBlank()) {
+            val remainingUris = draftCustomThemeImageUris.values + customThemeImageUris.values + listOf(customThemeImageUri)
+            if (removedDraftUri !in remainingUris) {
+                scope.launch(Dispatchers.IO) {
+                    CustomThemeImageStore.deleteImportedImage(context, removedDraftUri)
+                }
+            }
+        } else {
+            val savedImageUris = customThemeImageUris.toMutableMap()
+            if (customThemeImageUri.isNotBlank()) {
+                savedImageUris.putIfAbsent(CustomThemeWeatherKey.FALLBACK, customThemeImageUri)
+            }
+            val removedSavedUri = savedImageUris.remove(weatherKey).orEmpty()
+            viewModel.clearCustomThemeImage(weatherKey)
+            if (removedSavedUri.isNotBlank()) {
+                val remainingUris = savedImageUris.values + draftCustomThemeImageUris.values
+                if (removedSavedUri !in remainingUris) {
+                    scope.launch(Dispatchers.IO) {
+                        CustomThemeImageStore.deleteImportedImage(context, removedSavedUri)
+                    }
+                }
+            }
+        }
+    }
+    val commonOnClearCustomThemeImage: () -> Unit = {
+        viewModel.clearCustomThemeImage()
+        draftCustomThemeImageUris.clear()
+        draftCustomThemeCropAnchors.clear()
+        customThemeEditorMessage = ""
+        scope.launch(Dispatchers.IO) {
+            CustomThemeImageStore.deleteAllImportedImages(context)
+        }
+    }
+
+    if (showingCustomThemeEditor) {
+        CustomThemeEditorPanel(
+            modifier = modifier.background(visualTheme.background),
+            customThemeImageUri = customThemeImageUri,
+            customThemeCropAnchor = customThemeCropAnchor,
+            customThemeImageUris = customThemeImageUris,
+            customThemeCropAnchors = customThemeCropAnchors,
+            customThemeProfile = customThemeProfile,
+            widgetSnapshot = widgetSnapshot,
+            draftCustomThemeImageUris = draftCustomThemeImageUris,
+            draftCustomThemeCropAnchors = draftCustomThemeCropAnchors,
+            customThemeEditorMessage = customThemeEditorMessage,
+            customThemeImporting = customThemeImporting,
+            onBackToThemeStore = { showingCustomThemeEditor = false },
+            onOpenHomeBlockEditor = onOpenHomeBlockEditor,
+            onPickCustomThemeImage = commonOnPickCustomThemeImage,
+            onPickMultipleCustomThemeImages = commonOnPickMultipleCustomThemeImages,
+            onCustomThemeCropAnchorChanged = commonOnCustomThemeCropAnchorChanged,
+            onDraftCustomThemeCropAnchorChanged = commonOnDraftCustomThemeCropAnchorChanged,
+            onApplyCustomThemeDraft = commonOnApplyCustomThemeDraft,
+            onDiscardCustomThemeDraft = commonOnDiscardCustomThemeDraft,
+            onClearCustomThemeWeatherImage = commonOnClearCustomThemeWeatherImage,
+            onClearCustomThemeImage = commonOnClearCustomThemeImage
+        )
+    } else {
+        LazyColumn(
+            modifier = modifier.background(visualTheme.background),
+            contentPadding = PaddingValues(bottom = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(0.dp)
+        ) {
+            item {
                 PersonalizationPanel(
                     themes = themes,
                     selectedTheme = selectedTheme,
@@ -317,32 +358,48 @@ fun PersonalizationScreen(
                     customThemeImageUris = customThemeImageUris,
                     customThemeCropAnchors = customThemeCropAnchors,
                     customThemeProfile = customThemeProfile,
+                    widgetSnapshot = widgetSnapshot,
                     draftCustomThemeImageUris = draftCustomThemeImageUris,
                     draftCustomThemeCropAnchors = draftCustomThemeCropAnchors,
                     onThemeSelected = viewModel::setVisualTheme,
+                    backRequestVersion = panelBackRequestVersion,
+                    onBackRequestConsumed = { consumed ->
+                        if (!consumed) {
+                            onExitRequested()
+                        }
+                    },
                     onOpenCustomThemeEditor = {
                         viewModel.setVisualTheme(VisualThemeUtils.THEME_CUSTOM_1)
                         showingCustomThemeEditor = true
-                    },
+                    }
                 )
             }
-        }
-        if (message.isNotBlank() && !message.startsWith("主题/个性化")) {
-            item {
-                InfoCard(
-                    modifier = Modifier.padding(
-                        horizontal = YunJiUiTokens.ScreenHorizontalPadding,
-                        vertical = 12.dp
-                    )
-                ) {
-                    Text(
-                        text = message,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
+            if (message.isNotBlank() && !message.startsWith("\u4e3b\u9898/\u4e2a\u6027\u5316")) {
+                item {
+                    InfoCard(
+                        modifier = Modifier.padding(
+                            horizontal = YunJiUiTokens.ScreenHorizontalPadding,
+                            vertical = 12.dp
+                        )
+                    ) {
+                        Text(
+                            text = message,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         }
+    }
+}
+
+private fun persistReadPermission(context: Context, uri: Uri) {
+    runCatching {
+        context.contentResolver.takePersistableUriPermission(
+            uri,
+            Intent.FLAG_GRANT_READ_URI_PERMISSION
+        )
     }
 }
 

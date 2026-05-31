@@ -1,4 +1,4 @@
-package com.litroenade.yunjiweather.ui.compose.screens
+﻿package com.litroenade.yunjiweather.ui.compose.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -123,8 +123,7 @@ import kotlinx.coroutines.delay
 import kotlin.math.abs
 
 /**
- * 首页主天气面板。
- * 这里把切城、下拉刷新、动态天气背景和可重排模块组合起来，具体卡片渲染下沉到模块层。
+ * 首页主天气面板，组合切城、下拉刷新、动态天气背景和可重排模块。
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -230,8 +229,8 @@ fun HomeScreen(
         Modifier
     }
 
-    val headerCityName = displayedWeatherData?.cityName ?: "云迹天气"
-    val headerNoticeText = message
+    val headerCityName = displayedWeatherData?.cityName ?: "\u4e91\u8ff9\u5929\u6c14"
+    val headerNoticeText = homeHeaderNoticeText(message, isRefreshing, uiState)
     val visualTheme = LocalYunJiVisualTheme.current
     val themeSkin = LocalThemeSkin.current
     val customThemeOptions = LocalCustomThemeOptions.current
@@ -287,7 +286,7 @@ fun HomeScreen(
             )
         )
     } else {
-        weatherBackground(weatherSceneSpec, themeSkin)
+        weatherBackground(weatherSceneSpec, lightContext, themeSkin)
     }
     Box(
         modifier = modifier
@@ -396,7 +395,12 @@ fun HomeScreen(
             when (val state = uiState) {
                 null -> item {
                     Spacer(Modifier.height(18.dp))
-                    MessageCard("等待加载", "正在读取默认城市天气。", "刷新", viewModel::refresh)
+                    MessageCard(
+                        "\u7b49\u5f85\u52a0\u8f7d",
+                        "\u6b63\u5728\u8bfb\u53d6\u9ed8\u8ba4\u57ce\u5e02\u5929\u6c14\u3002",
+                        "\u5237\u65b0",
+                        viewModel::refresh
+                    )
                 }
 
                 else -> when (state.status) {
@@ -404,9 +408,9 @@ fun HomeScreen(
                     UiState.Status.ERROR, UiState.Status.EMPTY -> item {
                         Spacer(Modifier.height(18.dp))
                         MessageCard(
-                            title = "天气加载失败",
-                            message = state.message ?: "暂无可用天气数据。",
-                            buttonText = "重试",
+                            title = "\u5929\u6c14\u52a0\u8f7d\u5931\u8d25",
+                            message = state.message ?: "\u6682\u65e0\u53ef\u7528\u5929\u6c14\u6570\u636e\u3002",
+                            buttonText = "\u91cd\u8bd5",
                             onButtonClick = viewModel::refresh
                         )
                     }
@@ -416,7 +420,12 @@ fun HomeScreen(
                         if (data == null) {
                             item {
                                 Spacer(Modifier.height(18.dp))
-                                MessageCard("天气加载失败", "天气数据为空。", "重试", viewModel::refresh)
+                                MessageCard(
+                                    "\u5929\u6c14\u52a0\u8f7d\u5931\u8d25",
+                                    "\u5929\u6c14\u6570\u636e\u4e3a\u7a7a\u3002",
+                                    "\u91cd\u8bd5",
+                                    viewModel::refresh
+                                )
                             }
                         } else {
                             val displayData = debugWeatherOverride?.applyTo(data) ?: data
@@ -530,9 +539,9 @@ private fun PullRefreshStatus(
         return
     }
     val text = when {
-        isRefreshing -> "正在更新 · $lastUpdateText"
-        pullFraction >= 1f -> "松开更新 · $lastUpdateText"
-        else -> "下拉更新 · $lastUpdateText"
+        isRefreshing -> "\u6b63\u5728\u66f4\u65b0 \u00b7 $lastUpdateText"
+        pullFraction >= 1f -> "\u677e\u5f00\u66f4\u65b0 \u00b7 $lastUpdateText"
+        else -> "\u4e0b\u62c9\u66f4\u65b0 \u00b7 $lastUpdateText"
     }
     val themeEffect = ThemeWeatherEffectCatalog.getEffect(LocalThemeSkin.current.key)
     val textColor = foregroundOverride
@@ -579,7 +588,7 @@ private fun LoadingCard() {
         ) {
             CircularProgressIndicator()
             Text(
-                text = "正在更新天气数据",
+                text = "\u6b63\u5728\u66f4\u65b0\u5929\u6c14\u6570\u636e",
                 style = MaterialTheme.typography.bodyLarge
             )
         }
@@ -682,7 +691,7 @@ private fun CurrentWeatherSection(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "${data.condition}  空气${data.airQualityCategory}",
+                    text = "${data.condition}  \u7a7a\u6c14${data.airQualityCategory}",
                     style = MaterialTheme.typography.titleSmall,
                     color = secondaryTextColor,
                     modifier = Modifier.align(Alignment.CenterHorizontally),
@@ -693,7 +702,7 @@ private fun CurrentWeatherSection(
             Spacer(Modifier.weight(1f))
             Text(
                 text = if (state.status == UiState.Status.CACHE) {
-                    "缓存 ${formatWeatherTime(state.updateTime)}"
+                    "\u7f13\u5b58 ${formatWeatherTime(state.updateTime)}"
                 } else {
                     "更新 ${formatWeatherTime(data.updateTime)}"
                 },
@@ -765,7 +774,7 @@ private fun WeatherTopActions(
         ) {
             WeatherTopIcon(
                 iconRes = R.drawable.ic_search_24,
-                contentDescription = "搜索城市",
+                contentDescription = "\u641c\u7d22\u57ce\u5e02",
                 tint = primaryTextColor,
                 containerColor = iconContainerColor,
                 borderColor = iconBorderColor,
@@ -786,28 +795,28 @@ private fun WeatherTopActions(
                     containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
                 ) {
                     DropdownMenuItem(
-                        text = { Text("管理城市") },
+                        text = { Text("\u7ba1\u7406\u57ce\u5e02") },
                         onClick = {
                             expanded = false
                             onManageCities()
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("桌面天气") },
+                        text = { Text("\u684c\u9762\u5929\u6c14") },
                         onClick = {
                             expanded = false
                             onDesktopWeather()
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("个性化") },
+                        text = { Text("\u4e2a\u6027\u5316") },
                         onClick = {
                             expanded = false
                             onPersonalization()
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("设置") },
+                        text = { Text("璁剧疆") },
                         onClick = {
                             expanded = false
                             onSettings()
@@ -935,14 +944,14 @@ private fun CityPageDots(
 @Composable
 internal fun WeatherMetricPanel(data: HomeWeatherData, temperatureUnit: String, windUnit: String) {
     InfoCard {
-        SectionTitle("今日实况")
+        SectionTitle("\u4eca\u65e5\u5b9e\u51b5")
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            MetricTile("体感", formatTemperatureDisplay(data.feelsLike, temperatureUnit), Modifier.weight(1f))
-            MetricTile("湿度", "${data.humidity}%", Modifier.weight(1f))
+            MetricTile("\u4f53\u611f", formatTemperatureDisplay(data.feelsLike, temperatureUnit), Modifier.weight(1f))
+            MetricTile("\u6e7f\u5ea6", "${data.humidity}%", Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            MetricTile("风力", formatWindDisplay(data, windUnit), Modifier.weight(1f))
-            MetricTile("能见度", "${data.visibility} km", Modifier.weight(1f))
+            MetricTile("\u98ce\u529b", formatWindDisplay(data, windUnit), Modifier.weight(1f))
+            MetricTile("\u80fd\u89c1\u5ea6", "${data.visibility} km", Modifier.weight(1f))
         }
         AirQualitySummary(data)
     }
@@ -951,7 +960,7 @@ internal fun WeatherMetricPanel(data: HomeWeatherData, temperatureUnit: String, 
 @Composable
 internal fun WindDetailPanel(data: HomeWeatherData, windUnit: String) {
     InfoCard {
-        SectionTitle("风和风力")
+        SectionTitle("\u98ce\u548c\u98ce\u529b")
         Text(
             text = formatWindDisplay(data, windUnit),
             style = MaterialTheme.typography.headlineSmall,
@@ -961,12 +970,12 @@ internal fun WindDetailPanel(data: HomeWeatherData, windUnit: String) {
             overflow = TextOverflow.Ellipsis
         )
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            MetricTile("风向", data.windDir, Modifier.weight(1f))
-            MetricTile("风速", "${data.windSpeed} km/h", Modifier.weight(1f))
+            MetricTile("\u98ce\u5411", data.windDir, Modifier.weight(1f))
+            MetricTile("\u98ce\u901f", "${data.windSpeed} km/h", Modifier.weight(1f))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            MetricTile("气压", "${data.pressure} hPa", Modifier.weight(1f))
-            MetricTile("能见度", "${data.visibility} km", Modifier.weight(1f))
+            MetricTile("\u6c14\u538b", "${data.pressure} hPa", Modifier.weight(1f))
+            MetricTile("\u80fd\u89c1\u5ea6", "${data.visibility} km", Modifier.weight(1f))
         }
     }
 }
@@ -974,7 +983,7 @@ internal fun WindDetailPanel(data: HomeWeatherData, windUnit: String) {
 @Composable
 internal fun SunAndAirPanel(data: HomeWeatherData) {
     InfoCard {
-        SectionTitle("空气质量概览")
+        SectionTitle("\u7a7a\u6c14\u8d28\u91cf\u6982\u89c8")
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -1024,11 +1033,11 @@ internal fun SunAndAirPanel(data: HomeWeatherData) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             MetricTile(
                 "UV",
-                data.uvIndex.ifBlank { "暂无" },
+                data.uvIndex.ifBlank { "\u6682\u65e0" },
                 Modifier.weight(1f)
             )
             MetricTile(
-                "首要污染物",
+                "\u9996\u8981\u6c61\u67d3\u7269",
                 data.primaryPollutant,
                 Modifier.weight(1f)
             )
@@ -1036,12 +1045,12 @@ internal fun SunAndAirPanel(data: HomeWeatherData) {
         if (data.sunrise.isNotBlank() && data.sunset.isNotBlank()) {
             SunriseSunsetArc(data.sunrise, data.sunset)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                MetricTile("日出", data.sunrise, Modifier.weight(1f))
-                MetricTile("日落", data.sunset, Modifier.weight(1f))
+                MetricTile("\u65e5\u51fa", data.sunrise, Modifier.weight(1f))
+                MetricTile("\u65e5\u843d", data.sunset, Modifier.weight(1f))
             }
         } else {
             Text(
-                text = "当前缓存缺少日出日落数据，刷新后会从天气接口补齐。",
+                text = "\u5f53\u524d\u7f13\u5b58\u7f3a\u5c11\u65e5\u51fa\u65e5\u843d\u6570\u636e\uff0c\u5237\u65b0\u540e\u4f1a\u4ece\u5929\u6c14\u63a5\u53e3\u8865\u9f50\u3002",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1075,7 +1084,7 @@ private fun SunriseSunsetArc(sunrise: String, sunset: String) {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(
-                text = "日出日落 · ${progressState.phaseText}",
+                text = "\u65e5\u51fa\u65e5\u843d \u00b7 ${progressState.phaseText}",
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurface
@@ -1170,7 +1179,7 @@ private fun AirQualitySummary(data: HomeWeatherData) {
                     verticalArrangement = Arrangement.spacedBy(3.dp)
                 ) {
                     Text(
-                        text = "空气质量",
+                        text = "\u7a7a\u6c14\u8d28\u91cf",
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -1194,7 +1203,7 @@ private fun AirQualitySummary(data: HomeWeatherData) {
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = "首要污染物 ${data.primaryPollutant}",
+                        text = "\u9996\u8981\u6c61\u67d3\u7269 ${data.primaryPollutant}",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onPrimaryContainer,
                         maxLines = 1,
@@ -1233,7 +1242,7 @@ internal fun WeatherInsightPanel(
         HomeWeatherInsightBuilder.build(data, warnings)
     }
     InfoCard {
-        SectionTitle("今日资讯")
+        SectionTitle("\u4eca\u65e5\u8d44\u8baf")
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -1263,12 +1272,12 @@ internal fun AdvicePanel(data: HomeWeatherData) {
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             AdviceTile(
-                title = "穿衣",
+                title = "\u7a7f\u8863",
                 text = data.clothingAdvice,
                 modifier = Modifier.weight(1f)
             )
             AdviceTile(
-                title = "出行",
+                title = "\u51fa\u884c",
                 text = data.travelAdvice,
                 modifier = Modifier.weight(1f)
             )
@@ -1283,27 +1292,27 @@ internal fun CalendarLifePanel(
 ) {
     val lunarDay = remember { LunarCalendarUtils.today() }
     InfoCard {
-        SectionTitle("日历生活")
+        SectionTitle("\u65e5\u5386\u751f\u6d3b")
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             FeatureEntryTile(
                 title = lunarDay.weekdayText,
-                subtitle = "${lunarDay.gregorianText} · ${lunarDay.lunarText}",
+                subtitle = "${lunarDay.gregorianText} \u00b7 ${lunarDay.lunarText}",
                 onClick = onOpenLifeIndex,
                 modifier = Modifier.weight(1f)
             )
             FeatureEntryTile(
                 title = lunarDay.festivalOrDefaultText,
-                subtitle = "结合 ${data.cityName} 的天气查看生活建议",
+                subtitle = "\u7ed3\u5408 ${data.cityName} \u7684\u5929\u6c14\u67e5\u770b\u751f\u6d3b\u5efa\u8bae",
                 onClick = onOpenLifeIndex,
                 modifier = Modifier.weight(1f)
             )
         }
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            MetricTile("穿衣", data.clothingAdvice, Modifier.weight(1f))
-            MetricTile("出行", data.travelAdvice, Modifier.weight(1f))
+            MetricTile("\u7a7f\u8863", data.clothingAdvice, Modifier.weight(1f))
+            MetricTile("\u51fa\u884c", data.travelAdvice, Modifier.weight(1f))
         }
     }
 }
@@ -1337,9 +1346,9 @@ private fun AdviceTile(
 @Composable
 internal fun HourlyForecast(forecasts: List<WeatherHourlyData>, temperatureUnit: String) {
     InfoCard {
-        SectionTitle("逐小时")
+        SectionTitle("\u9010\u5c0f\u65f6")
         if (forecasts.isEmpty()) {
-            Text("暂无逐小时数据", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("\u6682\u65e0\u9010\u5c0f\u65f6\u6570\u636e", color = MaterialTheme.colorScheme.onSurfaceVariant)
             return@InfoCard
         }
         LazyRow(
@@ -1395,9 +1404,9 @@ internal fun DailyForecast(
     referenceTimeMillis: Long
 ) {
     InfoCard {
-        SectionTitle("未来几天")
+        SectionTitle("\u672a\u6765\u51e0\u5929")
         if (items.isEmpty()) {
-            Text("暂无日预报数据", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("\u6682\u65e0\u65e5\u9884\u62a5\u6570\u636e", color = MaterialTheme.colorScheme.onSurfaceVariant)
             return@InfoCard
         }
         LazyRow(
@@ -1477,7 +1486,7 @@ private fun DebugWeatherDialog(
     var selectedTime by remember(selectedOverride) { mutableStateOf(initialOverride.time) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("调试时间与天气") },
+        title = { Text("\u8c03\u8bd5\u65f6\u95f4\u4e0e\u5929\u6c14") },
         text = {
             LazyColumn(
                 modifier = Modifier.height(430.dp),
@@ -1485,12 +1494,12 @@ private fun DebugWeatherDialog(
             ) {
                 item {
                     Text(
-                        text = "选择一个时间段和一种天气，组合后只影响当前页面预览，不写入缓存。",
+                        text = "\u9009\u62e9\u4e00\u4e2a\u65f6\u95f4\u6bb5\u548c\u4e00\u79cd\u5929\u6c14\uff0c\u7ec4\u5408\u540e\u53ea\u5f71\u54cd\u5f53\u524d\u9875\u9762\u9884\u89c8\uff0c\u4e0d\u5199\u5165\u7f13\u5b58\u3002",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                item { DebugSectionTitle("时间") }
+                item { DebugSectionTitle("\u65f6\u95f4") }
                 items(DebugWeatherPresets.timePresets, key = { preset -> preset.key }) { preset ->
                     DebugWeatherOption(
                         title = preset.title,
@@ -1499,7 +1508,7 @@ private fun DebugWeatherDialog(
                         onClick = { selectedTime = preset }
                     )
                 }
-                item { DebugSectionTitle("天气") }
+                item { DebugSectionTitle("\u5929\u6c14") }
                 items(DebugWeatherPresets.weatherPresets, key = { preset -> preset.key }) { preset ->
                     DebugWeatherOption(
                         title = preset.title,
@@ -1525,7 +1534,7 @@ private fun DebugWeatherDialog(
                         onOverrideSelected(DebugWeatherOverride(selectedWeather, selectedTime))
                     }
                 ) {
-                    Text("应用组合")
+                    Text("\u5e94\u7528\u7ec4\u5408")
                 }
             }
         }
@@ -1604,10 +1613,33 @@ private fun lastWeatherUpdateLabel(state: UiState<HomeWeatherData>?, data: HomeW
         data?.updateTime ?: 0L
     }
     return if (updateMillis > 0L) {
-        "上次 ${formatWeatherTime(updateMillis)}"
+        "\u4e0a\u6b21 ${formatWeatherTime(updateMillis)}"
     } else {
         "尚未更新"
     }
+}
+
+internal fun homeHeaderNoticeText(
+    rawMessage: String,
+    isRefreshing: Boolean,
+    state: UiState<HomeWeatherData>?
+): String {
+    val message = rawMessage.trim()
+    if (message.isEmpty()) {
+        return ""
+    }
+    return if (isCacheRefreshingNotice(message)) {
+        if (isRefreshing && state?.status == UiState.Status.CACHE) message else ""
+    } else {
+        message
+    }
+}
+
+private fun isCacheRefreshingNotice(message: String): Boolean {
+    return message.contains("\u6b63\u5728\u540c\u6b65") ||
+        (message.contains("\u672c\u5730\u7f13\u5b58") && message.contains("\u6b63\u5728\u5237\u65b0\u5929\u6c14")) ||
+        message.contains("\u5df2\u663e\u793a\u8fc7\u671f\u672c\u5730\u7f13\u5b58") ||
+        message.contains("\u5df2\u663e\u793a\u672c\u5730\u7f13\u5b58")
 }
 
 @Composable
@@ -1652,9 +1684,16 @@ private fun HomeBackdropScrim(
     }
 }
 
-private fun weatherBackground(sceneSpec: WeatherSceneSpec, skin: ThemeSkin): Brush {
+private fun weatherBackground(
+    sceneSpec: WeatherSceneSpec,
+    lightContext: WeatherLightContext,
+    skin: ThemeSkin
+): Brush {
     val depth = ((skin.homeImmersion - 1f) * 0.38f).coerceIn(0f, 0.22f)
-    if (sceneSpec.category == WeatherIconUtils.WeatherCategory.NIGHT) {
+    val night = lightContext.isNight || sceneSpec.category == WeatherIconUtils.WeatherCategory.NIGHT
+    val warmPhase = lightContext.phase == WeatherLightContext.Phase.DAWN ||
+        lightContext.phase == WeatherLightContext.Phase.DUSK
+    if (night && sceneSpec.precipitation == WeatherSceneSpec.Precipitation.NONE) {
         return Brush.verticalGradient(
             listOf(
                 skin.nightGradientTop,
@@ -1663,11 +1702,39 @@ private fun weatherBackground(sceneSpec: WeatherSceneSpec, skin: ThemeSkin): Bru
             )
         )
     }
+    val phaseTint = when {
+        night -> Color(0xFF122331)
+        warmPhase && lightContext.phase == WeatherLightContext.Phase.DAWN -> Color(0xFFFFC27A)
+        warmPhase -> Color(0xFFFF8E76)
+        else -> Color.Transparent
+    }
+    val tintAmount = when {
+        night -> 0.38f
+        warmPhase -> 0.20f + lightContext.warmth * 0.12f
+        else -> 0f
+    }
+    val precipitationDepth = when (sceneSpec.precipitation) {
+        WeatherSceneSpec.Precipitation.RAIN -> if (night) 0.30f else 0.16f
+        WeatherSceneSpec.Precipitation.SNOW -> if (night) 0.22f else 0.08f
+        WeatherSceneSpec.Precipitation.NONE -> 0f
+    }
     return Brush.verticalGradient(
         listOf(
-            deepenWeatherColor(Color(sceneSpec.topColor), depth),
-            deepenWeatherColor(Color(sceneSpec.middleColor), depth * 0.72f),
-            Color(sceneSpec.bottomColor)
+            phaseTintWeatherColor(
+                deepenWeatherColor(Color(sceneSpec.topColor), depth + precipitationDepth),
+                phaseTint,
+                tintAmount
+            ),
+            phaseTintWeatherColor(
+                deepenWeatherColor(Color(sceneSpec.middleColor), depth * 0.72f + precipitationDepth * 0.72f),
+                phaseTint,
+                tintAmount * 0.82f
+            ),
+            phaseTintWeatherColor(
+                deepenWeatherColor(Color(sceneSpec.bottomColor), precipitationDepth * 0.45f),
+                phaseTint,
+                tintAmount * 0.42f
+            )
         )
     )
 }
@@ -1680,6 +1747,19 @@ private fun deepenWeatherColor(color: Color, amount: Float): Color {
         red = (color.red * (1f - amount)).coerceIn(0f, 1f),
         green = (color.green * (1f - amount * 0.92f)).coerceIn(0f, 1f),
         blue = (color.blue * (1f - amount * 0.58f)).coerceIn(0f, 1f),
+        alpha = color.alpha
+    )
+}
+
+private fun phaseTintWeatherColor(color: Color, tint: Color, amount: Float): Color {
+    if (amount <= 0f || tint.alpha <= 0f) {
+        return color
+    }
+    val clamped = amount.coerceIn(0f, 1f)
+    return Color(
+        red = color.red * (1f - clamped) + tint.red * clamped,
+        green = color.green * (1f - clamped) + tint.green * clamped,
+        blue = color.blue * (1f - clamped) + tint.blue * clamped,
         alpha = color.alpha
     )
 }

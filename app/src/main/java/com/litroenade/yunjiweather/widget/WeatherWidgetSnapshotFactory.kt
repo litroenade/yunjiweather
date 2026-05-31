@@ -2,6 +2,7 @@ package com.litroenade.yunjiweather.widget
 
 import com.litroenade.yunjiweather.data.model.CustomThemeAsset
 import com.litroenade.yunjiweather.data.model.HomeWeatherData
+import com.litroenade.yunjiweather.utils.WeatherDisplayUtils
 
 object WeatherWidgetSnapshotFactory {
 
@@ -11,11 +12,21 @@ object WeatherWidgetSnapshotFactory {
         updateText: String,
         customBackground: CustomThemeAsset = CustomThemeAsset.empty()
     ): WeatherWidgetSnapshot {
+        return fromHomeWeather(data, updateText, customBackground, WeatherDisplayUtils.TEMPERATURE_CELSIUS)
+    }
+
+    @JvmStatic
+    fun fromHomeWeather(
+        data: HomeWeatherData,
+        updateText: String,
+        customBackground: CustomThemeAsset,
+        temperatureUnit: String
+    ): WeatherWidgetSnapshot {
         return WeatherWidgetSnapshot(
             cityName = data.cityName,
-            temperatureText = "${data.temperature}°",
+            temperatureText = WeatherDisplayUtils.formatTemperature(data.temperature, temperatureUnit),
             conditionText = data.condition,
-            rangeText = "${data.tempMax}° / ${data.tempMin}°",
+            rangeText = "${WeatherDisplayUtils.formatTemperature(data.tempMax, temperatureUnit)} / ${WeatherDisplayUtils.formatTemperature(data.tempMin, temperatureUnit)}",
             updateText = updateText,
             isAvailable = true,
             humidityText = "\u6e7f\u5ea6 ${data.humidity}%",
@@ -47,13 +58,15 @@ object WeatherWidgetSnapshotFactory {
 
     private fun clothingValue(temperature: String, advice: String): String {
         val normalizedAdvice = advice.trim()
+        val parsedTemperature = parseTemperature(temperature)
         return when {
             normalizedAdvice.contains("\u77ed\u8896") -> "\u77ed\u8896"
             normalizedAdvice.contains("\u5916\u5957") -> "\u5916\u5957"
             normalizedAdvice.contains("\u7fbd\u7ed2") -> "\u7fbd\u7ed2\u670d"
             normalizedAdvice.contains("\u6bdb\u8863") -> "\u6bdb\u8863"
-            parseTemperature(temperature) >= 26 -> "\u77ed\u8896"
-            parseTemperature(temperature) <= 10 -> "\u539a\u5916\u5957"
+            parsedTemperature == null -> "\u6682\u65e0"
+            parsedTemperature >= 26 -> "\u77ed\u8896"
+            parsedTemperature <= 10 -> "\u539a\u5916\u5957"
             else -> "\u8584\u5916\u5957"
         }
     }
@@ -79,10 +92,11 @@ object WeatherWidgetSnapshotFactory {
     }
 
     private fun coldValue(temperature: String): String {
-        return if (parseTemperature(temperature) <= 12) "\u6ce8\u610f" else "\u4e0d\u6613"
+        val parsedTemperature = parseTemperature(temperature) ?: return "\u6682\u65e0"
+        return if (parsedTemperature <= 12) "\u6ce8\u610f" else "\u4e0d\u6613"
     }
 
-    private fun parseTemperature(temperature: String): Int {
-        return temperature.trim().toDoubleOrNull()?.toInt() ?: 20
+    private fun parseTemperature(temperature: String): Int? {
+        return temperature.trim().toDoubleOrNull()?.toInt()
     }
 }

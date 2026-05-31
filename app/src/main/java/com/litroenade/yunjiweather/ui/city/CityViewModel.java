@@ -92,11 +92,11 @@ public class CityViewModel extends AndroidViewModel {
             try {
                 CityEntity city = createCity(cityName);
                 if (city == null) {
-                    message.postValue("请输入城市名称");
+                    message.postValue("\u8bf7\u8f93\u5165\u57ce\u5e02\u540d\u79f0");
                     return;
                 }
                 if (cityRepository.findByLocationId(city.locationId) != null) {
-                    message.postValue("该城市已存在");
+                    message.postValue("\u8be5\u57ce\u5e02\u5df2\u5b58\u5728");
                     return;
                 }
                 if (cityRepository.count() == 0) {
@@ -104,7 +104,7 @@ public class CityViewModel extends AndroidViewModel {
                 }
                 cityRepository.insert(city);
                 searchResults.postValue(Collections.emptyList());
-                message.postValue("城市已添加");
+                message.postValue("\u57ce\u5e02\u5df2\u6dfb\u52a0");
                 reloadOnExecutor();
             } catch (IOException exception) {
                 message.postValue(exception.getMessage());
@@ -118,7 +118,7 @@ public class CityViewModel extends AndroidViewModel {
         String normalizedCityName = cityName == null ? "" : cityName.trim();
         if (normalizedCityName.isEmpty()) {
             searchResults.setValue(Collections.emptyList());
-            message.setValue("请输入城市名称");
+            message.setValue("\u8bf7\u8f93\u5165\u57ce\u5e02\u540d\u79f0");
             return;
         }
         busy.setValue(true);
@@ -130,7 +130,9 @@ public class CityViewModel extends AndroidViewModel {
                         System.currentTimeMillis()
                 );
                 searchResults.postValue(results);
-                message.postValue(results.isEmpty() ? "未找到匹配城市" : "请选择要添加的城市");
+                message.postValue(results.isEmpty() ?
+                        "\u672a\u627e\u5230\u5339\u914d\u57ce\u5e02" :
+                        "\u8bf7\u9009\u62e9\u8981\u6dfb\u52a0\u7684\u57ce\u5e02");
             } catch (IOException exception) {
                 searchResults.postValue(Collections.emptyList());
                 message.postValue(exception.getMessage());
@@ -148,7 +150,7 @@ public class CityViewModel extends AndroidViewModel {
         executorService.execute(() -> {
             try {
                 if (cityRepository.findByLocationId(city.locationId) != null) {
-                    message.postValue("该城市已存在");
+                    message.postValue("\u8be5\u57ce\u5e02\u5df2\u5b58\u5728");
                     return;
                 }
                 long nowTime = System.currentTimeMillis();
@@ -158,7 +160,7 @@ public class CityViewModel extends AndroidViewModel {
                 city.createTime = nowTime;
                 cityRepository.insert(city);
                 searchResults.postValue(Collections.emptyList());
-                message.postValue("城市已添加");
+                message.postValue("\u57ce\u5e02\u5df2\u6dfb\u52a0");
                 reloadOnExecutor();
             } finally {
                 busy.postValue(false);
@@ -171,7 +173,7 @@ public class CityViewModel extends AndroidViewModel {
         executorService.execute(() -> {
             try {
                 cityRepository.deleteCity(city, System.currentTimeMillis());
-                message.postValue("城市已删除");
+                message.postValue("\u57ce\u5e02\u5df2\u5220\u9664");
                 reloadOnExecutor();
                 if (city.isDefault) {
                     defaultCityChangeVersion.postValue(++defaultCityChangeCounter);
@@ -195,7 +197,7 @@ public class CityViewModel extends AndroidViewModel {
         executorService.execute(() -> {
             try {
                 cityRepository.setDefaultCity(city.locationId, System.currentTimeMillis());
-                message.postValue("默认城市已切换为 " + city.cityName);
+                message.postValue("\u9ed8\u8ba4\u57ce\u5e02\u5df2\u5207\u6362\u4e3a " + city.cityName);
                 reloadOnExecutor();
                 defaultCityChangeVersion.postValue(++defaultCityChangeCounter);
             } finally {
@@ -225,7 +227,7 @@ public class CityViewModel extends AndroidViewModel {
         List<CityEntity> cityEntities = cityRepository.findAll();
         CityEntity defaultCityEntity = cityRepository.findDefaultCity();
         cities.postValue(cityEntities);
-        defaultCity.postValue(defaultCityEntity == null ? "北京" : defaultCityEntity.cityName);
+        defaultCity.postValue(defaultCityEntity == null ? "\u5317\u4eac" : defaultCityEntity.cityName);
         Map<String, CityWeatherSummary> summaries = cityWeatherSummaryRepository.loadSummaries(
                 cityEntities,
                 this::publishCitySummaries

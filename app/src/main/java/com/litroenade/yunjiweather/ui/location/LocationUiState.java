@@ -1,8 +1,7 @@
 package com.litroenade.yunjiweather.ui.location;
 
 /**
- * 定位入口的界面状态机。
- * 城市页面根据状态展示授权、定位中、失败和手动搜索降级提示。
+ * Location entry UI state for city and widget screens.
  */
 public final class LocationUiState {
 
@@ -20,11 +19,11 @@ public final class LocationUiState {
     }
 
     public static LocationUiState requestingPermission() {
-        return new LocationUiState(LocationStatus.REQUESTING_PERMISSION, "需要定位权限来识别当前城市。");
+        return new LocationUiState(LocationStatus.REQUESTING_PERMISSION, "\u9700\u8981\u5b9a\u4f4d\u6743\u9650\u6765\u8bc6\u522b\u5f53\u524d\u57ce\u5e02\u3002");
     }
 
     public static LocationUiState fetchingLocation() {
-        return new LocationUiState(LocationStatus.FETCHING_LOCATION, "正在获取系统定位。");
+        return new LocationUiState(LocationStatus.FETCHING_LOCATION, "\u6b63\u5728\u83b7\u53d6\u7cfb\u7edf\u5b9a\u4f4d\u3002");
     }
 
     public static LocationUiState success(String message) {
@@ -36,7 +35,7 @@ public final class LocationUiState {
     }
 
     public static LocationUiState denied() {
-        return new LocationUiState(LocationStatus.DENIED, "未授予定位权限，可手动搜索并添加城市。");
+        return new LocationUiState(LocationStatus.DENIED, "\u672a\u6388\u4e88\u5b9a\u4f4d\u6743\u9650\uff0c\u53ef\u624b\u52a8\u641c\u7d22\u5e76\u6dfb\u52a0\u57ce\u5e02\u3002");
     }
 
     public LocationStatus getStatus() {

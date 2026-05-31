@@ -23,15 +23,16 @@ internal object PanoramaWeatherEffect : ThemeWeatherEffect {
 
     override fun homeBackdropImageResId(sceneSpec: WeatherSceneSpec, lightContext: WeatherLightContext): Int {
         return when {
-            lightContext.isNight || sceneSpec.category == WeatherIconUtils.WeatherCategory.NIGHT -> R.drawable.theme_panorama_night
             sceneSpec.precipitation == WeatherSceneSpec.Precipitation.RAIN -> R.drawable.theme_panorama_rain
             sceneSpec.precipitation == WeatherSceneSpec.Precipitation.SNOW -> R.drawable.theme_panorama_snow
+            lightContext.isNight || sceneSpec.category == WeatherIconUtils.WeatherCategory.NIGHT -> R.drawable.theme_panorama_night
             else -> R.drawable.theme_panorama_day
         }
     }
 
     override fun homeBackdropAlpha(sceneSpec: WeatherSceneSpec, lightContext: WeatherLightContext): Float {
         return when {
+            lightContext.isNight && sceneSpec.precipitation != WeatherSceneSpec.Precipitation.NONE -> 0.50f
             lightContext.isNight -> 0.32f
             sceneSpec.precipitation != WeatherSceneSpec.Precipitation.NONE -> 0.54f
             else -> 0.62f + lightContext.exposure * 0.08f
@@ -54,8 +55,13 @@ internal object PanoramaWeatherEffect : ThemeWeatherEffect {
         skin: ThemeSkin
     ) {
         drawExposureScrim(sceneSpec, lightContext)
-        if (lightContext.isNight || sceneSpec.category == WeatherIconUtils.WeatherCategory.NIGHT) {
+        val clearNight = sceneSpec.precipitation == WeatherSceneSpec.Precipitation.NONE &&
+            (lightContext.isNight || sceneSpec.category == WeatherIconUtils.WeatherCategory.NIGHT)
+        val night = lightContext.isNight || sceneSpec.category == WeatherIconUtils.WeatherCategory.NIGHT
+        if (clearNight) {
             drawRealNightSky(progress, immersion, skin, lightContext)
+        } else if (night) {
+            drawPrecipitationNightGlow(sceneSpec, progress, immersion)
         } else {
             drawRealSunlight(progress, immersion, skin, lightContext)
         }
@@ -136,6 +142,29 @@ private fun DrawScope.drawRealSunlight(
         )
     }
     drawLightBloom(progress, center, warmthColor, lightContext)
+}
+
+private fun DrawScope.drawPrecipitationNightGlow(
+    sceneSpec: WeatherSceneSpec,
+    progress: Float,
+    immersion: Float
+) {
+    val glowColor = when (sceneSpec.precipitation) {
+        WeatherSceneSpec.Precipitation.RAIN -> Color(0xFF8FB8D8)
+        WeatherSceneSpec.Precipitation.SNOW -> Color(0xFFCFE5F4)
+        WeatherSceneSpec.Precipitation.NONE -> Color(0xFF93AEE4)
+    }
+    val pulse = 0.84f + sin(progress * 6.28318f).toFloat() * 0.08f
+    drawRect(
+        brush = Brush.radialGradient(
+            listOf(
+                glowColor.copy(alpha = 0.12f * immersion.coerceIn(1f, 1.35f) * pulse),
+                Color.Transparent
+            ),
+            center = Offset(size.width * 0.72f, size.height * 0.16f),
+            radius = size.width * 0.72f
+        )
+    )
 }
 
 private fun DrawScope.drawLightBloom(

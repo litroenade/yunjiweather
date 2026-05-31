@@ -11,6 +11,7 @@ import com.litroenade.yunjiweather.data.local.CityDao;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class CityRepositoryTest {
@@ -18,8 +19,8 @@ public class CityRepositoryTest {
     @Test
     public void deleteDefaultCityPromotesFirstRemainingCity() {
         FakeCityDao cityDao = new FakeCityDao();
-        CityEntity beijing = city("北京", "101010100", true);
-        CityEntity shanghai = city("上海", "101020100", false);
+        CityEntity beijing = city("\u5317\u4eac", "101010100", true, 0);
+        CityEntity shanghai = city("\u4e0a\u6d77", "101020100", false, 1);
         cityDao.insert(beijing);
         cityDao.insert(shanghai);
         cityDao.insertedDuringSave = false;
@@ -35,7 +36,7 @@ public class CityRepositoryTest {
     @Test
     public void saveNewCityAsDefaultClearsOldDefaultAndInsertsCity() {
         FakeCityDao cityDao = new FakeCityDao();
-        CityEntity shenzhen = city("深圳", "101280601", true);
+        CityEntity shenzhen = city("\u6df1\u5733", "101280601", true, 0);
         CityRepository repository = new CityRepository(cityDao);
 
         repository.saveAsDefaultCity(shenzhen, 1716600000000L);
@@ -47,12 +48,12 @@ public class CityRepositoryTest {
     @Test
     public void saveExistingCityAsDefaultUsesExistingRecord() {
         FakeCityDao cityDao = new FakeCityDao();
-        CityEntity guangzhou = city("广州", "101280101", false);
+        CityEntity guangzhou = city("\u5e7f\u5dde", "101280101", false, 1);
         cityDao.insert(guangzhou);
         cityDao.insertedDuringSave = false;
         CityRepository repository = new CityRepository(cityDao);
 
-        repository.saveAsDefaultCity(city("广州", "101280101", true), 1716600000000L);
+        repository.saveAsDefaultCity(city("\u5e7f\u5dde", "101280101", true, 0), 1716600000000L);
 
         assertEquals("101280101", cityDao.defaultLocationId);
         assertFalse(cityDao.insertedDuringSave);
@@ -69,8 +70,8 @@ public class CityRepositoryTest {
     @Test
     public void deleteNonDefaultCityDoesNotPromoteFallback() {
         FakeCityDao cityDao = new FakeCityDao();
-        CityEntity beijing = city("北京", "101010100", true);
-        CityEntity shanghai = city("上海", "101020100", false);
+        CityEntity beijing = city("\u5317\u4eac", "101010100", true, 0);
+        CityEntity shanghai = city("\u4e0a\u6d77", "101020100", false, 1);
         cityDao.insert(beijing);
         cityDao.insert(shanghai);
         CityRepository repository = new CityRepository(cityDao);
@@ -84,8 +85,8 @@ public class CityRepositoryTest {
     @Test
     public void setDefaultCityClearsBeforeSettingNewDefault() {
         FakeCityDao cityDao = new FakeCityDao();
-        cityDao.insert(city("北京", "101010100", true));
-        cityDao.insert(city("上海", "101020100", false));
+        cityDao.insert(city("\u5317\u4eac", "101010100", true, 0));
+        cityDao.insert(city("\u4e0a\u6d77", "101020100", false, 1));
         CityRepository repository = new CityRepository(cityDao);
 
         repository.setDefaultCity("101020100", 1716600000000L);
@@ -94,8 +95,40 @@ public class CityRepositoryTest {
         assertEquals("101020100", cityDao.findDefaultCity().locationId);
     }
 
-    private static CityEntity city(String cityName, String locationId, boolean isDefault) {
-        return new CityEntity(cityName, locationId, cityName, "中国", 0.0, 0.0, isDefault, 0, 1L, 1L);
+    @Test
+    public void moveCityDownSwapsAdjacentNonDefaultSortOrders() {
+        FakeCityDao cityDao = new FakeCityDao();
+        cityDao.insert(city("\u5317\u4eac", "101010100", true, 0));
+        cityDao.insert(city("\u4e0a\u6d77", "101020100", false, 1));
+        cityDao.insert(city("\u5e7f\u5dde", "101280101", false, 2));
+        CityRepository repository = new CityRepository(cityDao);
+
+        repository.moveCity("101020100", 1, 1716600000000L);
+
+        List<CityEntity> sorted = cityDao.findAll();
+        assertEquals("101010100", sorted.get(0).locationId);
+        assertEquals("101280101", sorted.get(1).locationId);
+        assertEquals("101020100", sorted.get(2).locationId);
+        assertEquals(1716600000000L, cityDao.findByLocationId("101020100").updateTime);
+        assertEquals(1716600000000L, cityDao.findByLocationId("101280101").updateTime);
+    }
+
+    @Test
+    public void moveCityUpDoesNotCrossDefaultCity() {
+        FakeCityDao cityDao = new FakeCityDao();
+        cityDao.insert(city("\u5317\u4eac", "101010100", true, 0));
+        cityDao.insert(city("\u4e0a\u6d77", "101020100", false, 1));
+        CityRepository repository = new CityRepository(cityDao);
+
+        repository.moveCity("101020100", -1, 1716600000000L);
+
+        List<CityEntity> sorted = cityDao.findAll();
+        assertEquals("101010100", sorted.get(0).locationId);
+        assertEquals("101020100", sorted.get(1).locationId);
+    }
+
+    private static CityEntity city(String cityName, String locationId, boolean isDefault, int sortOrder) {
+        return new CityEntity(cityName, locationId, cityName, "\u4e2d\u56fd", 0.0, 0.0, isDefault, sortOrder, 1L, 1L);
     }
 
     private static final class FakeCityDao implements CityDao {
@@ -115,7 +148,12 @@ public class CityRepositoryTest {
 
         @Override
         public List<CityEntity> findAll() {
-            return new ArrayList<>(cities);
+            List<CityEntity> sorted = new ArrayList<>(cities);
+            sorted.sort(Comparator
+                    .comparing((CityEntity city) -> !city.isDefault)
+                    .thenComparingInt(city -> city.sortOrder)
+                    .thenComparingLong(city -> city.createTime));
+            return sorted;
         }
 
         @Override

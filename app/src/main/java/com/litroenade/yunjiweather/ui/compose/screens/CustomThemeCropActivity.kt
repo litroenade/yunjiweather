@@ -1,6 +1,7 @@
 package com.litroenade.yunjiweather.ui.compose.screens
 
 import android.app.Activity
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
@@ -62,16 +63,16 @@ class CustomThemeCropActivity : ComponentActivity() {
                             setResult(Activity.RESULT_CANCELED)
                             finish()
                         }) {
-                            Text("取消")
+                            Text("\u53d6\u6d88")
                         }
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = "裁剪静态底图",
+                                text = "\u88c1\u526a\u9759\u6001\u5e95\u56fe",
                                 style = MaterialTheme.typography.titleMedium,
                                 color = Color.White
                             )
                             Text(
-                                text = "动效由主题引擎叠加，这里只裁剪全屏背景底图",
+                                text = "\u52a8\u6548\u7531\u4e3b\u9898\u5f15\u64ce\u9a71\u52a8\uff0c\u8fd9\u91cc\u53ea\u88c1\u526a\u5168\u5c4f\u80cc\u666f\u5e95\u56fe\u3002",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = Color.White.copy(alpha = 0.68f)
                             )
@@ -79,7 +80,7 @@ class CustomThemeCropActivity : ComponentActivity() {
                         Button(onClick = {
                             val cropView = cropViewState.value
                             if (cropView == null) {
-                                errorText.value = "裁剪视图尚未就绪"
+                                errorText.value = "\u88c1\u526a\u89c6\u56fe\u5c1a\u672a\u5c31\u7eea"
                                 return@Button
                             }
                             val outputUri = createOutputUri()
@@ -92,7 +93,7 @@ class CustomThemeCropActivity : ComponentActivity() {
                                 outputUri
                             )
                         }) {
-                            Text("完成")
+                            Text("\u5b8c\u6210")
                         }
                     }
                     if (errorText.value.isNotBlank()) {
@@ -120,7 +121,7 @@ class CustomThemeCropActivity : ComponentActivity() {
                                         )
                                         finish()
                                     } else {
-                                        errorText.value = result.error?.message ?: "图片裁剪失败"
+                                        errorText.value = result.error?.message ?: "\u56fe\u7247\u88c1\u526a\u5931\u8d25"
                                     }
                                 }
                                 cropViewState.value = this
@@ -147,6 +148,14 @@ class CustomThemeCropActivity : ComponentActivity() {
         fun createIntent(context: Context, sourceUri: Uri): Intent {
             return Intent(context, CustomThemeCropActivity::class.java)
                 .putExtra(EXTRA_SOURCE_URI, sourceUri.toString())
+                .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                .apply {
+                    clipData = ClipData.newUri(
+                        context.contentResolver,
+                        "custom_theme_source",
+                        sourceUri
+                    )
+                }
         }
 
         fun resultUri(data: Intent?): Uri? {

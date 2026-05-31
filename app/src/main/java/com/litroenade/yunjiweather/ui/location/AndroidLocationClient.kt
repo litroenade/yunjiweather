@@ -1,7 +1,7 @@
 package com.litroenade.yunjiweather.ui.location
 
-import android.annotation.SuppressLint
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
@@ -14,8 +14,7 @@ import android.os.Looper
 import androidx.core.content.ContextCompat
 
 /**
- * 系统定位的最小封装。
- * 只给粗略权限时不读取精确定位源，避免系统权限降级后触发安全异常。
+ * Minimal system-location wrapper used by city selection flows.
  */
 class AndroidLocationClient(private val context: Context) {
 
@@ -25,18 +24,18 @@ class AndroidLocationClient(private val context: Context) {
         onError: (String) -> Unit
     ) {
         if (!LocationPermissionResult.hasUsablePermission(context)) {
-            onError("未授予定位权限，可手动搜索并添加城市。")
+            onError("\u672a\u6388\u4e88\u5b9a\u4f4d\u6743\u9650\uff0c\u53ef\u624b\u52a8\u641c\u7d22\u5e76\u6dfb\u52a0\u57ce\u5e02\u3002")
             return
         }
         val manager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
         if (manager == null) {
-            onError("系统定位服务不可用，可手动搜索并添加城市。")
+            onError("\u7cfb\u7edf\u5b9a\u4f4d\u670d\u52a1\u4e0d\u53ef\u7528\uff0c\u53ef\u624b\u52a8\u641c\u7d22\u5e76\u6dfb\u52a0\u57ce\u5e02\u3002")
             return
         }
         val fineLocationGranted = hasFineLocationPermission()
         val provider = bestProvider(manager, fineLocationGranted)
         if (provider == null) {
-            onError("未开启系统定位服务，可打开定位后重试，或手动搜索城市。")
+            onError("\u672a\u5f00\u542f\u7cfb\u7edf\u5b9a\u4f4d\u670d\u52a1\uff0c\u53ef\u6253\u5f00\u5b9a\u4f4d\u540e\u91cd\u8bd5\uff0c\u6216\u624b\u52a8\u641c\u7d22\u57ce\u5e02\u3002")
             return
         }
         val cached = newestLastKnownLocation(manager, provider, fineLocationGranted)
@@ -62,7 +61,7 @@ class AndroidLocationClient(private val context: Context) {
                 ContextCompat.getMainExecutor(context)
             ) { location ->
                 if (location == null) {
-                    onError("暂未获取到定位结果，可稍后重试或手动搜索城市。")
+                    onError("\u6682\u672a\u83b7\u53d6\u5230\u5b9a\u4f4d\u7ed3\u679c\uff0c\u53ef\u7a0d\u540e\u91cd\u8bd5\u6216\u624b\u52a8\u641c\u7d22\u57ce\u5e02\u3002")
                 } else {
                     onSuccess(location.latitude, location.longitude)
                 }
@@ -99,7 +98,7 @@ class AndroidLocationClient(private val context: Context) {
             if (!completed) {
                 completed = true
                 manager.removeUpdates(listener)
-                onError("定位等待超时，可手动搜索并添加城市。")
+                onError("\u5b9a\u4f4d\u7b49\u5f85\u8d85\u65f6\uff0c\u53ef\u624b\u52a8\u641c\u7d22\u5e76\u6dfb\u52a0\u57ce\u5e02\u3002")
             }
         }
         manager.requestSingleUpdate(provider, listener, Looper.getMainLooper())

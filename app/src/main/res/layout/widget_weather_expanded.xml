@@ -136,7 +136,7 @@
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:maxLines="1"
-                        android:text="鐭"
+                        android:text="短袖"
                         android:textColor="#FFFFFFFF"
                         android:textSize="14sp"
                         android:textStyle="bold"/>
@@ -148,7 +148,7 @@
                         android:layout_marginTop="2dp"
                         android:gravity="center"
                         android:maxLines="1"
-                        android:text="绌胯。"
+                        android:text="穿衣"
                         android:textColor="#CCFFFFFF"
                         android:textSize="10sp"/>
                 </LinearLayout>
@@ -167,7 +167,7 @@
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:maxLines="1"
-                        android:text="閫傚疁"
+                        android:text="适宜"
                         android:textColor="#FFFFFFFF"
                         android:textSize="14sp"
                         android:textStyle="bold"/>
@@ -179,7 +179,7 @@
                         android:layout_marginTop="2dp"
                         android:gravity="center"
                         android:maxLines="1"
-                        android:text="閽撻奔"
+                        android:text="钓鱼"
                         android:textColor="#CCFFFFFF"
                         android:textSize="10sp"/>
                 </LinearLayout>
@@ -210,7 +210,7 @@
                         android:layout_marginTop="2dp"
                         android:gravity="center"
                         android:maxLines="1"
-                        android:text="鏅氶湠"
+                        android:text="晚霞"
                         android:textColor="#CCFFFFFF"
                         android:textSize="10sp"/>
                 </LinearLayout>
@@ -229,7 +229,7 @@
                         android:layout_height="wrap_content"
                         android:gravity="center"
                         android:maxLines="1"
-                        android:text="涓嶆槗"
+                        android:text="不易"
                         android:textColor="#FFFFFFFF"
                         android:textSize="14sp"
                         android:textStyle="bold"/>
@@ -241,7 +241,7 @@
                         android:layout_marginTop="2dp"
                         android:gravity="center"
                         android:maxLines="1"
-                        android:text="鎰熷啋"
+                        android:text="感冒"
                         android:textColor="#CCFFFFFF"
                         android:textSize="10sp"/>
                 </LinearLayout>

@@ -2,8 +2,7 @@ package com.litroenade.yunjiweather.ui.compose.theme.profiles
 
 import com.litroenade.yunjiweather.ui.compose.theme.mixins.ThemeMixinCatalog
 import com.litroenade.yunjiweather.ui.compose.theme.skins.ThemeSkin
-import com.litroenade.yunjiweather.ui.compose.theme.skins.custom.CustomPlaceholderSkin
-import com.litroenade.yunjiweather.ui.compose.theme.skins.fantasy.FantasyPlaceholderSkin
+import com.litroenade.yunjiweather.ui.compose.theme.skins.custom.CustomThemeSkin
 import com.litroenade.yunjiweather.ui.compose.theme.skins.official.OfficialWeatherSkin
 import com.litroenade.yunjiweather.ui.compose.theme.skins.panorama.PanoramaWeatherSkin
 import com.litroenade.yunjiweather.utils.VisualThemeCatalog
@@ -13,8 +12,7 @@ object ThemeProfileCatalog {
     private val profiles = listOf(
         profile(VisualThemeUtils.THEME_SKY, OfficialWeatherSkin.skin),
         profile(VisualThemeUtils.THEME_PANORAMA, PanoramaWeatherSkin.skin),
-        profile(VisualThemeUtils.THEME_FANTASY, FantasyPlaceholderSkin.skin),
-        profile(VisualThemeUtils.THEME_CUSTOM_1, CustomPlaceholderSkin.skin)
+        profile(VisualThemeUtils.THEME_CUSTOM_1, CustomThemeSkin.skin)
     )
     private val profilesByKey = profiles.associateBy { profile -> profile.key }
     private val defaultProfile = profilesByKey.getValue(VisualThemeUtils.THEME_SKY)
@@ -26,7 +24,7 @@ object ThemeProfileCatalog {
 
     @JvmStatic
     fun getProfile(themeKey: String): ThemeProfile {
-        val catalogThemeKey = VisualThemeCatalog.getThemeOrDefault(themeKey).key
+        val catalogThemeKey = VisualThemeUtils.normalizeThemeKey(themeKey)
         return profilesByKey[catalogThemeKey] ?: defaultProfile
     }
 

@@ -4,7 +4,7 @@ import androidx.compose.ui.graphics.Color
 import com.litroenade.yunjiweather.ui.compose.theme.skins.official.OfficialWeatherSkin
 import com.litroenade.yunjiweather.utils.VisualThemeUtils
 
-object CustomPlaceholderSkin {
+object CustomThemeSkin {
     val skin = OfficialWeatherSkin.skin.copy(
         key = VisualThemeUtils.THEME_CUSTOM_1,
         folderName = "custom",

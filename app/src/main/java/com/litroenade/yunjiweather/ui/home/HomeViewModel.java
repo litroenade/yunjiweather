@@ -209,10 +209,21 @@ public class HomeViewModel extends AndroidViewModel {
                     System.currentTimeMillis()
             );
             publishHomeWeatherResult(refreshResult);
+            clearTransientCacheRefreshMessage(refreshResult);
         } catch (RuntimeException exception) {
             message.postValue("天气同步失败，继续显示本地缓存：" + buildLoadErrorMessage(exception));
         } finally {
             refreshing.postValue(false);
+        }
+    }
+
+    private void clearTransientCacheRefreshMessage(LoadHomeWeatherPageUseCase.Result result) {
+        UiState<HomeWeatherData> weatherState = result.getWeatherState();
+        if (weatherState == null || weatherState.getData() == null) {
+            return;
+        }
+        if (weatherState.getStatus() == UiState.Status.SUCCESS || result.isSatisfiedByFreshCache()) {
+            message.postValue("");
         }
     }
 

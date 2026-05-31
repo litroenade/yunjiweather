@@ -24,6 +24,7 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 public class VisualThemeUtilsTest {
 
@@ -58,21 +59,19 @@ public class VisualThemeUtilsTest {
     }
 
     @Test
-    public void catalog_marksFantasyAsPlaceholderSlot() {
+    public void catalog_treatsFantasyAsLegacyThemeKey() {
         VisualTheme fantasy = VisualThemeCatalog.findByKey(VisualThemeUtils.THEME_FANTASY);
 
-        assertNotNull(fantasy);
-        assertEquals("幻想乡", fantasy.getDisplayName());
-        assertEquals(false, fantasy.isSelectable());
+        assertNull(fantasy);
         assertEquals(false, VisualThemeUtils.isSupportedTheme(VisualThemeUtils.THEME_FANTASY));
-        assertEquals(false, VisualThemeCatalog.getThemes().contains(fantasy));
+        assertEquals(VisualThemeUtils.THEME_PANORAMA, VisualThemeUtils.normalizeThemeKey(VisualThemeUtils.THEME_FANTASY));
     }
 
     @Test
     public void skinCatalog_mapsThemeKeysToDedicatedFolders() {
         assertEquals("official", ThemeSkinCatalog.getThemeFolder(VisualThemeUtils.THEME_SKY));
         assertEquals("panorama", ThemeSkinCatalog.getThemeFolder(VisualThemeUtils.THEME_PANORAMA));
-        assertEquals("fantasy", ThemeSkinCatalog.getThemeFolder(VisualThemeUtils.THEME_FANTASY));
+        assertEquals("panorama", ThemeSkinCatalog.getThemeFolder(VisualThemeUtils.THEME_FANTASY));
         assertEquals("custom", ThemeSkinCatalog.getThemeFolder(VisualThemeUtils.THEME_CUSTOM_1));
     }
 
@@ -106,8 +105,7 @@ public class VisualThemeUtilsTest {
     }
 
     @Test
-    public void placeholderSkinsArePreviewOnly() {
-        assertEquals(false, ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_FANTASY).isRuntimeSelectable());
+    public void customSkinIsRuntimeSelectable() {
         assertEquals(true, ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_CUSTOM_1).isRuntimeSelectable());
     }
 

@@ -30,6 +30,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -82,6 +83,7 @@ fun DesktopWeatherScreen(
     modifier: Modifier = Modifier,
     homeWeatherData: HomeWeatherData? = null,
     homeWeatherUpdateTime: Long = 0L,
+    temperatureUnit: String = "\u0043",
     animationEnabled: Boolean = true,
     locationUiState: LocationUiState = LocationUiState.idle(),
     onRequestLocation: () -> Unit = {},
@@ -95,18 +97,24 @@ fun DesktopWeatherScreen(
     val visualTheme = LocalYunJiVisualTheme.current
     val customThemeOptions = LocalCustomThemeOptions.current
     val customWidgetBackground = customWidgetBackground(visualTheme.key, customThemeOptions)
-    val previewSnapshot = remember(homeWeatherData, homeWeatherUpdateTime) {
+    val previewSnapshot = remember(homeWeatherData, homeWeatherUpdateTime, temperatureUnit) {
         homeWeatherData?.let { data ->
             WeatherWidgetSnapshotFactory.fromHomeWeather(
                 data,
                 DateTimeUtils.formatMinuteTime(
                     if (homeWeatherUpdateTime > 0L) homeWeatherUpdateTime else data.updateTime
                 ),
-                CustomThemeAsset.empty()
+                CustomThemeAsset.empty(),
+                temperatureUnit
             )
         } ?: WeatherWidgetSnapshotFactory.unavailable(DefaultCityUtils.DEFAULT_CITY_NAME)
     }
-    val colors = rememberDesktopWeatherColors(visualTheme.background.luminance() < 0.35f)
+    val backgroundLuminance = (
+            visualTheme.defaultWeatherGradient.top.luminance() * 0.25f +
+                    visualTheme.defaultWeatherGradient.middle.luminance() * 0.35f +
+                    visualTheme.defaultWeatherGradient.bottom.luminance() * 0.40f
+            )
+    val colors = rememberDesktopWeatherColors(backgroundLuminance < 0.42f)
     val swipeThresholdPx = with(LocalDensity.current) { 56.dp.toPx() }
     val dragProgress = if (isWidgetDragging) {
         (abs(horizontalSwipeDistance) / swipeThresholdPx).coerceIn(0f, 1f)
@@ -188,51 +196,57 @@ fun DesktopWeatherScreen(
         ) {
             WidgetModeTabs(
                 selectedMode = selectedMode,
+                colors = colors,
                 onModeSelected = ::selectWidgetMode
             )
             Spacer(Modifier.weight(0.72f))
-            AnimatedContent(
-                modifier = widgetSwipeModifier.graphicsLayer {
-                    translationX = dragOffset * 0.35f
-                    alpha = 1f - dragProgress * 0.18f
-                    val scale = 1f - dragProgress * 0.03f
-                    scaleX = scale
-                    scaleY = scale
-                },
-                targetState = selectedMode,
-                transitionSpec = {
-                    val direction = widgetSwitchDirection
-                    val slideDuration = if (animationEnabled) 260 else 0
-                    val fadeDuration = if (animationEnabled) 160 else 0
-                    val enter = slideInHorizontally(
-                        animationSpec = tween(slideDuration, easing = FastOutSlowInEasing)
-                    ) { width -> width * direction / 3 } + fadeIn(
-                        animationSpec = tween(fadeDuration, easing = FastOutSlowInEasing)
-                    )
-                    val exit = slideOutHorizontally(
-                        animationSpec = tween(if (animationEnabled) 220 else 0, easing = FastOutSlowInEasing)
-                    ) { width -> -width * direction / 3 } + fadeOut(
-                        animationSpec = tween(if (animationEnabled) 140 else 0, easing = FastOutSlowInEasing)
-                    )
-                    (enter togetherWith exit).using(SizeTransform(clip = false))
-                },
-                label = "desktop-widget-mode"
-            ) { animatedMode ->
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(
+                modifier = widgetSwipeModifier
+                    .fillMaxWidth()
+                    .height(176.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                AnimatedContent(
+                    modifier = Modifier.graphicsLayer {
+                        translationX = dragOffset * 0.35f
+                        alpha = 1f - dragProgress * 0.18f
+                        val scale = 1f - dragProgress * 0.03f
+                        scaleX = scale
+                        scaleY = scale
+                    },
+                    targetState = selectedMode,
+                    transitionSpec = {
+                        val direction = widgetSwitchDirection
+                        val slideDuration = if (animationEnabled) 260 else 0
+                        val fadeDuration = if (animationEnabled) 160 else 0
+                        val enter = slideInHorizontally(
+                            animationSpec = tween(slideDuration, easing = FastOutSlowInEasing)
+                        ) { width -> width * direction / 3 } + fadeIn(
+                            animationSpec = tween(fadeDuration, easing = FastOutSlowInEasing)
+                        )
+                        val exit = slideOutHorizontally(
+                            animationSpec = tween(if (animationEnabled) 220 else 0, easing = FastOutSlowInEasing)
+                        ) { width -> -width * direction / 3 } + fadeOut(
+                            animationSpec = tween(if (animationEnabled) 140 else 0, easing = FastOutSlowInEasing)
+                        )
+                        (enter togetherWith exit).using(SizeTransform(clip = false))
+                    },
+                    label = "desktop-widget-mode"
+                ) { animatedMode ->
                     DesktopWidgetPreview(
                         selectedMode = animatedMode,
                         snapshot = previewSnapshot,
                         customBackground = customWidgetBackground
                     )
-                    Spacer(Modifier.height(48.dp))
-                    Text(
-                        text = animatedMode.widgetModeTitle(),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = colors.secondaryText
-                    )
-                    PageDots(active = animatedMode.ordinalIndex())
                 }
             }
+            Spacer(Modifier.height(22.dp))
+            Text(
+                text = selectedMode.widgetModeTitle(),
+                style = MaterialTheme.typography.titleMedium,
+                color = colors.secondaryText
+            )
+            PageDots(active = selectedMode.ordinalIndex(), colors = colors)
             Spacer(Modifier.height(34.dp))
             Text(
                 modifier = Modifier.fillMaxWidth(),
@@ -251,16 +265,37 @@ fun DesktopWeatherScreen(
                     modifier = Modifier.padding(horizontal = 18.dp, vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
+                    Column(
                         modifier = Modifier.weight(1f),
-                        text = "\u5f53\u524d\u4f4d\u7f6e",
-                        fontSize = YunJiUiTokens.PrimaryActionTextSize,
-                        fontWeight = FontWeight.Medium,
-                        color = colors.primaryText
-                    )
+                        verticalArrangement = Arrangement.spacedBy(3.dp)
+                    ) {
+                        Text(
+                            text = "\u5f53\u524d\u4f4d\u7f6e",
+                            fontSize = YunJiUiTokens.PrimaryActionTextSize,
+                            fontWeight = FontWeight.Medium,
+                            color = colors.primaryText
+                        )
+                        Text(
+                            text = locationStatusText(locationUiState.status),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = colors.secondaryText
+                        )
+                    }
                     Switch(
                         checked = useCurrentLocation,
                         enabled = !locationUiState.isBusy,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = colors.primaryButton,
+                            uncheckedThumbColor = colors.switchThumb,
+                            uncheckedTrackColor = colors.switchTrack,
+                            uncheckedBorderColor = colors.switchBorder,
+                            disabledCheckedThumbColor = Color.White.copy(alpha = 0.72f),
+                            disabledCheckedTrackColor = colors.primaryButton.copy(alpha = 0.52f),
+                            disabledUncheckedThumbColor = colors.switchThumb.copy(alpha = 0.52f),
+                            disabledUncheckedTrackColor = colors.switchTrack.copy(alpha = 0.52f),
+                            disabledUncheckedBorderColor = colors.switchBorder.copy(alpha = 0.52f)
+                        ),
                         onCheckedChange = { enabled ->
                             useCurrentLocation = enabled
                             if (enabled) {
@@ -353,7 +388,14 @@ private fun rememberDesktopWeatherColors(darkPalette: Boolean): DesktopWeatherCo
             primaryText = Color.White,
             secondaryText = Color.White.copy(alpha = 0.66f),
             cardContainer = Color.White.copy(alpha = 0.14f),
-            primaryButton = Color(0xFF2D7DF6)
+            primaryButton = Color(0xFF2D7DF6),
+            tabSelectedText = Color.White,
+            tabUnselectedText = Color.White.copy(alpha = 0.62f),
+            dotActive = Color.White,
+            dotInactive = Color.White.copy(alpha = 0.34f),
+            switchThumb = Color(0xFFD8D2DD),
+            switchTrack = Color(0x663C3443),
+            switchBorder = Color.White.copy(alpha = 0.40f)
         )
     } else {
         DesktopWeatherColors(
@@ -361,10 +403,17 @@ private fun rememberDesktopWeatherColors(darkPalette: Boolean): DesktopWeatherCo
             overlayTop = Color(0x3338536B),
             overlayMiddle = Color(0x552B72AC),
             overlayBottom = Color(0x882B72AC),
-            primaryText = Color.White,
-            secondaryText = Color.White.copy(alpha = 0.70f),
-            cardContainer = Color.White.copy(alpha = 0.20f),
-            primaryButton = Color(0xFF2D7DF6)
+            primaryText = Color(0xFF102A37),
+            secondaryText = Color(0xB3102A37),
+            cardContainer = Color.White.copy(alpha = 0.42f),
+            primaryButton = Color(0xFF2D7DF6),
+            tabSelectedText = Color(0xFF102A37),
+            tabUnselectedText = Color(0x80102A37),
+            dotActive = Color(0xCC102A37),
+            dotInactive = Color(0x33102A37),
+            switchThumb = Color(0xFF756F7B),
+            switchTrack = Color.White.copy(alpha = 0.42f),
+            switchBorder = Color(0x66102A37)
         )
     }
 }
@@ -377,7 +426,14 @@ private data class DesktopWeatherColors(
     val primaryText: Color,
     val secondaryText: Color,
     val cardContainer: Color,
-    val primaryButton: Color
+    val primaryButton: Color,
+    val tabSelectedText: Color,
+    val tabUnselectedText: Color,
+    val dotActive: Color,
+    val dotInactive: Color,
+    val switchThumb: Color,
+    val switchTrack: Color,
+    val switchBorder: Color
 )
 
 private fun customWidgetBackground(
@@ -426,18 +482,6 @@ internal fun WidgetPreviewBackground(customBackground: CustomThemeImage) {
     }
 }
 
-private fun sampleWidgetSnapshot(): WeatherWidgetSnapshot {
-    return WeatherWidgetSnapshot(
-        cityName = "\u5317\u4eac",
-        temperatureText = "25\u63b3",
-        conditionText = "\u6674",
-        rangeText = "35\u63b3 / 25\u63b3",
-        updateText = "05-31 07:59",
-        isAvailable = true,
-        adviceText = "\u51fa\u884c\u6ce8\u610f\u9632\u6652\uff0c\u53ca\u65f6\u8865\u6c34"
-    )
-}
-
 @Composable
 private fun DesktopWidgetPreview(
     selectedMode: WeatherWidgetLayoutMode,
@@ -455,6 +499,7 @@ private fun DesktopWidgetPreview(
 @Composable
 private fun WidgetModeTabs(
     selectedMode: WeatherWidgetLayoutMode,
+    colors: DesktopWeatherColors,
     onModeSelected: (WeatherWidgetLayoutMode) -> Unit
 ) {
     Row(
@@ -464,9 +509,9 @@ private fun WidgetModeTabs(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.Bottom
     ) {
-        WidgetModeTab("\u5929\u6c14\u65f6\u949f", WeatherWidgetLayoutMode.COMPACT, selectedMode, onModeSelected)
-        WidgetModeTab("\u57fa\u7840\u5929\u6c14", WeatherWidgetLayoutMode.STANDARD, selectedMode, onModeSelected)
-        WidgetModeTab("\u751f\u6d3b\u5efa\u8bae", WeatherWidgetLayoutMode.EXPANDED, selectedMode, onModeSelected)
+        WidgetModeTab("\u5929\u6c14\u65f6\u949f", WeatherWidgetLayoutMode.COMPACT, selectedMode, colors, onModeSelected)
+        WidgetModeTab("\u57fa\u7840\u5929\u6c14", WeatherWidgetLayoutMode.STANDARD, selectedMode, colors, onModeSelected)
+        WidgetModeTab("\u751f\u6d3b\u5efa\u8bae", WeatherWidgetLayoutMode.EXPANDED, selectedMode, colors, onModeSelected)
     }
 }
 
@@ -475,6 +520,7 @@ private fun WidgetModeTab(
     title: String,
     mode: WeatherWidgetLayoutMode,
     selectedMode: WeatherWidgetLayoutMode,
+    colors: DesktopWeatherColors,
     onModeSelected: (WeatherWidgetLayoutMode) -> Unit
 ) {
     Column(
@@ -484,7 +530,7 @@ private fun WidgetModeTab(
         Text(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 6.dp),
             text = title,
-            color = if (mode == selectedMode) Color.White else Color.White.copy(alpha = 0.36f),
+            color = if (mode == selectedMode) colors.tabSelectedText else colors.tabUnselectedText,
             fontSize = YunJiUiTokens.PageTabTextSize,
             fontWeight = if (mode == selectedMode) FontWeight.SemiBold else FontWeight.Normal
         )
@@ -492,17 +538,12 @@ private fun WidgetModeTab(
             modifier = Modifier
                 .size(width = 74.dp, height = 3.dp)
                 .background(
-                    if (mode == selectedMode) Color.White else Color.Transparent,
+                    if (mode == selectedMode) colors.tabSelectedText else Color.Transparent,
                     RoundedCornerShape(2.dp)
                 )
                 .padding(top = 4.dp)
         )
     }
-}
-
-@Composable
-internal fun LifeAdviceWidgetPreview(customBackground: CustomThemeImage) {
-    LifeAdviceWidgetPreview(sampleWidgetSnapshot(), customBackground)
 }
 
 @Composable
@@ -573,11 +614,6 @@ internal fun LifeAdviceWidgetPreview(
 }
 
 @Composable
-internal fun StandardWidgetPreview(customBackground: CustomThemeImage) {
-    StandardWidgetPreview(sampleWidgetSnapshot(), customBackground)
-}
-
-@Composable
 internal fun StandardWidgetPreview(
     snapshot: WeatherWidgetSnapshot,
     customBackground: CustomThemeImage
@@ -617,11 +653,6 @@ internal fun StandardWidgetPreview(
             }
         }
     }
-}
-
-@Composable
-internal fun CompactWidgetPreview(customBackground: CustomThemeImage) {
-    CompactWidgetPreview(sampleWidgetSnapshot(), customBackground)
 }
 
 @Composable
@@ -681,7 +712,7 @@ private fun LifeIndexColumn(
     }
 }
 @Composable
-private fun PageDots(active: Int) {
+private fun PageDots(active: Int, colors: DesktopWeatherColors) {
     Row(
         modifier = Modifier.padding(top = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -691,7 +722,7 @@ private fun PageDots(active: Int) {
                 modifier = Modifier
                     .size(width = if (index == active) 24.dp else 8.dp, height = 8.dp)
                     .background(
-                        if (index == active) Color.White else Color.White.copy(alpha = 0.16f),
+                        if (index == active) colors.dotActive else colors.dotInactive,
                         RoundedCornerShape(8.dp)
                     )
             )
@@ -724,6 +755,17 @@ private fun WeatherWidgetLayoutMode.widgetModeTitle(): String {
         WeatherWidgetLayoutMode.AUTO,
         WeatherWidgetLayoutMode.STANDARD -> "\u57fa\u7840\u5929\u6c14"
         WeatherWidgetLayoutMode.EXPANDED -> "\u751f\u6d3b\u5efa\u8bae"
+    }
+}
+
+private fun locationStatusText(status: LocationStatus): String {
+    return when (status) {
+        LocationStatus.REQUESTING_PERMISSION -> "\u6b63\u5728\u8bf7\u6c42\u5b9a\u4f4d\u6743\u9650"
+        LocationStatus.FETCHING_LOCATION -> "\u6b63\u5728\u83b7\u53d6\u5b9e\u65f6\u4f4d\u7f6e"
+        LocationStatus.SUCCESS -> "\u5df2\u4f7f\u7528\u5f53\u524d\u4f4d\u7f6e\u5929\u6c14"
+        LocationStatus.DENIED -> "\u672a\u6388\u6743\u5b9a\u4f4d\uff0c\u5f00\u542f\u540e\u5c06\u8bf7\u6c42\u6743\u9650"
+        LocationStatus.ERROR -> "\u5b9a\u4f4d\u5931\u8d25\uff0c\u53ef\u91cd\u65b0\u5f00\u542f"
+        LocationStatus.IDLE -> "\u5f00\u542f\u540e\u5c06\u540c\u6b65\u5f53\u524d\u4f4d\u7f6e\u5929\u6c14"
     }
 }
 

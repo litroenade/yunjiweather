@@ -18,13 +18,6 @@ public final class VisualThemeCatalog {
             "全景天气",
             "沉浸式动态天气，强化真实光影、雨雪和风场层次。"
     );
-    private static final VisualTheme FANTASY_THEME = new VisualTheme(
-            VisualThemeUtils.THEME_FANTASY,
-            "幻想乡",
-            "暂不开放：后续用于幻想风格皮肤。",
-            true,
-            false
-    );
     private static final VisualTheme CUSTOM_THEME = new VisualTheme(
             VisualThemeUtils.THEME_CUSTOM_1,
             "自定义主题",
@@ -33,7 +26,7 @@ public final class VisualThemeCatalog {
             true
     );
 
-    private static final List<VisualTheme> ALL_THEMES = List.of(DEFAULT_THEME, PANORAMA_THEME, FANTASY_THEME, CUSTOM_THEME);
+    private static final List<VisualTheme> ALL_THEMES = List.of(DEFAULT_THEME, PANORAMA_THEME, CUSTOM_THEME);
 
     private static final List<VisualTheme> THEMES = List.of(DEFAULT_THEME, PANORAMA_THEME, CUSTOM_THEME);
 

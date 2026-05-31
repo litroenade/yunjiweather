@@ -17,7 +17,8 @@ import dagger.hilt.android.EntryPointAccessors
 import java.util.Calendar
 
 /**
- * 灏忕粍浠跺彧璇诲彇鏈湴鏁版嵁搴撶紦瀛樺揩鐓э紝涓嶇洿鎺ュ彂璧风綉缁滆姹傘€? * 鍚庡彴鍒锋柊鐢辩粺涓€浠诲姟璋冨害锛岄伩鍏嶆闈㈤绻佸敜閱掑鑷村惎鍔ㄥ櫒鍗￠】鎴栬€楃數銆? */
+ * Widget rendering reads only the local HOME cache; refresh scheduling owns network work.
+ */
 class WeatherWidgetSnapshotLoader @JvmOverloads constructor(
     private val cityReader: DefaultCityReader,
     private val cacheReader: HomeWeatherCacheReader,
@@ -40,17 +41,18 @@ class WeatherWidgetSnapshotLoader @JvmOverloads constructor(
         return try {
             val data = gson.fromJson(cache.weatherJson, HomeWeatherData::class.java)
             data.validateForDisplay()
+            val settings = settingsReader.read()
             WeatherWidgetSnapshotFactory.fromHomeWeather(
                 data = data,
                 updateText = DateTimeUtils.formatMinuteTime(cache.updateTime),
-                customBackground = customBackgroundFor(data)
+                customBackground = customBackgroundFor(data, settings),
+                temperatureUnit = settings.temperatureUnit
             )
         } catch (exception: RuntimeException) {
             WeatherWidgetSnapshotFactory.unavailable(cityName)
         }
     }
-    private fun customBackgroundFor(data: HomeWeatherData): CustomThemeAsset {
-        val settings = settingsReader.read()
+    private fun customBackgroundFor(data: HomeWeatherData, settings: WidgetThemeSettings): CustomThemeAsset {
         if (settings.visualThemeKey != VisualThemeUtils.THEME_CUSTOM_1 || settings.customThemeProfile.isEmpty) {
             return CustomThemeAsset.empty()
         }
@@ -85,7 +87,7 @@ class WeatherWidgetSnapshotLoader @JvmOverloads constructor(
                     entryPoint.weatherCacheDao().findByLocationAndType(locationId, WeatherCacheTypes.HOME)
                 },
                 Gson(),
-                { WidgetThemeSettings(entryPoint.settingsRepository().visualTheme, entryPoint.settingsRepository().customThemeProfile) }
+                { WidgetThemeSettings(entryPoint.settingsRepository().visualTheme, entryPoint.settingsRepository().customThemeProfile, entryPoint.settingsRepository().temperatureUnit) }
             )
         }
 

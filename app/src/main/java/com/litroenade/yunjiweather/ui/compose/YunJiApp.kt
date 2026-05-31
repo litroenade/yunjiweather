@@ -83,6 +83,7 @@ fun YunJiApp(
     var activeTarget by rememberSaveable { mutableStateOf<WeatherNavigationTarget?>(null) }
     var showPersonalizationBlockEditor by rememberSaveable { mutableStateOf(false) }
     var showCityEditor by rememberSaveable { mutableStateOf(false) }
+    var personalizationBackRequestVersion by rememberSaveable { mutableStateOf(0) }
     var noticeText by rememberSaveable { mutableStateOf("") }
     val context = LocalContext.current
     val visualTheme = LocalYunJiVisualTheme.current
@@ -100,6 +101,7 @@ fun YunJiApp(
         }
         if (activePage != WeatherNavigationTarget.PERSONALIZATION) {
             showPersonalizationBlockEditor = false
+            personalizationBackRequestVersion = 0
         }
         if (activePage != WeatherNavigationTarget.MANAGE_CITIES) {
             showCityEditor = false
@@ -180,14 +182,18 @@ fun YunJiApp(
         } else {
             MaterialTheme.colorScheme.onSurfaceVariant
         }
-        val pageBack = if (activePage == WeatherNavigationTarget.MANAGE_CITIES && showCityEditor) {
-            { showCityEditor = false }
-        } else {
-            closePageAndRefresh
+        val pageBack = when {
+            activePage == WeatherNavigationTarget.MANAGE_CITIES && showCityEditor -> {
+                { showCityEditor = false }
+            }
+            activePage == WeatherNavigationTarget.PERSONALIZATION -> {
+                { personalizationBackRequestVersion += 1 }
+            }
+            else -> closePageAndRefresh
         }
         WeatherPageScaffold(
             title = if (activePage == WeatherNavigationTarget.MANAGE_CITIES && showCityEditor) {
-                "缂栬緫鍩庡競"
+                "\u7f16\u8f91\u57ce\u5e02"
             } else {
                 activePageTitle(activePage)
             },
@@ -217,7 +223,7 @@ fun YunJiApp(
                             Icon(
                                 modifier = Modifier.size(YunJiUiTokens.PageHeaderIconSize),
                                 painter = painterResource(R.drawable.ic_settings_24),
-                                contentDescription = "璋冩暣棣栭〉妯″潡",
+                                contentDescription = "\u8c03\u6574\u9996\u9875\u6a21\u5757",
                                 tint = pageTitleColor
                             )
                         }
@@ -232,7 +238,11 @@ fun YunJiApp(
                             Icon(
                                 modifier = Modifier.size(YunJiUiTokens.PageHeaderIconSize),
                                 painter = painterResource(if (showCityEditor) R.drawable.ic_check_24 else R.drawable.ic_settings_24),
-                                contentDescription = if (showCityEditor) "瀹屾垚缂栬緫鍩庡競" else "缂栬緫鍩庡競",
+                                contentDescription = if (showCityEditor) {
+                                    "\u5b8c\u6210\u7f16\u8f91\u57ce\u5e02"
+                                } else {
+                                    "\u7f16\u8f91\u57ce\u5e02"
+                                },
                                 tint = pageTitleColor
                             )
                         }
@@ -256,6 +266,7 @@ fun YunJiApp(
                     modifier = pageModifier,
                     homeWeatherData = homeUiState?.data,
                     homeWeatherUpdateTime = homeUiState?.updateTime ?: homeUiState?.data?.updateTime ?: 0L,
+                    temperatureUnit = temperatureUnit,
                     animationEnabled = animationEnabled,
                     locationUiState = locationUiState,
                     onRequestLocation = onRequestLocation,
@@ -264,7 +275,12 @@ fun YunJiApp(
 
                 WeatherNavigationTarget.PERSONALIZATION -> PersonalizationScreen(
                     modifier = pageModifier,
-                    onOpenHomeBlockEditor = { showPersonalizationBlockEditor = true }
+                    onOpenHomeBlockEditor = { showPersonalizationBlockEditor = true },
+                    backRequestVersion = personalizationBackRequestVersion,
+                    homeWeatherData = homeUiState?.data,
+                    homeWeatherUpdateTime = homeUiState?.updateTime ?: homeUiState?.data?.updateTime ?: 0L,
+                    temperatureUnit = temperatureUnit,
+                    onExitRequested = closePageAndRefresh
                 )
 
                 WeatherNavigationTarget.SETTINGS -> MineScreen(

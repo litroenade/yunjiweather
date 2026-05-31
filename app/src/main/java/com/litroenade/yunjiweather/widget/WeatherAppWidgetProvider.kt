@@ -19,7 +19,8 @@ import java.io.File
 import java.util.concurrent.Executors
 
 /**
- * 灏忕粍浠跺叆鍙ｅ彧璐熻矗骞挎挱鐢熷懡鍛ㄦ湡鍜屾闈㈣繙绋嬭鍥炬覆鏌撱€? * 鏁版嵁鍒锋柊銆佺紦瀛樿鍙栧拰鐐瑰嚮璺敱鍒嗙锛屼究浜庡悗缁墿灞曞绉嶆闈㈡牱寮忋€? */
+ * The widget provider only handles lifecycle broadcasts and RemoteViews rendering.
+ */
 open class WeatherAppWidgetProvider : AppWidgetProvider() {
 
     protected open val fixedLayoutMode: WeatherWidgetLayoutMode = WeatherWidgetLayoutMode.STANDARD

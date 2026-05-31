@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import com.litroenade.yunjiweather.data.model.CustomThemeAsset;
 import com.litroenade.yunjiweather.data.model.CustomThemeCropAnchor;
 import com.litroenade.yunjiweather.data.model.HomeWeatherData;
+import com.litroenade.yunjiweather.utils.WeatherDisplayUtils;
 
 import org.junit.Test;
 
@@ -37,12 +38,26 @@ public class WeatherWidgetSnapshotFactoryTest {
     }
 
     @Test
+    public void fromHomeWeatherUsesConfiguredTemperatureUnit() {
+        WeatherWidgetSnapshot snapshot = WeatherWidgetSnapshotFactory.fromHomeWeather(
+                homeWeather(),
+                "05-31 13:25",
+                CustomThemeAsset.empty(),
+                WeatherDisplayUtils.TEMPERATURE_FAHRENHEIT
+        );
+
+        assertEquals("88°F", snapshot.getTemperatureText());
+        assertEquals("95°F / 77°F", snapshot.getRangeText());
+    }
+
+    @Test
     public void unavailableSnapshotKeepsCityAndClearFallbackText() {
         WeatherWidgetSnapshot snapshot = WeatherWidgetSnapshotFactory.unavailable("Shanghai");
 
         assertEquals("Shanghai", snapshot.getCityName());
         assertEquals("\u6253\u5f00\u67e5\u770b\u5b9e\u65f6\u5929\u6c14", snapshot.getTemperatureText());
         assertEquals("\u6682\u65e0\u7f13\u5b58", snapshot.getConditionText());
+        assertEquals("\u6682\u65e0", snapshot.getClothingValue());
     }
 
     private static HomeWeatherData homeWeather() {

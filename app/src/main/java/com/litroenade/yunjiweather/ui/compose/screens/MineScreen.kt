@@ -221,6 +221,7 @@ private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surface.copy(alpha = if (darkPalette) 0.30f else 0.62f),
+        contentColor = MaterialTheme.colorScheme.onSurface,
         border = BorderStroke(
             1.dp,
             MaterialTheme.colorScheme.outline.copy(alpha = if (darkPalette) 0.09f else 0.12f)
@@ -252,6 +253,7 @@ private fun SettingRow(
             modifier = Modifier.weight(1f),
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
+            color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
@@ -319,12 +321,6 @@ private fun AppInfoPanel(
         SettingLabel("\u672c\u5730\u5b58\u50a8\u72b6\u6001")
         Text(
             text = localStorageSummary.ifBlank { "\u6b63\u5728\u8bfb\u53d6\u672c\u5730\u6570\u636e" },
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        SettingLabel("\u9879\u76ee\u8fd0\u884c\u72b6\u6001")
-        Text(
-            text = "\u672c\u5730\u6570\u636e\u3001Compose \u754c\u9762\u548c\u540e\u53f0\u63d0\u9192\u6b63\u5e38\u8fd0\u884c\u3002",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

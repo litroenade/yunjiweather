@@ -3,7 +3,7 @@
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -154,7 +154,7 @@ fun CityScreen(
             if (showHeader) {
                 item {
                     Text(
-                        text = "榛樿鍩庡競锛?defaultCity",
+                        text = "\u9ed8\u8ba4\u57ce\u5e02\uff1a$defaultCity",
                         style = MaterialTheme.typography.bodyMedium,
                         color = cityColors.secondaryText
                     )
@@ -339,19 +339,27 @@ private fun CitySearchCard(
                 }
             }
         }
-        if (locationUiState.message.isNotBlank() || message.isNotBlank() || busy) {
+        val statusText = citySearchStatusText(
+            busy = busy,
+            cityMessage = message,
+            locationStatus = locationUiState.status,
+            locationMessage = locationUiState.message,
+            manualSearchActive = query.isNotBlank() || searchResults.isNotEmpty()
+        )
+        if (statusText.isNotBlank()) {
+            val fromLocation = statusText == locationUiState.message.trim()
             Text(
-                text = when {
-                    busy -> "\u6b63\u5728\u5904\u7406\u57ce\u5e02\u6570\u636e"
-                    locationUiState.message.isNotBlank() -> locationUiState.message
-                    else -> message
-                },
+                text = statusText,
                 style = MaterialTheme.typography.bodySmall,
-                color = when (locationUiState.status) {
-                    LocationStatus.ERROR,
-                    LocationStatus.DENIED -> MaterialTheme.colorScheme.error
-                    LocationStatus.SUCCESS -> Color(0xFF6EA6FF)
-                    else -> colors.secondaryText
+                color = if (fromLocation) {
+                    when (locationUiState.status) {
+                        LocationStatus.ERROR,
+                        LocationStatus.DENIED -> MaterialTheme.colorScheme.error
+                        LocationStatus.SUCCESS -> Color(0xFF6EA6FF)
+                        else -> colors.secondaryText
+                    }
+                } else {
+                    colors.secondaryText
                 }
             )
         }
@@ -383,14 +391,14 @@ private fun CitySearchResultRow(
                     text = candidate.cityName,
                     style = MaterialTheme.typography.bodyLarge,
                     fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = colors.primaryText,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = "${candidate.province} \u00b7 ${candidate.country}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = colors.secondaryText,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -404,6 +412,26 @@ private fun CitySearchResultRow(
                 Text("\u6dfb\u52a0")
             }
         }
+    }
+}
+
+internal fun citySearchStatusText(
+    busy: Boolean,
+    cityMessage: String,
+    locationStatus: LocationStatus,
+    locationMessage: String,
+    manualSearchActive: Boolean
+): String {
+    val normalizedCityMessage = cityMessage.trim()
+    val normalizedLocationMessage = locationMessage.trim()
+    return when {
+        busy -> "\u6b63\u5728\u5904\u7406\u57ce\u5e02\u6570\u636e"
+        normalizedCityMessage.isNotEmpty() -> normalizedCityMessage
+        normalizedLocationMessage.isEmpty() -> ""
+        locationStatus == LocationStatus.ERROR || locationStatus == LocationStatus.DENIED -> {
+            if (manualSearchActive) "" else normalizedLocationMessage
+        }
+        else -> normalizedLocationMessage
     }
 }
 
@@ -425,25 +453,34 @@ private fun CityCard(
     val dragThresholdPx = with(LocalDensity.current) { 56.dp.toPx() }
     var dragOffsetY by remember(city.locationId, editing) { mutableStateOf(0f) }
     val reorderModifier = if (canDragToReorder) {
+        Modifier.graphicsLayer { translationY = dragOffsetY }
+    } else {
         Modifier
-            .graphicsLayer { translationY = dragOffsetY }
-            .pointerInput(city.locationId, canMoveUp, canMoveDown, actionsEnabled) {
-                detectDragGesturesAfterLongPress(
-                    onDragCancel = { dragOffsetY = 0f },
-                    onDragEnd = {
-                        when {
-                            dragOffsetY <= -dragThresholdPx && canMoveUp -> onMoveUp()
-                            dragOffsetY >= dragThresholdPx && canMoveDown -> onMoveDown()
+    }
+    val dragHandleModifier = if (canDragToReorder) {
+        Modifier.pointerInput(city.locationId, canMoveUp, canMoveDown, actionsEnabled) {
+            detectDragGestures(
+                onDragStart = { dragOffsetY = 0f },
+                onDragCancel = { dragOffsetY = 0f },
+                onDragEnd = { dragOffsetY = 0f },
+                onDrag = { change, dragAmount ->
+                    change.consume()
+                    val minOffset = if (canMoveUp) -dragThresholdPx * 1.35f else 0f
+                    val maxOffset = if (canMoveDown) dragThresholdPx * 1.35f else 0f
+                    dragOffsetY = (dragOffsetY + dragAmount.y).coerceIn(minOffset, maxOffset)
+                    when {
+                        dragOffsetY <= -dragThresholdPx && canMoveUp -> {
+                            dragOffsetY = 0f
+                            onMoveUp()
                         }
-                        dragOffsetY = 0f
-                    },
-                    onDrag = { _, dragAmount ->
-                        val minOffset = if (canMoveUp) -dragThresholdPx * 1.35f else 0f
-                        val maxOffset = if (canMoveDown) dragThresholdPx * 1.35f else 0f
-                        dragOffsetY = (dragOffsetY + dragAmount.y).coerceIn(minOffset, maxOffset)
+                        dragOffsetY >= dragThresholdPx && canMoveDown -> {
+                            dragOffsetY = 0f
+                            onMoveDown()
+                        }
                     }
-                )
-            }
+                }
+            )
+        }
     } else {
         Modifier
     }
@@ -486,7 +523,8 @@ private fun CityCard(
                     Box(
                         modifier = Modifier
                             .size(48.dp)
-                            .padding(end = 4.dp),
+                            .padding(end = 4.dp)
+                            .then(dragHandleModifier),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -519,7 +557,7 @@ private fun CityCard(
                         )
                     }
                     Text(
-                        text = summary?.condition?.takeIf { it.isNotBlank() } ?: "\u591a\u4e91",
+                        text = citySummaryConditionText(summary),
                         style = MaterialTheme.typography.titleMedium,
                         color = Color.White.copy(alpha = 0.92f)
                     )
@@ -667,6 +705,12 @@ internal fun formatCitySummaryTemperature(value: String?, unit: String): String 
     } else {
         WeatherDisplayUtils.formatTemperature(temperature, unit)
     }
+}
+
+internal fun citySummaryConditionText(summary: CityWeatherSummary?): String {
+    return summary?.condition?.trim()?.takeIf { it.isNotEmpty() }
+        ?: summary?.errorMessage?.trim()?.takeIf { it.isNotEmpty() }
+        ?: "天气摘要暂不可用"
 }
 
 internal fun formatCitySummaryTemperatureRange(tempMax: String?, tempMin: String?, unit: String): String {

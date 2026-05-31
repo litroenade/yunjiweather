@@ -2,6 +2,6 @@
   "key": "fantasy",
   "folder": "fantasy",
   "name": "幻想乡",
-  "status": "reserved",
-  "description": "预留给后续幻想风格皮肤。"
+  "status": "legacy",
+  "description": "历史主题键，运行时迁移到全景天气。"
 }

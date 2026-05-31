@@ -64,8 +64,10 @@ class CityRepository(private val cityDao: CityDao) {
         if (targetIndex == currentIndex || targetCity.isDefault) {
             return
         }
-        cityDao.updateSortOrder(city.locationId, targetCity.sortOrder, nowTime)
-        cityDao.updateSortOrder(targetCity.locationId, city.sortOrder, nowTime)
+        val currentSortOrder = city.sortOrder
+        val targetSortOrder = targetCity.sortOrder
+        cityDao.updateSortOrder(city.locationId, targetSortOrder, nowTime)
+        cityDao.updateSortOrder(targetCity.locationId, currentSortOrder, nowTime)
     }
 
     fun saveAsDefaultCity(city: CityEntity, nowTime: Long) {
