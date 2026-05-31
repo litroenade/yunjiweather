@@ -71,6 +71,7 @@ import com.litroenade.yunjiweather.widget.WeatherWidgetLayoutMode
 import com.litroenade.yunjiweather.widget.WeatherWidgetSnapshot
 import com.litroenade.yunjiweather.widget.WeatherWidgetSnapshotFactory
 import com.litroenade.yunjiweather.widget.WidgetStyleSpec
+import java.util.Calendar
 import kotlin.math.abs
 
 private val DesktopWidgetModes = listOf(
@@ -97,7 +98,13 @@ fun DesktopWeatherScreen(
     var useCurrentLocation by rememberSaveable { mutableStateOf(locationUiState.status == LocationStatus.SUCCESS) }
     val visualTheme = LocalYunJiVisualTheme.current
     val customThemeOptions = LocalCustomThemeOptions.current
-    val customWidgetBackground = customWidgetBackground(visualTheme.key, customThemeOptions)
+    val widgetMinuteOfDay = remember { currentWidgetMinuteOfDay() }
+    val customWidgetBackground = customWidgetBackground(
+        visualTheme.key,
+        customThemeOptions,
+        homeWeatherData,
+        widgetMinuteOfDay
+    )
     val previewSnapshot = remember(homeWeatherData, homeWeatherUpdateTime, temperatureUnit, visualTheme.key, customWidgetBackground) {
         val customWidgetAsset = customWidgetBackground.toCustomThemeAsset()
         homeWeatherData?.let { data ->
@@ -110,7 +117,11 @@ fun DesktopWeatherScreen(
                 temperatureUnit,
                 visualTheme.key
             )
-        } ?: WeatherWidgetSnapshotFactory.unavailable(DefaultCityUtils.DEFAULT_CITY_NAME)
+        } ?: WeatherWidgetSnapshotFactory.unavailable(
+            DefaultCityUtils.DEFAULT_CITY_NAME,
+            visualTheme.key,
+            customWidgetAsset
+        )
     }
     val backgroundLuminance = (
             visualTheme.defaultWeatherGradient.top.luminance() * 0.25f +
@@ -441,18 +452,31 @@ private data class DesktopWeatherColors(
 
 private fun customWidgetBackground(
     visualThemeKey: String,
-    customThemeOptions: com.litroenade.yunjiweather.ui.compose.theme.CustomThemeOptions
+    customThemeOptions: com.litroenade.yunjiweather.ui.compose.theme.CustomThemeOptions,
+    homeWeatherData: HomeWeatherData?,
+    minuteOfDay: Int
 ): CustomThemeImage {
     if (visualThemeKey != VisualThemeUtils.THEME_CUSTOM_1) {
         return CustomThemeImage()
     }
-    val firstAsset = customThemeOptions.profile.assets.firstOrNull { asset -> !asset.isEmpty }
-    if (firstAsset != null) {
+    val resolvedAsset = homeWeatherData?.let { data ->
+        WeatherWidgetSnapshotFactory.customBackgroundForHomeWeather(
+            visualThemeKey,
+            customThemeOptions.profile,
+            data,
+            minuteOfDay
+        )
+    } ?: WeatherWidgetSnapshotFactory.customBackgroundForFallback(
+        visualThemeKey,
+        customThemeOptions.profile,
+        minuteOfDay
+    )
+    if (!resolvedAsset.isEmpty) {
         return CustomThemeImage(
-            assetId = firstAsset.id,
-            uri = firstAsset.uri,
-            cropAnchor = firstAsset.cropAnchor,
-            mediaType = firstAsset.mediaType
+            assetId = resolvedAsset.id,
+            uri = resolvedAsset.uri,
+            cropAnchor = resolvedAsset.cropAnchor,
+            mediaType = resolvedAsset.mediaType
         )
     }
     return CustomThemeImage(
@@ -464,6 +488,11 @@ private fun customWidgetBackground(
             CustomThemeAsset.MEDIA_IMAGE
         }
     )
+}
+
+private fun currentWidgetMinuteOfDay(): Int {
+    val calendar = Calendar.getInstance()
+    return calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
 }
 
 private fun CustomThemeImage.toCustomThemeAsset(): CustomThemeAsset {
@@ -591,7 +620,7 @@ internal fun LifeAdviceWidgetPreview(
         color = Color.White.copy(alpha = 0.20f)
     ) {
         Box {
-            WidgetPreviewBackground(customBackground)
+            WidgetPreviewBackground(snapshot, customBackground)
             Box(
                 Modifier
                     .fillMaxSize()
@@ -658,7 +687,7 @@ internal fun StandardWidgetPreview(
         color = Color(0xAA68B8F2)
     ) {
         Box {
-            WidgetPreviewBackground(customBackground)
+            WidgetPreviewBackground(snapshot, customBackground)
             Box(
                 Modifier
                     .fillMaxSize()
@@ -700,7 +729,7 @@ internal fun CompactWidgetPreview(
         color = Color(0xAA5FABE8)
     ) {
         Box {
-            WidgetPreviewBackground(customBackground)
+            WidgetPreviewBackground(snapshot, customBackground)
             Box(
                 Modifier
                     .fillMaxSize()

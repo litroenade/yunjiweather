@@ -19,7 +19,12 @@ object CustomThemeImageStore {
         }
         val destination = File.createTempFile("custom_theme_", importExtension(appContext, sourceUri), directory)
         try {
-            appContext.contentResolver.openInputStream(sourceUri)?.use { input ->
+            val inputStream = runCatching {
+                appContext.contentResolver.openInputStream(sourceUri)
+            }.getOrElse { exception ->
+                throw IOException(exception.message ?: "Unable to read selected image", exception)
+            }
+            inputStream?.use { input ->
                 FileOutputStream(destination).use { output ->
                     input.copyTo(output)
                 }
@@ -35,7 +40,9 @@ object CustomThemeImageStore {
     }
 
     fun mediaTypeForUri(context: Context, sourceUri: Uri): String {
-        val mimeType = context.applicationContext.contentResolver.getType(sourceUri).orEmpty().lowercase()
+        val mimeType = runCatching {
+            context.applicationContext.contentResolver.getType(sourceUri)
+        }.getOrNull().orEmpty().lowercase()
         val path = sourceUri.toString().lowercase()
         return if (mimeType == "image/gif" || path.endsWith(".gif")) {
             CustomThemeAsset.MEDIA_GIF

@@ -21,6 +21,7 @@ import com.litroenade.yunjiweather.utils.MineCacheStatusUtils;
 import com.litroenade.yunjiweather.utils.VisualTheme;
 import com.litroenade.yunjiweather.utils.VisualThemeCatalog;
 import com.litroenade.yunjiweather.utils.VisualThemeUtils;
+import com.litroenade.yunjiweather.widget.WeatherAppWidgetProvider;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -216,6 +217,7 @@ public class MineViewModel extends AndroidViewModel {
     public void setVisualTheme(String themeKey) {
         settingsRepository.setVisualTheme(themeKey);
         reloadSettings();
+        refreshWeatherWidgets();
         VisualTheme theme = VisualThemeCatalog.getThemeOrDefault(themeKey);
         message.setValue("主题/个性化已应用：" + theme.getDisplayName());
     }
@@ -224,12 +226,14 @@ public class MineViewModel extends AndroidViewModel {
         settingsRepository.setCustomThemeImageUri(imageUri);
         settingsRepository.setVisualTheme(VisualThemeUtils.THEME_CUSTOM_1);
         reloadSettings();
+        refreshWeatherWidgets();
         message.setValue("自定义主题图片已更新");
     }
 
     public void setCustomThemeCropAnchor(String cropAnchor) {
         settingsRepository.setCustomThemeCropAnchor(cropAnchor);
         reloadSettings();
+        refreshWeatherWidgets();
         message.setValue("自定义主题裁剪位置已更新");
     }
 
@@ -237,6 +241,7 @@ public class MineViewModel extends AndroidViewModel {
         settingsRepository.setCustomThemeImage(weatherKey, imageUri, cropAnchor);
         settingsRepository.setVisualTheme(VisualThemeUtils.THEME_CUSTOM_1);
         reloadSettings();
+        refreshWeatherWidgets();
         message.setValue("自定义主题图片已保存");
     }
 
@@ -257,6 +262,7 @@ public class MineViewModel extends AndroidViewModel {
         }
         settingsRepository.setVisualTheme(VisualThemeUtils.THEME_CUSTOM_1);
         reloadSettings();
+        refreshWeatherWidgets();
         message.setValue("自定义主题已保存并应用");
     }
 
@@ -264,6 +270,7 @@ public class MineViewModel extends AndroidViewModel {
         settingsRepository.setCustomThemeProfile(profile);
         settingsRepository.setVisualTheme(VisualThemeUtils.THEME_CUSTOM_1);
         reloadSettings();
+        refreshWeatherWidgets();
         message.setValue("自定义主题包已保存并应用");
     }
 
@@ -273,6 +280,7 @@ public class MineViewModel extends AndroidViewModel {
             settingsRepository.setVisualTheme(VisualThemeUtils.THEME_SKY);
         }
         reloadSettings();
+        refreshWeatherWidgets();
         message.setValue("自定义主题图片已移除");
     }
 
@@ -283,6 +291,7 @@ public class MineViewModel extends AndroidViewModel {
             settingsRepository.setVisualTheme(VisualThemeUtils.THEME_SKY);
         }
         reloadSettings();
+        refreshWeatherWidgets();
         message.setValue("自定义主题场景素材已移除");
     }
 
@@ -348,6 +357,10 @@ public class MineViewModel extends AndroidViewModel {
         customThemeCropAnchors.setValue(settingsRepository.getCustomThemeCropAnchors());
         customThemeProfile.setValue(settingsRepository.getCustomThemeProfile());
         reloadHomeBlockLayout();
+    }
+
+    private void refreshWeatherWidgets() {
+        WeatherAppWidgetProvider.updateAll(getApplication());
     }
 
     private void reloadHomeBlockLayout() {

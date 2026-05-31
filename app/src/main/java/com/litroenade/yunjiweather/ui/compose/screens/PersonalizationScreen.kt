@@ -191,10 +191,18 @@ fun PersonalizationScreen(
             return@rememberLauncherForActivityResult
         }
         persistReadPermission(context, uri)
-        if (CustomThemeImageStore.mediaTypeForUri(context, uri) == CustomThemeAsset.MEDIA_GIF) {
+        val mediaType = runCatching {
+            CustomThemeImageStore.mediaTypeForUri(context, uri)
+        }.getOrDefault(CustomThemeAsset.MEDIA_IMAGE)
+        if (mediaType == CustomThemeAsset.MEDIA_GIF) {
             importDraftImage(uri, pendingCustomThemeWeatherKey, deleteCacheAfterImport = false)
         } else {
-            cropImageLauncher.launch(CustomThemeCropActivity.createIntent(context, uri))
+            runCatching {
+                cropImageLauncher.launch(CustomThemeCropActivity.createIntent(context, uri))
+            }.onFailure {
+                customThemeEditorMessage = "\u88c1\u526a\u5668\u6253\u5f00\u5931\u8d25\uff0c\u5df2\u6539\u4e3a\u76f4\u63a5\u5bfc\u5165\u539f\u56fe\u3002"
+                importDraftImage(uri, pendingCustomThemeWeatherKey, deleteCacheAfterImport = false)
+            }
         }
     }
     val multiImagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->

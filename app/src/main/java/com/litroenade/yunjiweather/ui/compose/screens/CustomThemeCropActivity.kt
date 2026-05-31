@@ -46,6 +46,7 @@ class CustomThemeCropActivity : ComponentActivity() {
             YunJiTheme(darkTheme = true) {
                 val errorText = remember { mutableStateOf("") }
                 val cropViewState = remember { mutableStateOf<CropImageView?>(null) }
+                val cropImageReady = remember { mutableStateOf(false) }
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -77,22 +78,32 @@ class CustomThemeCropActivity : ComponentActivity() {
                                 color = Color.White.copy(alpha = 0.68f)
                             )
                         }
-                        Button(onClick = {
-                            val cropView = cropViewState.value
-                            if (cropView == null) {
-                                errorText.value = "\u88c1\u526a\u89c6\u56fe\u5c1a\u672a\u5c31\u7eea"
-                                return@Button
+                        Button(
+                            enabled = cropViewState.value != null && cropImageReady.value,
+                            onClick = {
+                                val cropView = cropViewState.value
+                                if (cropView == null) {
+                                    errorText.value = "\u88c1\u526a\u89c6\u56fe\u5c1a\u672a\u5c31\u7eea"
+                                    return@Button
+                                }
+                                val outputUri = runCatching { createOutputUri() }.getOrElse { throwable ->
+                                    errorText.value = throwable.message ?: "\u65e0\u6cd5\u521b\u5efa\u88c1\u526a\u7f13\u5b58\u6587\u4ef6"
+                                    return@Button
+                                }
+                                runCatching {
+                                    cropView.croppedImageAsync(
+                                        Bitmap.CompressFormat.JPEG,
+                                        92,
+                                        1800,
+                                        2600,
+                                        CropImageView.RequestSizeOptions.RESIZE_INSIDE,
+                                        outputUri
+                                    )
+                                }.onFailure { throwable ->
+                                    errorText.value = throwable.message ?: "\u56fe\u7247\u88c1\u526a\u542f\u52a8\u5931\u8d25"
+                                }
                             }
-                            val outputUri = createOutputUri()
-                            cropView.croppedImageAsync(
-                                Bitmap.CompressFormat.JPEG,
-                                92,
-                                1800,
-                                2600,
-                                CropImageView.RequestSizeOptions.RESIZE_INSIDE,
-                                outputUri
-                            )
-                        }) {
+                        ) {
                             Text("\u5b8c\u6210")
                         }
                     }
@@ -112,7 +123,24 @@ class CustomThemeCropActivity : ComponentActivity() {
                             CropImageView(context).apply {
                                 guidelines = CropImageView.Guidelines.ON
                                 setFixedAspectRatio(false)
-                                setImageUriAsync(sourceUri)
+                                setOnSetImageUriCompleteListener { _, _, error ->
+                                    if (error == null) {
+                                        cropImageReady.value = true
+                                        errorText.value = ""
+                                    } else {
+                                        cropImageReady.value = false
+                                        cropViewState.value = null
+                                        errorText.value = error.message ?: "\u65e0\u6cd5\u6253\u5f00\u9009\u62e9\u7684\u56fe\u7247"
+                                    }
+                                }
+                                cropImageReady.value = false
+                                runCatching { setImageUriAsync(sourceUri) }.onSuccess {
+                                    cropViewState.value = this
+                                }.onFailure { throwable ->
+                                    cropImageReady.value = false
+                                    cropViewState.value = null
+                                    errorText.value = throwable.message ?: "\u65e0\u6cd5\u6253\u5f00\u9009\u62e9\u7684\u56fe\u7247"
+                                }
                                 setOnCropImageCompleteListener { _, result ->
                                     if (result.isSuccessful && result.uriContent != null) {
                                         setResult(
@@ -124,7 +152,6 @@ class CustomThemeCropActivity : ComponentActivity() {
                                         errorText.value = result.error?.message ?: "\u56fe\u7247\u88c1\u526a\u5931\u8d25"
                                     }
                                 }
-                                cropViewState.value = this
                             }
                         }
                     )

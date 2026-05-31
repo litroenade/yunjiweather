@@ -295,8 +295,8 @@ internal fun CustomThemeEditorPanel(
             )
             Surface(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = YunJiUiTokens.ImmersiveContentTopPadding),
+                    .padding(top = YunJiUiTokens.ImmersiveContentTopPadding)
+                    .fillMaxSize(),
                 shape = PersonalizationEditorSheetShape,
                 color = editorPanelColor,
                 contentColor = editorContentColor
@@ -304,7 +304,8 @@ internal fun CustomThemeEditorPanel(
                 Column(
                     modifier = Modifier
                         .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 18.dp, vertical = 18.dp),
+                        .padding(horizontal = 18.dp)
+                        .padding(top = 18.dp, bottom = 36.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
                     CustomThemeEditorTabs(
@@ -1892,33 +1893,43 @@ private fun CustomThemeWeatherSlotRow(
                         else -> "\u672a\u914d\u7f6e\uff0c\u5c06\u56de\u9000\u9ed8\u8ba4\u56fe"
                     },
                     style = MaterialTheme.typography.bodySmall,
-                    color = secondaryColor
+                    color = secondaryColor,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
                     CropAnchorButton("\u9876", CustomThemeCropAnchor.TOP, cropAnchor, onCropAnchorChanged)
                     CropAnchorButton("\u4e2d", CustomThemeCropAnchor.CENTER, cropAnchor, onCropAnchorChanged)
                     CropAnchorButton("\u5e95", CustomThemeCropAnchor.BOTTOM, cropAnchor, onCropAnchorChanged)
                 }
-            }
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                OutlinedButton(
-                    enabled = enabled,
-                    onClick = { onPickCustomThemeImage(weatherKey) },
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = accentColor),
-                    border = BorderStroke(1.dp, accentColor.copy(alpha = 0.58f))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(if (imageUri.isBlank()) "选择" else "替换")
-                }
-                if (imageUri.isNotBlank()) {
-                    TextButton(
+                    OutlinedButton(
+                        modifier = Modifier
+                            .width(72.dp)
+                            .height(34.dp),
                         enabled = enabled,
-                        onClick = { onClearCustomThemeImage(weatherKey) },
-                        colors = ButtonDefaults.textButtonColors(contentColor = accentColor)
+                        onClick = { onPickCustomThemeImage(weatherKey) },
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = accentColor),
+                        border = BorderStroke(1.dp, accentColor.copy(alpha = 0.58f))
                     ) {
-                        Text("移除")
+                        Text(if (imageUri.isBlank()) "选择" else "替换")
+                    }
+                    if (imageUri.isNotBlank()) {
+                        TextButton(
+                            modifier = Modifier.height(30.dp),
+                            enabled = enabled,
+                            onClick = { onClearCustomThemeImage(weatherKey) },
+                            colors = ButtonDefaults.textButtonColors(contentColor = accentColor)
+                        ) {
+                            Text("移除")
+                        }
                     }
                 }
             }

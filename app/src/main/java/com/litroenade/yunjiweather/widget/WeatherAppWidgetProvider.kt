@@ -3,6 +3,7 @@
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
@@ -14,6 +15,7 @@ import android.content.Intent
 import android.util.Log
 import android.widget.RemoteViews
 import com.litroenade.yunjiweather.R
+import com.litroenade.yunjiweather.data.model.CustomThemeCropAnchor
 import com.litroenade.yunjiweather.ui.splash.SplashActivity
 import com.litroenade.yunjiweather.utils.VisualThemeUtils
 import com.litroenade.yunjiweather.utils.WeatherIconUtils
@@ -121,7 +123,7 @@ open class WeatherAppWidgetProvider : AppWidgetProvider() {
         ): RemoteViews {
             val spec = WidgetStyleSpec.forMode(mode)
             return RemoteViews(context.packageName, mode.layoutResId()).apply {
-                applyWidgetBackground(snapshot)
+                applyWidgetBackground(snapshot, spec)
                 setTextViewText(R.id.widget_title, snapshot.cityName)
                 setTextViewText(R.id.widget_temperature, snapshot.temperatureText)
                 setTextViewText(R.id.widget_summary, snapshot.conditionText)
@@ -196,8 +198,12 @@ open class WeatherAppWidgetProvider : AppWidgetProvider() {
             setViewVisibility(R.id.widget_advice, if (spec.isAdviceVisible) View.VISIBLE else View.GONE)
         }
 
-        private fun RemoteViews.applyWidgetBackground(snapshot: WeatherWidgetSnapshot) {
-            val customBitmap = bitmapFromFileUri(snapshot.customBackgroundUri)
+        private fun RemoteViews.applyWidgetBackground(snapshot: WeatherWidgetSnapshot, spec: WidgetStyleSpec) {
+            val customBitmap = bitmapFromFileUri(
+                snapshot.customBackgroundUri,
+                snapshot.customBackgroundCropAnchor,
+                spec
+            )
             if (customBitmap == null) {
                 setImageViewResource(R.id.widget_background_image, snapshot.widgetBackgroundResId())
             } else {
@@ -217,7 +223,11 @@ open class WeatherAppWidgetProvider : AppWidgetProvider() {
             }
         }
 
-        private fun bitmapFromFileUri(imageUri: String): android.graphics.Bitmap? {
+        private fun bitmapFromFileUri(
+            imageUri: String,
+            cropAnchor: String,
+            spec: WidgetStyleSpec
+        ): Bitmap? {
             if (imageUri.isBlank()) {
                 return null
             }
@@ -230,7 +240,42 @@ open class WeatherAppWidgetProvider : AppWidgetProvider() {
             if (!file.isFile) {
                 return null
             }
-            return runCatching { BitmapFactory.decodeFile(file.absolutePath) }.getOrNull()
+            return runCatching {
+                BitmapFactory.decodeFile(file.absolutePath)?.let { bitmap ->
+                    cropBitmapToWidgetAspect(bitmap, cropAnchor, spec)
+                }
+            }.getOrNull()
+        }
+
+        private fun cropBitmapToWidgetAspect(
+            bitmap: Bitmap,
+            cropAnchor: String,
+            spec: WidgetStyleSpec
+        ): Bitmap {
+            if (bitmap.width <= 0 || bitmap.height <= 0 || spec.previewWidthDp <= 0 || spec.previewHeightDp <= 0) {
+                return bitmap
+            }
+            val targetRatio = spec.previewWidthDp.toFloat() / spec.previewHeightDp.toFloat()
+            val bitmapRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
+            val cropWidth: Int
+            val cropHeight: Int
+            if (bitmapRatio > targetRatio) {
+                cropHeight = bitmap.height
+                cropWidth = (bitmap.height * targetRatio).toInt().coerceIn(1, bitmap.width)
+            } else {
+                cropWidth = bitmap.width
+                cropHeight = (bitmap.width / targetRatio).toInt().coerceIn(1, bitmap.height)
+            }
+            if (cropWidth == bitmap.width && cropHeight == bitmap.height) {
+                return bitmap
+            }
+            val cropLeft = ((bitmap.width - cropWidth) / 2).coerceAtLeast(0)
+            val cropTop = when (cropAnchor) {
+                CustomThemeCropAnchor.TOP -> 0
+                CustomThemeCropAnchor.BOTTOM -> bitmap.height - cropHeight
+                else -> (bitmap.height - cropHeight) / 2
+            }.coerceIn(0, bitmap.height - cropHeight)
+            return Bitmap.createBitmap(bitmap, cropLeft, cropTop, cropWidth, cropHeight)
         }
 
         private fun WeatherWidgetSnapshot.iconResId(): Int {
