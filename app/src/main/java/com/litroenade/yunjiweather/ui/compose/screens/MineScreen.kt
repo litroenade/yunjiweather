@@ -1,18 +1,25 @@
 package com.litroenade.yunjiweather.ui.compose.screens
 
 import android.app.Activity
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -25,14 +32,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.litroenade.yunjiweather.ui.compose.InfoCard
 import com.litroenade.yunjiweather.ui.compose.ScreenHeader
 import com.litroenade.yunjiweather.ui.compose.SectionTitle
+import com.litroenade.yunjiweather.ui.compose.theme.LocalYunJiVisualTheme
 import com.litroenade.yunjiweather.ui.compose.theme.YunJiUiTokens
 import com.litroenade.yunjiweather.ui.mine.MineViewModel
 import com.litroenade.yunjiweather.utils.PermissionUtils
@@ -47,8 +55,8 @@ fun MineScreen(
     viewModel: MineViewModel = viewModel()
 ) {
     val context = LocalContext.current
-    val localSpaceText by viewModel.localSpaceText.observeAsState("本机天气空间")
-    val defaultCity by viewModel.defaultCity.observeAsState("默认城市读取中")
+    val localSpaceText by viewModel.localSpaceText.observeAsState("\u672c\u673a\u5929\u6c14\u7a7a\u95f4")
+    val defaultCity by viewModel.defaultCity.observeAsState("\u9ed8\u8ba4\u57ce\u5e02\u8bfb\u53d6\u4e2d")
     val warningEnabled by viewModel.warningEnabled.observeAsState(true)
     val dailyReminderEnabled by viewModel.dailyReminderEnabled.observeAsState(false)
     val animationEnabled by viewModel.animationEnabled.observeAsState(true)
@@ -57,7 +65,7 @@ fun MineScreen(
     val temperatureUnit by viewModel.temperatureUnit.observeAsState(WeatherDisplayUtils.TEMPERATURE_CELSIUS)
     val windUnit by viewModel.windUnit.observeAsState(WeatherDisplayUtils.WIND_SCALE)
     val selectedTheme by viewModel.visualTheme.observeAsState(viewModel.currentVisualTheme)
-    val dataUpdateTime by viewModel.dataUpdateTime.observeAsState("暂无更新")
+    val dataUpdateTime by viewModel.dataUpdateTime.observeAsState("\u6682\u65e0\u66f4\u65b0")
     val localStorageSummary by viewModel.localStorageSummary.observeAsState("")
     val message by viewModel.message.observeAsState("")
     val selectedThemeName = remember(selectedTheme) {
@@ -69,38 +77,35 @@ fun MineScreen(
         viewModel.refresh()
     }
 
-    val listModifier = if (respectStatusBar) {
-        modifier.statusBarsPadding()
-    } else {
-        modifier
-    }
+    val listModifier = if (respectStatusBar) modifier.statusBarsPadding() else modifier
     LazyColumn(
-        modifier = listModifier
-            .padding(horizontal = YunJiUiTokens.ScreenHorizontalPadding),
+        modifier = listModifier.padding(horizontal = YunJiUiTokens.ScreenHorizontalPadding),
         contentPadding = PaddingValues(
             top = YunJiUiTokens.PageHeaderVerticalPadding,
-            bottom = YunJiUiTokens.PageHeaderVerticalPadding
+            bottom = 72.dp
         ),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         if (showHeader) {
             item {
                 ScreenHeader(
-                    title = "我的",
+                    title = "\u8bbe\u7f6e",
                     subtitle = localSpaceText
                 )
             }
         }
         item {
-            InfoCard {
+            SettingsCard {
                 Text(
                     text = defaultCity,
                     style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
                 Text(
                     text = dataUpdateTime,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 if (message.isNotBlank()) {
@@ -112,13 +117,11 @@ fun MineScreen(
                 }
             }
         }
+        item { SectionTitle("\u5929\u6c14\u504f\u597d") }
         item {
-            SectionTitle("天气偏好")
-        }
-        item {
-            InfoCard {
-                SettingSwitch(
-                    title = "天气预警",
+            SettingsCard {
+                SettingRow(
+                    title = "\u5929\u6c14\u9884\u8b66",
                     checked = warningEnabled,
                     onCheckedChange = { enabled ->
                         if (enabled) {
@@ -127,8 +130,8 @@ fun MineScreen(
                         viewModel.setWarningEnabled(enabled)
                     }
                 )
-                SettingSwitch(
-                    title = "每日提醒",
+                SettingRow(
+                    title = "\u6bcf\u65e5\u63d0\u9192",
                     checked = dailyReminderEnabled,
                     onCheckedChange = { enabled ->
                         if (enabled) {
@@ -137,59 +140,55 @@ fun MineScreen(
                         viewModel.setDailyReminderEnabled(enabled)
                     }
                 )
-                SettingSwitch("天气动画", animationEnabled, viewModel::setAnimationEnabled)
-                SettingSwitch("深色模式", darkModeEnabled, viewModel::setDarkModeEnabled)
-                SettingSwitch("允许开发者工具", developerToolsEnabled, viewModel::setDeveloperToolsEnabled)
+                SettingRow("\u5929\u6c14\u52a8\u753b", animationEnabled, viewModel::setAnimationEnabled)
+                SettingRow("\u6df1\u8272\u6a21\u5f0f", darkModeEnabled, viewModel::setDarkModeEnabled)
+                SettingRow("\u5141\u8bb8\u5f00\u53d1\u8005\u5de5\u5177", developerToolsEnabled, viewModel::setDeveloperToolsEnabled)
             }
         }
+        item { SectionTitle("\u5355\u4f4d\u4e0e\u4e3b\u9898") }
         item {
-            SectionTitle("单位与主题")
-        }
-        item {
-            InfoCard {
-                Text("温度单位", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+            SettingsCard {
+                SettingLabel("\u6e29\u5ea6\u5355\u4f4d")
                 OptionRow {
-                    UnitButton(
-                        text = "摄氏度",
+                    CompactSegmentedButton(
+                        text = "\u6444\u6c0f\u5ea6",
                         selected = temperatureUnit == WeatherDisplayUtils.TEMPERATURE_CELSIUS,
                         onClick = { viewModel.setTemperatureUnit(WeatherDisplayUtils.TEMPERATURE_CELSIUS) }
                     )
-                    UnitButton(
-                        text = "华氏度",
+                    CompactSegmentedButton(
+                        text = "\u534e\u6c0f\u5ea6",
                         selected = temperatureUnit == WeatherDisplayUtils.TEMPERATURE_FAHRENHEIT,
                         onClick = { viewModel.setTemperatureUnit(WeatherDisplayUtils.TEMPERATURE_FAHRENHEIT) }
                     )
                 }
-                Text("风速单位", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                SettingLabel("\u98ce\u901f\u5355\u4f4d")
                 OptionRow {
-                    UnitButton(
-                        text = "风力等级",
+                    CompactSegmentedButton(
+                        text = "\u98ce\u529b\u7b49\u7ea7",
                         selected = windUnit == WeatherDisplayUtils.WIND_SCALE,
                         onClick = { viewModel.setWindUnit(WeatherDisplayUtils.WIND_SCALE) }
                     )
-                    UnitButton(
-                        text = "米/秒",
+                    CompactSegmentedButton(
+                        text = "\u7c73/\u79d2",
                         selected = windUnit == WeatherDisplayUtils.WIND_METER_PER_SECOND,
                         onClick = { viewModel.setWindUnit(WeatherDisplayUtils.WIND_METER_PER_SECOND) }
                     )
                 }
-                Text("当前主题", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold)
+                SettingLabel("\u5f53\u524d\u4e3b\u9898")
                 Text(
                     text = selectedThemeName,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = "从首页更多菜单进入个性换肤，可调整主题和首页模块。",
+                    text = "\u5728\u4e2a\u6027\u6362\u80a4\u4e2d\u8c03\u6574\u4e3b\u9898\u3001\u81ea\u5b9a\u4e49\u7d20\u6750\u548c\u9996\u9875\u6a21\u5757\u987a\u5e8f\u3002",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
-        item {
-            SectionTitle("应用信息")
-        }
+        item { SectionTitle("\u5e94\u7528\u4fe1\u606f") }
         item {
             AppInfoPanel(
                 localStorageSummary = localStorageSummary,
@@ -203,15 +202,10 @@ fun MineScreen(
         AlertDialog(
             onDismissRequest = { infoDialog = null },
             title = { Text(dialog.title) },
-            text = {
-                Text(
-                    text = dialog.message,
-                    style = MaterialTheme.typography.bodyMedium
-                )
-            },
+            text = { Text(text = dialog.message, style = MaterialTheme.typography.bodyMedium) },
             confirmButton = {
                 TextButton(onClick = { infoDialog = null }) {
-                    Text("知道了")
+                    Text("\u77e5\u9053\u4e86")
                 }
             }
         )
@@ -219,26 +213,59 @@ fun MineScreen(
 }
 
 @Composable
-private fun SettingSwitch(
+private fun SettingsCard(content: @Composable ColumnScope.() -> Unit) {
+    val visualTheme = LocalYunJiVisualTheme.current
+    val darkPalette = visualTheme.background.luminance() < 0.35f ||
+            visualTheme.defaultWeatherGradient.top.luminance() < 0.35f
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surface.copy(alpha = if (darkPalette) 0.30f else 0.62f),
+        border = BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.outline.copy(alpha = if (darkPalette) 0.09f else 0.12f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            content = content
+        )
+    }
+}
+
+@Composable
+private fun SettingRow(
     title: String,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 46.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = title,
             modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
         Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
+}
+
+@Composable
+private fun SettingLabel(text: String) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyMedium,
+        fontWeight = FontWeight.SemiBold
+    )
 }
 
 @Composable
@@ -251,24 +278,33 @@ private fun OptionRow(content: @Composable RowScope.() -> Unit) {
 }
 
 @Composable
-private fun RowScope.UnitButton(
+private fun RowScope.CompactSegmentedButton(
     text: String,
     selected: Boolean,
     onClick: () -> Unit
 ) {
+    val shape = RoundedCornerShape(22.dp)
+    val modifier = Modifier
+        .weight(1f)
+        .heightIn(min = 44.dp)
     if (selected) {
         Button(
-            modifier = Modifier.weight(1f),
+            modifier = modifier,
+            shape = shape,
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
             onClick = onClick
         ) {
-            Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
         }
     } else {
         OutlinedButton(
-            modifier = Modifier.weight(1f),
+            modifier = modifier,
+            shape = shape,
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 0.dp),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onSurface),
             onClick = onClick
         ) {
-            Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall)
         }
     }
 }
@@ -279,45 +315,30 @@ private fun AppInfoPanel(
     onClearCache: () -> Unit,
     onOpenInfo: (MineInfoDialog) -> Unit
 ) {
-    InfoCard {
+    SettingsCard {
+        SettingLabel("\u672c\u5730\u5b58\u50a8\u72b6\u6001")
         Text(
-            text = "本地存储状态",
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold
-        )
-        Text(
-            text = localStorageSummary.ifBlank { "正在读取本地数据" },
-            style = MaterialTheme.typography.bodyMedium,
+            text = localStorageSummary.ifBlank { "\u6b63\u5728\u8bfb\u53d6\u672c\u5730\u6570\u636e" },
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        SettingLabel("\u9879\u76ee\u8fd0\u884c\u72b6\u6001")
         Text(
-            text = "项目运行状态",
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.SemiBold
-        )
-        Text(
-            text = "本机单用户数据空间；Compose 主界面；Room 本地缓存；Worker 负责后台提醒与预警刷新。",
-            style = MaterialTheme.typography.bodyMedium,
+            text = "\u672c\u5730\u6570\u636e\u3001Compose \u754c\u9762\u548c\u540e\u53f0\u63d0\u9192\u6b63\u5e38\u8fd0\u884c\u3002",
+            style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         Button(
             modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(22.dp),
             onClick = onClearCache
         ) {
-            Text("清理天气缓存")
+            Text("\u6e05\u7406\u5929\u6c14\u7f13\u5b58")
         }
-        InformationRow("数据来源说明") {
-            onOpenInfo(MineInfoDialog.DataSource)
-        }
-        InformationRow("开发与验证说明") {
-            onOpenInfo(MineInfoDialog.Developer)
-        }
-        InformationRow("使用帮助") {
-            onOpenInfo(MineInfoDialog.Help)
-        }
-        InformationRow("关于应用") {
-            onOpenInfo(MineInfoDialog.About)
-        }
+        InformationRow("\u6570\u636e\u6765\u6e90\u8bf4\u660e") { onOpenInfo(MineInfoDialog.DataSource) }
+        InformationRow("\u5f00\u53d1\u4e0e\u9a8c\u8bc1\u8bf4\u660e") { onOpenInfo(MineInfoDialog.Developer) }
+        InformationRow("\u4f7f\u7528\u5e2e\u52a9") { onOpenInfo(MineInfoDialog.Help) }
+        InformationRow("\u5173\u4e8e\u5e94\u7528") { onOpenInfo(MineInfoDialog.About) }
     }
 }
 
@@ -327,20 +348,22 @@ private fun InformationRow(
     onClick: () -> Unit
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 44.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
             text = title,
             modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
         TextButton(onClick = onClick) {
-            Text("查看")
+            Text("\u67e5\u770b", style = MaterialTheme.typography.bodySmall)
         }
     }
 }
@@ -350,19 +373,19 @@ private enum class MineInfoDialog(
     val message: String
 ) {
     DataSource(
-        "数据来源",
-        "天气、空气质量和城市搜索统一使用 Open-Meteo 与本地缓存，可无 API Key 运行。生活建议使用缓存和本地规则，天气预警只展示设备本地已有缓存，不伪造官方预警。"
+        "\u6570\u636e\u6765\u6e90",
+        "\u5929\u6c14\u3001\u7a7a\u6c14\u8d28\u91cf\u548c\u57ce\u5e02\u641c\u7d22\u4f7f\u7528\u672c\u5730\u7f13\u5b58\u4e0e Open-Meteo \u6570\u636e\uff0c\u65e0\u9700\u767b\u5f55\u3002"
     ),
     Developer(
-        "开发与验证说明",
-        "当前重构为 Kotlin + Compose 主界面，后端本地层保留 Room、Repository、Worker。IntelliJ IDEA 下 AGP 保持 8.10.0-alpha05，Gradle Wrapper 为 8.11.1，Gradle JVM 使用 JDK 17。常用验证命令：:app:compileDebugKotlin、:app:testDebugUnitTest、:app:assembleDebug。"
+        "\u5f00\u53d1\u4e0e\u9a8c\u8bc1",
+        "\u5f53\u524d\u5e94\u7528\u4f7f\u7528 Kotlin\u3001Compose\u3001Room \u548c Worker\uff0c\u5efa\u8bae\u901a\u8fc7 Gradle \u7f16\u8bd1\u4e0e\u5355\u5143\u6d4b\u8bd5\u9a8c\u8bc1\u3002"
     ),
     Help(
-        "使用帮助",
-        "首页查看默认城市天气；顶部搜索入口用于添加城市，更多菜单保留管理城市、桌面天气、个性化和设置。我的页可开启通知、每日提醒、天气动画、深色模式，并切换单位和主题/个性化。通知权限只在功能需要时申请；清理缓存不会删除已关注城市。"
+        "\u4f7f\u7528\u5e2e\u52a9",
+        "\u9996\u9875\u67e5\u770b\u9ed8\u8ba4\u57ce\u5e02\u5929\u6c14\uff0c\u7ba1\u7406\u57ce\u5e02\u9875\u53ef\u6dfb\u52a0\u3001\u6392\u5e8f\u548c\u5220\u9664\u57ce\u5e02\uff0c\u4e2a\u6027\u5316\u9875\u53ef\u8c03\u6574\u4e3b\u9898\u548c\u9996\u9875\u6a21\u5757\u3002"
     ),
     About(
-        "关于云迹天气",
-        "云迹天气是本机天气应用，城市、天气缓存、预警状态和偏好都保留在设备本地。登录模块已移除，当前不再接入账号系统，也不会上传本地账号数据。"
+        "\u5173\u4e8e\u4e91\u8ff9\u5929\u6c14",
+        "\u4e91\u8ff9\u5929\u6c14\u662f\u4ee5\u672c\u5730\u7f13\u5b58\u548c\u4e2a\u6027\u5316\u89c6\u89c9\u4e3a\u6838\u5fc3\u7684\u5929\u6c14\u5e94\u7528\u3002"
     )
 }

@@ -1,4 +1,4 @@
-package com.litroenade.yunjiweather.ui.compose
+﻿package com.litroenade.yunjiweather.ui.compose
 
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
@@ -33,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -85,6 +86,7 @@ fun YunJiApp(
     var noticeText by rememberSaveable { mutableStateOf("") }
     val context = LocalContext.current
     val visualTheme = LocalYunJiVisualTheme.current
+    val homeUiState by homeViewModel.uiState.observeAsState()
     val activePage = activeTarget?.takeIf { it.isFullPage }
     val activeSheet = activeTarget?.takeIf { it.isSheet }
     val closePageAndRefresh = {
@@ -167,8 +169,8 @@ fun YunJiApp(
                 activePage == WeatherNavigationTarget.DESKTOP_WEATHER ||
                 activePage == WeatherNavigationTarget.PERSONALIZATION
         val pageTitleColor = when {
-            activePage == WeatherNavigationTarget.DESKTOP_WEATHER -> Color.White
-            activePage == WeatherNavigationTarget.PERSONALIZATION -> Color.White
+            visualTheme.defaultWeatherGradient.top.luminance() < 0.35f ||
+                    visualTheme.background.luminance() < 0.35f -> Color.White
             activePage == WeatherNavigationTarget.MANAGE_CITIES &&
                     MaterialTheme.colorScheme.background.luminance() < 0.35f -> Color.White
             else -> MaterialTheme.colorScheme.onBackground
@@ -185,7 +187,7 @@ fun YunJiApp(
         }
         WeatherPageScaffold(
             title = if (activePage == WeatherNavigationTarget.MANAGE_CITIES && showCityEditor) {
-                "编辑城市"
+                "缂栬緫鍩庡競"
             } else {
                 activePageTitle(activePage)
             },
@@ -215,7 +217,7 @@ fun YunJiApp(
                             Icon(
                                 modifier = Modifier.size(YunJiUiTokens.PageHeaderIconSize),
                                 painter = painterResource(R.drawable.ic_settings_24),
-                                contentDescription = "调整首页模块",
+                                contentDescription = "璋冩暣棣栭〉妯″潡",
                                 tint = pageTitleColor
                             )
                         }
@@ -230,7 +232,7 @@ fun YunJiApp(
                             Icon(
                                 modifier = Modifier.size(YunJiUiTokens.PageHeaderIconSize),
                                 painter = painterResource(if (showCityEditor) R.drawable.ic_check_24 else R.drawable.ic_settings_24),
-                                contentDescription = if (showCityEditor) "完成编辑城市" else "编辑城市",
+                                contentDescription = if (showCityEditor) "瀹屾垚缂栬緫鍩庡競" else "缂栬緫鍩庡競",
                                 tint = pageTitleColor
                             )
                         }
@@ -252,6 +254,9 @@ fun YunJiApp(
 
                 WeatherNavigationTarget.DESKTOP_WEATHER -> DesktopWeatherScreen(
                     modifier = pageModifier,
+                    homeWeatherData = homeUiState?.data,
+                    homeWeatherUpdateTime = homeUiState?.updateTime ?: homeUiState?.data?.updateTime ?: 0L,
+                    animationEnabled = animationEnabled,
                     locationUiState = locationUiState,
                     onRequestLocation = onRequestLocation,
                     onRequestWidget = { mode -> noticeText = requestWeatherWidgetPin(context, mode) }
@@ -338,7 +343,7 @@ fun YunJiApp(
             text = { Text(noticeText) },
             confirmButton = {
                 TextButton(onClick = { noticeText = "" }) {
-                    Text("知道了")
+                    Text("\u77e5\u9053\u4e86")
                 }
             }
         )
@@ -347,22 +352,22 @@ fun YunJiApp(
 
 private fun activePageTitle(target: WeatherNavigationTarget): String {
     return when (target) {
-        WeatherNavigationTarget.MANAGE_CITIES -> "管理城市"
-        WeatherNavigationTarget.DESKTOP_WEATHER -> "桌面天气"
-        WeatherNavigationTarget.PERSONALIZATION -> "个性换肤"
-        WeatherNavigationTarget.SETTINGS -> "设置"
-        WeatherNavigationTarget.ALERTS -> "天气预警"
-        WeatherNavigationTarget.LIFE_INDEX -> "生活建议"
-        WeatherNavigationTarget.SEARCH_CITY -> "搜索城市"
+        WeatherNavigationTarget.MANAGE_CITIES -> "\u7ba1\u7406\u57ce\u5e02"
+        WeatherNavigationTarget.DESKTOP_WEATHER -> "\u684c\u9762\u5929\u6c14"
+        WeatherNavigationTarget.PERSONALIZATION -> "\u4e2a\u6027\u6362\u80a4"
+        WeatherNavigationTarget.SETTINGS -> "\u8bbe\u7f6e"
+        WeatherNavigationTarget.ALERTS -> "\u5929\u6c14\u9884\u8b66"
+        WeatherNavigationTarget.LIFE_INDEX -> "\u751f\u6d3b\u5efa\u8bae"
+        WeatherNavigationTarget.SEARCH_CITY -> "\u641c\u7d22\u57ce\u5e02"
     }
 }
 
 private fun activePageSubtitle(target: WeatherNavigationTarget): String? {
     return when (target) {
-        WeatherNavigationTarget.MANAGE_CITIES -> "搜索、添加、切换默认城市"
-        WeatherNavigationTarget.DESKTOP_WEATHER -> "管理系统桌面小组件"
-        WeatherNavigationTarget.PERSONALIZATION -> "选择主题，右上角调整首页模块"
-        WeatherNavigationTarget.SETTINGS -> "通知、单位和本地数据"
+        WeatherNavigationTarget.MANAGE_CITIES -> "\u641c\u7d22\u3001\u6dfb\u52a0\u3001\u5207\u6362\u9ed8\u8ba4\u57ce\u5e02"
+        WeatherNavigationTarget.DESKTOP_WEATHER -> "\u7ba1\u7406\u7cfb\u7edf\u684c\u9762\u5c0f\u7ec4\u4ef6"
+        WeatherNavigationTarget.PERSONALIZATION -> "\u9009\u62e9\u4e3b\u9898\uff0c\u53f3\u4e0a\u89d2\u8c03\u6574\u9996\u9875\u6a21\u5757"
+        WeatherNavigationTarget.SETTINGS -> "\u901a\u77e5\u3001\u5355\u4f4d\u548c\u672c\u5730\u6570\u636e"
         WeatherNavigationTarget.ALERTS -> null
         WeatherNavigationTarget.LIFE_INDEX -> null
         WeatherNavigationTarget.SEARCH_CITY -> null
@@ -376,9 +381,9 @@ private fun requestWeatherWidgetPin(context: Context, mode: WeatherWidgetLayoutM
             val provider = ComponentName(context, WeatherAppWidgetProvider.providerClassFor(mode))
             val requested = appWidgetManager.requestPinAppWidget(provider, null, null)
             if (requested) {
-                return "已请求添加桌面天气，请在系统弹窗中确认。"
+                return "\u5df2\u8bf7\u6c42\u6dfb\u52a0\u684c\u9762\u5929\u6c14\uff0c\u8bf7\u5728\u7cfb\u7edf\u5f39\u7a97\u4e2d\u786e\u8ba4\u3002"
             }
         }
     }
-    return "请长按桌面，在系统小组件列表中选择云迹天气。"
+    return "\u8bf7\u957f\u6309\u684c\u9762\uff0c\u5728\u7cfb\u7edf\u5c0f\u7ec4\u4ef6\u5217\u8868\u4e2d\u9009\u62e9\u4e91\u8ff9\u5929\u6c14\u3002"
 }

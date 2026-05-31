@@ -1,4 +1,4 @@
-package com.litroenade.yunjiweather.widget
+﻿package com.litroenade.yunjiweather.widget
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -19,9 +19,7 @@ import java.io.File
 import java.util.concurrent.Executors
 
 /**
- * 小组件入口只负责广播生命周期和桌面远程视图渲染。
- * 数据刷新、缓存读取和点击路由分离，便于后续扩展多种桌面样式。
- */
+ * 灏忕粍浠跺叆鍙ｅ彧璐熻矗骞挎挱鐢熷懡鍛ㄦ湡鍜屾闈㈣繙绋嬭鍥炬覆鏌撱€? * 鏁版嵁鍒锋柊銆佺紦瀛樿鍙栧拰鐐瑰嚮璺敱鍒嗙锛屼究浜庡悗缁墿灞曞绉嶆闈㈡牱寮忋€? */
 open class WeatherAppWidgetProvider : AppWidgetProvider() {
 
     protected open val fixedLayoutMode: WeatherWidgetLayoutMode = WeatherWidgetLayoutMode.STANDARD
@@ -222,9 +220,13 @@ open class WeatherAppWidgetProvider : AppWidgetProvider() {
 
         private fun WeatherWidgetSnapshot.iconResId(): Int {
             return when {
-                conditionText.contains("雪") -> R.drawable.ic_weather_snow
-                conditionText.contains("雨") || conditionText.contains("雷") -> R.drawable.ic_weather_rain
-                conditionText.contains("云") || conditionText.contains("阴") -> R.drawable.ic_weather_cloudy
+                iconCode.startsWith("4") || conditionText.contains("\u96ea") -> R.drawable.ic_weather_snow
+                iconCode.startsWith("3") ||
+                        conditionText.contains("\u96e8") ||
+                        conditionText.contains("\u96f7") -> R.drawable.ic_weather_rain
+                iconCode.startsWith("15") ||
+                        conditionText.contains("\u4e91") ||
+                        conditionText.contains("\u9634") -> R.drawable.ic_weather_cloudy
                 else -> R.drawable.ic_weather_sunny
             }
         }

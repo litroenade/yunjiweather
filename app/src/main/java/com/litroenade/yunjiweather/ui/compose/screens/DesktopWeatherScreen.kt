@@ -1,4 +1,4 @@
-package com.litroenade.yunjiweather.ui.compose.screens
+﻿package com.litroenade.yunjiweather.ui.compose.screens
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -53,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.litroenade.yunjiweather.R
 import com.litroenade.yunjiweather.data.model.CustomThemeAsset
+import com.litroenade.yunjiweather.data.model.HomeWeatherData
 import com.litroenade.yunjiweather.ui.compose.UriImage
 import com.litroenade.yunjiweather.ui.compose.theme.CustomThemeImage
 import com.litroenade.yunjiweather.ui.compose.theme.LocalCustomThemeOptions
@@ -60,8 +62,12 @@ import com.litroenade.yunjiweather.ui.compose.theme.LocalYunJiVisualTheme
 import com.litroenade.yunjiweather.ui.compose.theme.YunJiUiTokens
 import com.litroenade.yunjiweather.ui.location.LocationStatus
 import com.litroenade.yunjiweather.ui.location.LocationUiState
+import com.litroenade.yunjiweather.utils.DateTimeUtils
+import com.litroenade.yunjiweather.utils.DefaultCityUtils
 import com.litroenade.yunjiweather.utils.VisualThemeUtils
 import com.litroenade.yunjiweather.widget.WeatherWidgetLayoutMode
+import com.litroenade.yunjiweather.widget.WeatherWidgetSnapshot
+import com.litroenade.yunjiweather.widget.WeatherWidgetSnapshotFactory
 import com.litroenade.yunjiweather.widget.WidgetStyleSpec
 import kotlin.math.abs
 
@@ -74,6 +80,9 @@ private val DesktopWidgetModes = listOf(
 @Composable
 fun DesktopWeatherScreen(
     modifier: Modifier = Modifier,
+    homeWeatherData: HomeWeatherData? = null,
+    homeWeatherUpdateTime: Long = 0L,
+    animationEnabled: Boolean = true,
     locationUiState: LocationUiState = LocationUiState.idle(),
     onRequestLocation: () -> Unit = {},
     onRequestWidget: (WeatherWidgetLayoutMode) -> Unit
@@ -81,12 +90,34 @@ fun DesktopWeatherScreen(
     var selectedMode by rememberSaveable { mutableStateOf(WeatherWidgetLayoutMode.EXPANDED) }
     var widgetSwitchDirection by rememberSaveable { mutableStateOf(1) }
     var horizontalSwipeDistance by remember { mutableStateOf(0f) }
+    var isWidgetDragging by remember { mutableStateOf(false) }
     var useCurrentLocation by rememberSaveable { mutableStateOf(locationUiState.status == LocationStatus.SUCCESS) }
     val visualTheme = LocalYunJiVisualTheme.current
     val customThemeOptions = LocalCustomThemeOptions.current
     val customWidgetBackground = customWidgetBackground(visualTheme.key, customThemeOptions)
+    val previewSnapshot = remember(homeWeatherData, homeWeatherUpdateTime) {
+        homeWeatherData?.let { data ->
+            WeatherWidgetSnapshotFactory.fromHomeWeather(
+                data,
+                DateTimeUtils.formatMinuteTime(
+                    if (homeWeatherUpdateTime > 0L) homeWeatherUpdateTime else data.updateTime
+                ),
+                CustomThemeAsset.empty()
+            )
+        } ?: WeatherWidgetSnapshotFactory.unavailable(DefaultCityUtils.DEFAULT_CITY_NAME)
+    }
     val colors = rememberDesktopWeatherColors(visualTheme.background.luminance() < 0.35f)
     val swipeThresholdPx = with(LocalDensity.current) { 56.dp.toPx() }
+    val dragProgress = if (isWidgetDragging) {
+        (abs(horizontalSwipeDistance) / swipeThresholdPx).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+    val dragOffset = if (isWidgetDragging) {
+        horizontalSwipeDistance.coerceIn(-swipeThresholdPx, swipeThresholdPx)
+    } else {
+        0f
+    }
     fun selectWidgetMode(mode: WeatherWidgetLayoutMode) {
         val normalizedMode = mode.normalizedWidgetMode()
         if (normalizedMode != selectedMode) {
@@ -101,12 +132,14 @@ fun DesktopWeatherScreen(
         detectHorizontalDragGestures(
             onDragStart = {
                 horizontalSwipeDistance = 0f
+                isWidgetDragging = true
             },
             onHorizontalDrag = { _, dragAmount ->
                 horizontalSwipeDistance += dragAmount
             },
             onDragCancel = {
                 horizontalSwipeDistance = 0f
+                isWidgetDragging = false
             },
             onDragEnd = {
                 if (abs(horizontalSwipeDistance) >= swipeThresholdPx) {
@@ -117,6 +150,7 @@ fun DesktopWeatherScreen(
                     }
                 }
                 horizontalSwipeDistance = 0f
+                isWidgetDragging = false
             }
         )
     }
@@ -158,19 +192,27 @@ fun DesktopWeatherScreen(
             )
             Spacer(Modifier.weight(0.72f))
             AnimatedContent(
-                modifier = widgetSwipeModifier,
+                modifier = widgetSwipeModifier.graphicsLayer {
+                    translationX = dragOffset * 0.35f
+                    alpha = 1f - dragProgress * 0.18f
+                    val scale = 1f - dragProgress * 0.03f
+                    scaleX = scale
+                    scaleY = scale
+                },
                 targetState = selectedMode,
                 transitionSpec = {
                     val direction = widgetSwitchDirection
+                    val slideDuration = if (animationEnabled) 260 else 0
+                    val fadeDuration = if (animationEnabled) 160 else 0
                     val enter = slideInHorizontally(
-                        animationSpec = tween(260, easing = FastOutSlowInEasing)
+                        animationSpec = tween(slideDuration, easing = FastOutSlowInEasing)
                     ) { width -> width * direction / 3 } + fadeIn(
-                        animationSpec = tween(160, easing = FastOutSlowInEasing)
+                        animationSpec = tween(fadeDuration, easing = FastOutSlowInEasing)
                     )
                     val exit = slideOutHorizontally(
-                        animationSpec = tween(220, easing = FastOutSlowInEasing)
+                        animationSpec = tween(if (animationEnabled) 220 else 0, easing = FastOutSlowInEasing)
                     ) { width -> -width * direction / 3 } + fadeOut(
-                        animationSpec = tween(140, easing = FastOutSlowInEasing)
+                        animationSpec = tween(if (animationEnabled) 140 else 0, easing = FastOutSlowInEasing)
                     )
                     (enter togetherWith exit).using(SizeTransform(clip = false))
                 },
@@ -179,6 +221,7 @@ fun DesktopWeatherScreen(
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     DesktopWidgetPreview(
                         selectedMode = animatedMode,
+                        snapshot = previewSnapshot,
                         customBackground = customWidgetBackground
                     )
                     Spacer(Modifier.height(48.dp))
@@ -193,7 +236,7 @@ fun DesktopWeatherScreen(
             Spacer(Modifier.height(34.dp))
             Text(
                 modifier = Modifier.fillMaxWidth(),
-                text = "打开当前位置，展示实时位置天气",
+                text = "\u6253\u5f00\u5f53\u524d\u4f4d\u7f6e\uff0c\u5c55\u793a\u5b9e\u65f6\u4f4d\u7f6e\u5929\u6c14",
                 style = MaterialTheme.typography.titleMedium,
                 color = colors.secondaryText
             )
@@ -210,7 +253,7 @@ fun DesktopWeatherScreen(
                 ) {
                     Text(
                         modifier = Modifier.weight(1f),
-                        text = "当前位置",
+                        text = "\u5f53\u524d\u4f4d\u7f6e",
                         fontSize = YunJiUiTokens.PrimaryActionTextSize,
                         fontWeight = FontWeight.Medium,
                         color = colors.primaryText
@@ -240,7 +283,7 @@ fun DesktopWeatherScreen(
                 onClick = { onRequestWidget(selectedMode) }
             ) {
                 Text(
-                    text = "添加至桌面",
+                    text = "\u6dfb\u52a0\u81f3\u684c\u9762",
                     fontSize = YunJiUiTokens.PrimaryActionTextSize,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -383,16 +426,29 @@ internal fun WidgetPreviewBackground(customBackground: CustomThemeImage) {
     }
 }
 
+private fun sampleWidgetSnapshot(): WeatherWidgetSnapshot {
+    return WeatherWidgetSnapshot(
+        cityName = "\u5317\u4eac",
+        temperatureText = "25\u63b3",
+        conditionText = "\u6674",
+        rangeText = "35\u63b3 / 25\u63b3",
+        updateText = "05-31 07:59",
+        isAvailable = true,
+        adviceText = "\u51fa\u884c\u6ce8\u610f\u9632\u6652\uff0c\u53ca\u65f6\u8865\u6c34"
+    )
+}
+
 @Composable
 private fun DesktopWidgetPreview(
     selectedMode: WeatherWidgetLayoutMode,
+    snapshot: WeatherWidgetSnapshot,
     customBackground: CustomThemeImage
 ) {
     when (selectedMode.normalizedWidgetMode()) {
-        WeatherWidgetLayoutMode.COMPACT -> CompactWidgetPreview(customBackground)
+        WeatherWidgetLayoutMode.COMPACT -> CompactWidgetPreview(snapshot, customBackground)
         WeatherWidgetLayoutMode.AUTO,
-        WeatherWidgetLayoutMode.STANDARD -> StandardWidgetPreview(customBackground)
-        WeatherWidgetLayoutMode.EXPANDED -> LifeAdviceWidgetPreview(customBackground)
+        WeatherWidgetLayoutMode.STANDARD -> StandardWidgetPreview(snapshot, customBackground)
+        WeatherWidgetLayoutMode.EXPANDED -> LifeAdviceWidgetPreview(snapshot, customBackground)
     }
 }
 
@@ -408,9 +464,9 @@ private fun WidgetModeTabs(
         horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.Bottom
     ) {
-        WidgetModeTab("天气时钟", WeatherWidgetLayoutMode.COMPACT, selectedMode, onModeSelected)
-        WidgetModeTab("基础天气", WeatherWidgetLayoutMode.STANDARD, selectedMode, onModeSelected)
-        WidgetModeTab("生活建议", WeatherWidgetLayoutMode.EXPANDED, selectedMode, onModeSelected)
+        WidgetModeTab("\u5929\u6c14\u65f6\u949f", WeatherWidgetLayoutMode.COMPACT, selectedMode, onModeSelected)
+        WidgetModeTab("\u57fa\u7840\u5929\u6c14", WeatherWidgetLayoutMode.STANDARD, selectedMode, onModeSelected)
+        WidgetModeTab("\u751f\u6d3b\u5efa\u8bae", WeatherWidgetLayoutMode.EXPANDED, selectedMode, onModeSelected)
     }
 }
 
@@ -446,6 +502,14 @@ private fun WidgetModeTab(
 
 @Composable
 internal fun LifeAdviceWidgetPreview(customBackground: CustomThemeImage) {
+    LifeAdviceWidgetPreview(sampleWidgetSnapshot(), customBackground)
+}
+
+@Composable
+internal fun LifeAdviceWidgetPreview(
+    snapshot: WeatherWidgetSnapshot,
+    customBackground: CustomThemeImage
+) {
     val spec = WidgetStyleSpec.forMode(WeatherWidgetLayoutMode.EXPANDED)
     Surface(
         modifier = Modifier
@@ -462,7 +526,7 @@ internal fun LifeAdviceWidgetPreview(customBackground: CustomThemeImage) {
                     .background(Color(0x664AA0E0))
             )
             Image(
-                painter = painterResource(R.drawable.ic_weather_cloudy),
+                painter = painterResource(widgetPreviewIconResId(snapshot)),
                 contentDescription = null,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
@@ -475,21 +539,33 @@ internal fun LifeAdviceWidgetPreview(customBackground: CustomThemeImage) {
                     .padding(spec.contentPaddingDp.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("北京", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-                    Text("25°", color = Color.White, fontSize = spec.temperatureTextSizeSp.sp, fontWeight = FontWeight.Light)
-                    Text("35° / 25°", color = Color.White.copy(alpha = 0.86f), fontSize = 13.sp)
+                Column(
+                    modifier = Modifier.weight(0.85f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Text(snapshot.cityName, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                    Text(snapshot.temperatureText, color = Color.White, fontSize = spec.temperatureTextSizeSp.sp, fontWeight = FontWeight.Light)
+                    Text(snapshot.rangeText, color = Color.White.copy(alpha = 0.86f), fontSize = 13.sp)
                 }
                 Column(
-                    modifier = Modifier.padding(end = 42.dp),
+                    modifier = Modifier
+                        .weight(1.35f)
+                        .padding(start = 12.dp, end = 34.dp),
                     horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("阴  空气良", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
-                    Text("2026-05-31 07:59", color = Color.White.copy(alpha = 0.86f), fontSize = 12.sp)
-                    Text("短袖   适宜   一般   不易", color = Color.White, fontSize = 14.sp)
-                    Text("穿衣     钓鱼     晚霞     感冒", color = Color.White.copy(alpha = 0.70f), fontSize = 10.sp)
-                    Text("出行注意防晒，及时补水", color = Color.White.copy(alpha = 0.84f), fontSize = 11.sp)
+                    Text(snapshot.conditionText, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
+                    Text(snapshot.updateText, color = Color.White.copy(alpha = 0.86f), fontSize = 12.sp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        LifeIndexColumn(snapshot.clothingValue, "\u7a7f\u8863")
+                        LifeIndexColumn(snapshot.fishingValue, "\u9493\u9c7c")
+                        LifeIndexColumn(snapshot.sunsetValue, "\u665a\u971e")
+                        LifeIndexColumn(snapshot.coldValue, "\u611f\u5192")
+                    }
+                    Text(snapshot.adviceText, color = Color.White.copy(alpha = 0.84f), fontSize = 11.sp)
                 }
             }
         }
@@ -498,6 +574,14 @@ internal fun LifeAdviceWidgetPreview(customBackground: CustomThemeImage) {
 
 @Composable
 internal fun StandardWidgetPreview(customBackground: CustomThemeImage) {
+    StandardWidgetPreview(sampleWidgetSnapshot(), customBackground)
+}
+
+@Composable
+internal fun StandardWidgetPreview(
+    snapshot: WeatherWidgetSnapshot,
+    customBackground: CustomThemeImage
+) {
     val spec = WidgetStyleSpec.forMode(WeatherWidgetLayoutMode.STANDARD)
     Surface(
         modifier = Modifier
@@ -514,7 +598,7 @@ internal fun StandardWidgetPreview(customBackground: CustomThemeImage) {
                     .background(Color(0x664AA0E0))
             )
             Image(
-                painter = painterResource(R.drawable.ic_weather_cloudy),
+                painter = painterResource(widgetPreviewIconResId(snapshot)),
                 contentDescription = null,
                 modifier = Modifier
                     .align(Alignment.TopEnd)
@@ -525,11 +609,11 @@ internal fun StandardWidgetPreview(customBackground: CustomThemeImage) {
                 modifier = Modifier.padding(spec.contentPaddingDp.dp),
                 verticalArrangement = Arrangement.spacedBy(5.dp)
             ) {
-                Text("北京", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-                Text("25°", color = Color.White, fontSize = spec.temperatureTextSizeSp.sp, fontWeight = FontWeight.Light)
-                Text("35° / 25°", color = Color.White.copy(alpha = 0.86f), fontSize = 14.sp)
-                Text("阴", color = Color.White, fontSize = 16.sp)
-                Text("2026-05-31 07:59", color = Color.White.copy(alpha = 0.80f), fontSize = 11.sp)
+                Text(snapshot.cityName, color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                Text(snapshot.temperatureText, color = Color.White, fontSize = spec.temperatureTextSizeSp.sp, fontWeight = FontWeight.Light)
+                Text(snapshot.rangeText, color = Color.White.copy(alpha = 0.86f), fontSize = 14.sp)
+                Text(snapshot.conditionText, color = Color.White, fontSize = 16.sp)
+                Text(snapshot.updateText, color = Color.White.copy(alpha = 0.80f), fontSize = 11.sp)
             }
         }
     }
@@ -537,6 +621,14 @@ internal fun StandardWidgetPreview(customBackground: CustomThemeImage) {
 
 @Composable
 internal fun CompactWidgetPreview(customBackground: CustomThemeImage) {
+    CompactWidgetPreview(sampleWidgetSnapshot(), customBackground)
+}
+
+@Composable
+internal fun CompactWidgetPreview(
+    snapshot: WeatherWidgetSnapshot,
+    customBackground: CustomThemeImage
+) {
     val spec = WidgetStyleSpec.forMode(WeatherWidgetLayoutMode.COMPACT)
     Surface(
         modifier = Modifier
@@ -560,7 +652,7 @@ internal fun CompactWidgetPreview(customBackground: CustomThemeImage) {
             ) {
                 Text(
                     modifier = Modifier.weight(1f),
-                    text = "25°",
+                    text = snapshot.temperatureText,
                     color = Color.White,
                     fontSize = spec.temperatureTextSizeSp.sp,
                     fontWeight = FontWeight.Light
@@ -569,15 +661,25 @@ internal fun CompactWidgetPreview(customBackground: CustomThemeImage) {
                     modifier = Modifier.weight(0.95f),
                     horizontalAlignment = Alignment.End
                 ) {
-                    Text("北京", color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-                    Text("阴", color = Color.White.copy(alpha = 0.95f), fontSize = 10.sp)
-                    Text("35° / 25°", color = Color.White.copy(alpha = 0.88f), fontSize = 10.sp)
+                    Text(snapshot.cityName, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+                    Text(snapshot.conditionText, color = Color.White.copy(alpha = 0.95f), fontSize = 10.sp)
+                    Text(snapshot.rangeText, color = Color.White.copy(alpha = 0.88f), fontSize = 10.sp)
                 }
             }
         }
     }
 }
 
+@Composable
+private fun LifeIndexColumn(
+    value: String,
+    label: String
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(value, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+        Text(label, color = Color.White.copy(alpha = 0.70f), fontSize = 9.sp)
+    }
+}
 @Composable
 private fun PageDots(active: Int) {
     Row(
@@ -618,9 +720,22 @@ private fun WeatherWidgetLayoutMode.widgetModeAtOffset(offset: Int): WeatherWidg
 
 private fun WeatherWidgetLayoutMode.widgetModeTitle(): String {
     return when (normalizedWidgetMode()) {
-        WeatherWidgetLayoutMode.COMPACT -> "天气时钟"
+        WeatherWidgetLayoutMode.COMPACT -> "\u5929\u6c14\u65f6\u949f"
         WeatherWidgetLayoutMode.AUTO,
-        WeatherWidgetLayoutMode.STANDARD -> "基础天气"
-        WeatherWidgetLayoutMode.EXPANDED -> "生活建议"
+        WeatherWidgetLayoutMode.STANDARD -> "\u57fa\u7840\u5929\u6c14"
+        WeatherWidgetLayoutMode.EXPANDED -> "\u751f\u6d3b\u5efa\u8bae"
+    }
+}
+
+private fun widgetPreviewIconResId(snapshot: WeatherWidgetSnapshot): Int {
+    return when {
+        snapshot.iconCode.startsWith("4") || snapshot.conditionText.contains("\u96ea") -> R.drawable.ic_weather_snow
+        snapshot.iconCode.startsWith("3") ||
+                snapshot.conditionText.contains("\u96e8") ||
+                snapshot.conditionText.contains("\u96f7") -> R.drawable.ic_weather_rain
+        snapshot.iconCode.startsWith("15") ||
+                snapshot.conditionText.contains("\u4e91") ||
+                snapshot.conditionText.contains("\u9634") -> R.drawable.ic_weather_cloudy
+        else -> R.drawable.ic_weather_sunny
     }
 }

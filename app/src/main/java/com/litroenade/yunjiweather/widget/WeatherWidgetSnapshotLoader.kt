@@ -1,4 +1,4 @@
-package com.litroenade.yunjiweather.widget
+﻿package com.litroenade.yunjiweather.widget
 
 import android.content.Context
 import com.google.gson.Gson
@@ -17,9 +17,7 @@ import dagger.hilt.android.EntryPointAccessors
 import java.util.Calendar
 
 /**
- * 小组件只读取本地数据库缓存快照，不直接发起网络请求。
- * 后台刷新由统一任务调度，避免桌面频繁唤醒导致启动器卡顿或耗电。
- */
+ * 灏忕粍浠跺彧璇诲彇鏈湴鏁版嵁搴撶紦瀛樺揩鐓э紝涓嶇洿鎺ュ彂璧风綉缁滆姹傘€? * 鍚庡彴鍒锋柊鐢辩粺涓€浠诲姟璋冨害锛岄伩鍏嶆闈㈤绻佸敜閱掑鑷村惎鍔ㄥ櫒鍗￠】鎴栬€楃數銆? */
 class WeatherWidgetSnapshotLoader @JvmOverloads constructor(
     private val cityReader: DefaultCityReader,
     private val cacheReader: HomeWeatherCacheReader,
@@ -37,36 +35,20 @@ class WeatherWidgetSnapshotLoader @JvmOverloads constructor(
 
     private fun fromCache(cityName: String, cache: WeatherCacheEntity?): WeatherWidgetSnapshot {
         if (cache == null) {
-            return unavailable(cityName)
+            return WeatherWidgetSnapshotFactory.unavailable(cityName)
         }
         return try {
             val data = gson.fromJson(cache.weatherJson, HomeWeatherData::class.java)
             data.validateForDisplay()
-            val customBackground = customBackgroundFor(data)
-            WeatherWidgetSnapshot(
-                cityName = data.cityName,
-                temperatureText = "${data.temperature}°",
-                conditionText = data.condition,
-                rangeText = "${data.tempMax}° / ${data.tempMin}°",
+            WeatherWidgetSnapshotFactory.fromHomeWeather(
+                data = data,
                 updateText = DateTimeUtils.formatMinuteTime(cache.updateTime),
-                isAvailable = true,
-                humidityText = "湿度 ${data.humidity}%",
-                windText = "${data.windDir} ${data.windScale}",
-                airQualityText = "空气 ${data.airQualityCategory}",
-                adviceText = data.travelAdvice,
-                clothingValue = clothingValue(data.temperature, data.clothingAdvice),
-                fishingValue = fishingValue(data.condition),
-                sunsetValue = sunsetValue(data.condition),
-                coldValue = coldValue(data.temperature),
-                customBackgroundUri = customBackground.uri,
-                customBackgroundCropAnchor = customBackground.cropAnchor,
-                customBackgroundMediaType = customBackground.mediaType
+                customBackground = customBackgroundFor(data)
             )
         } catch (exception: RuntimeException) {
-            unavailable(cityName)
+            WeatherWidgetSnapshotFactory.unavailable(cityName)
         }
     }
-
     private fun customBackgroundFor(data: HomeWeatherData): CustomThemeAsset {
         val settings = settingsReader.read()
         if (settings.visualThemeKey != VisualThemeUtils.THEME_CUSTOM_1 || settings.customThemeProfile.isEmpty) {
@@ -76,54 +58,6 @@ class WeatherWidgetSnapshotLoader @JvmOverloads constructor(
         val weatherKey = CustomThemeWeatherKey.fromWeatherCategory(category)
         val night = category == WeatherIconUtils.WeatherCategory.NIGHT
         return CustomThemeResolver.resolve(settings.customThemeProfile, weatherKey, night, currentMinuteOfDay())
-    }
-
-    private fun unavailable(cityName: String): WeatherWidgetSnapshot {
-        return WeatherWidgetSnapshot(
-            cityName = cityName,
-            temperatureText = "打开查看实时天气",
-            conditionText = "暂无缓存",
-            rangeText = "城市、预警、生活建议",
-            updateText = "",
-            isAvailable = false
-        )
-    }
-
-    private fun clothingValue(temperature: String, advice: String): String {
-        val normalizedAdvice = advice.trim()
-        return when {
-            normalizedAdvice.contains("短袖") -> "短袖"
-            normalizedAdvice.contains("外套") -> "外套"
-            normalizedAdvice.contains("羽绒") -> "羽绒服"
-            normalizedAdvice.contains("毛衣") -> "毛衣"
-            parseTemperature(temperature) >= 26 -> "短袖"
-            parseTemperature(temperature) <= 10 -> "厚外套"
-            else -> "薄外套"
-        }
-    }
-
-    private fun fishingValue(condition: String): String {
-        return if (condition.contains("雨") || condition.contains("雪") || condition.contains("雷")) {
-            "不宜"
-        } else {
-            "适宜"
-        }
-    }
-
-    private fun sunsetValue(condition: String): String {
-        return if (condition.contains("晴") || condition.contains("少云")) {
-            "较好"
-        } else {
-            "一般"
-        }
-    }
-
-    private fun coldValue(temperature: String): String {
-        return if (parseTemperature(temperature) <= 12) "注意" else "不易"
-    }
-
-    private fun parseTemperature(temperature: String): Int {
-        return temperature.trim().toDoubleOrNull()?.toInt() ?: 20
     }
 
     fun interface DefaultCityReader {

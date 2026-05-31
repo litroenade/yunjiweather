@@ -1,4 +1,4 @@
-package com.litroenade.yunjiweather.ui.compose.screens
+﻿package com.litroenade.yunjiweather.ui.compose.screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -49,7 +50,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -61,9 +61,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.litroenade.yunjiweather.R
 import com.litroenade.yunjiweather.data.entity.CityEntity
 import com.litroenade.yunjiweather.data.model.CityWeatherSummary
+import com.litroenade.yunjiweather.ui.compose.WeatherSceneSpec
 import com.litroenade.yunjiweather.ui.city.CityViewModel
 import com.litroenade.yunjiweather.ui.compose.formatWeatherTime
 import com.litroenade.yunjiweather.ui.compose.theme.LocalYunJiVisualTheme
+import com.litroenade.yunjiweather.ui.compose.theme.WeatherGradient
 import com.litroenade.yunjiweather.ui.compose.theme.YunJiUiTokens
 import com.litroenade.yunjiweather.ui.location.LocationStatus
 import com.litroenade.yunjiweather.ui.location.LocationUiState
@@ -85,15 +87,14 @@ fun CityScreen(
     val cities by viewModel.cities.observeAsState(emptyList())
     val searchResults by viewModel.searchResults.observeAsState(emptyList())
     val summaries by viewModel.citySummaries.observeAsState(emptyMap())
-    val defaultCity by viewModel.defaultCity.observeAsState("未设置")
+    val defaultCity by viewModel.defaultCity.observeAsState("\u672a\u8bbe\u7f6e")
     val message by viewModel.message.observeAsState("")
     val busy by viewModel.busy.observeAsState(false)
     val defaultCityChangeVersion by viewModel.defaultCityChangeVersion.observeAsState(0L)
     var query by rememberSaveable { mutableStateOf("") }
     var lastSubmittedQuery by rememberSaveable { mutableStateOf("") }
     var focusSearchToken by rememberSaveable { mutableStateOf(0) }
-    val visualTheme = LocalYunJiVisualTheme.current
-    val cityColors = rememberCityPageColors(visualTheme.background.luminance() < 0.35f)
+    val cityColors = rememberCityPageColors()
 
     fun submitSearch() {
         val normalizedQuery = query.trim()
@@ -134,7 +135,7 @@ fun CityScreen(
     Box(
         modifier = listModifier
             .fillMaxSize()
-            .background(cityColors.background)
+            .background(cityColors.backgroundBrush)
     ) {
         LazyColumn(
             modifier = Modifier
@@ -146,14 +147,14 @@ fun CityScreen(
                 } else {
                     YunJiUiTokens.ImmersiveContentTopPadding
                 },
-                bottom = 118.dp
+                bottom = 72.dp
             ),
             verticalArrangement = Arrangement.spacedBy(18.dp)
         ) {
             if (showHeader) {
                 item {
                     Text(
-                        text = "默认城市：$defaultCity",
+                        text = "榛樿鍩庡競锛?defaultCity",
                         style = MaterialTheme.typography.bodyMedium,
                         color = cityColors.secondaryText
                     )
@@ -192,33 +193,50 @@ fun CityScreen(
                     onDelete = { viewModel.removeCity(city) }
                 )
             }
-        }
-        Button(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(
-                    horizontal = YunJiUiTokens.BottomActionHorizontalPadding,
-                    vertical = 28.dp
+            item(key = "add_city_cta") {
+                CityAddActionButton(
+                    enabled = !busy,
+                    colors = cityColors,
+                    text = if (query.isBlank()) "+ \u6dfb\u52a0\u57ce\u5e02" else "\u641c\u7d22\u5e76\u6dfb\u52a0",
+                    onClick = {
+                        if (query.isBlank()) {
+                            focusSearchToken += 1
+                        } else {
+                            submitSearch()
+                        }
+                    }
                 )
-                .fillMaxWidth()
-                .height(YunJiUiTokens.PrimaryButtonHeight),
-            enabled = !busy,
-            shape = RoundedCornerShape(28.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = cityColors.bottomButton),
-            onClick = {
-                if (query.isBlank()) {
-                    focusSearchToken += 1
-                } else {
-                    submitSearch()
-                }
             }
-        ) {
-            Text(
-                text = if (query.isBlank()) "+ 添加城市" else "搜索并添加",
-                fontSize = YunJiUiTokens.PrimaryActionTextSize,
-                color = cityColors.onBottomButton
-            )
         }
+    }
+}
+
+@Composable
+private fun CityAddActionButton(
+    enabled: Boolean,
+    colors: CityPageColors,
+    text: String,
+    onClick: () -> Unit
+) {
+    Button(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(YunJiUiTokens.PrimaryButtonHeight),
+        enabled = enabled,
+        shape = RoundedCornerShape(28.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = colors.bottomButton,
+            contentColor = colors.onBottomButton
+        ),
+        onClick = onClick
+    ) {
+        Text(
+            text = text,
+            fontSize = YunJiUiTokens.PrimaryActionTextSize,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
     }
 }
 
@@ -253,7 +271,7 @@ private fun CitySearchCard(
                 .focusRequester(focusRequester),
             value = query,
             onValueChange = onQueryChange,
-            placeholder = { Text("搜索城市（中文/拼音）", color = colors.secondaryText.copy(alpha = 0.70f)) },
+            placeholder = { Text("\u641c\u7d22\u57ce\u5e02\uff08\u4e2d\u6587/\u62fc\u97f3\uff09", color = colors.secondaryText.copy(alpha = 0.70f)) },
             leadingIcon = {
                 Icon(
                     painter = painterResource(R.drawable.ic_search_24),
@@ -268,7 +286,7 @@ private fun CitySearchCard(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.ic_search_24),
-                        contentDescription = "搜索城市",
+                        contentDescription = "\u641c\u7d22\u57ce\u5e02",
                         tint = colors.primaryText.copy(alpha = if (!busy && query.isNotBlank()) 0.88f else 0.28f)
                     )
                 }
@@ -309,7 +327,7 @@ private fun CitySearchCard(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            listOf("北京", "上海", "广州", "深圳").forEach { cityName ->
+            listOf("\u5317\u4eac", "\u4e0a\u6d77", "\u5e7f\u5dde", "\u6df1\u5733").forEach { cityName ->
                 OutlinedButton(
                     modifier = Modifier.weight(1f),
                     enabled = !busy,
@@ -324,7 +342,7 @@ private fun CitySearchCard(
         if (locationUiState.message.isNotBlank() || message.isNotBlank() || busy) {
             Text(
                 text = when {
-                    busy -> "正在处理城市数据"
+                    busy -> "\u6b63\u5728\u5904\u7406\u57ce\u5e02\u6570\u636e"
                     locationUiState.message.isNotBlank() -> locationUiState.message
                     else -> message
                 },
@@ -370,7 +388,7 @@ private fun CitySearchResultRow(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "${candidate.province} · ${candidate.country}",
+                    text = "${candidate.province} \u00b7 ${candidate.country}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -383,7 +401,7 @@ private fun CitySearchResultRow(
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = colors.primaryText),
                 border = BorderStroke(1.dp, colors.cardStroke)
             ) {
-                Text("添加")
+                Text("\u6dfb\u52a0")
             }
         }
     }
@@ -429,22 +447,21 @@ private fun CityCard(
     } else {
         Modifier
     }
+    val visualTheme = LocalYunJiVisualTheme.current
+    val backgroundBrush = cityCardBackgroundBrush(summary?.iconCode, visualTheme.defaultWeatherGradient)
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .height(if (city.isDefault) 150.dp else 164.dp)
             .then(reorderModifier),
         shape = RoundedCornerShape(24.dp),
-        color = Color(0xFF2F6CA8)
+        color = Color.Transparent
     ) {
         Box {
-            Image(
-                painter = painterResource(R.drawable.theme_panorama_day),
-                contentDescription = null,
+            Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .alpha(0.72f),
-                contentScale = ContentScale.Crop
+                    .background(backgroundBrush)
             )
             Box(
                 Modifier
@@ -474,7 +491,7 @@ private fun CityCard(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.ic_drag_handle_24),
-                            contentDescription = "拖动排序",
+                            contentDescription = "\u62d6\u52a8\u6392\u5e8f",
                             tint = Color.White.copy(alpha = if (actionsEnabled) 0.88f else 0.32f)
                         )
                     }
@@ -485,11 +502,16 @@ private fun CityCard(
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         if (city.isDefault) {
-                            Text("●", color = Color.White, fontSize = 26.sp)
+                            Box(
+                                modifier = Modifier
+                                    .padding(end = 8.dp)
+                                    .size(8.dp)
+                                    .background(Color.White, CircleShape)
+                            )
                         }
                         Text(
                             text = city.cityName,
-                            style = MaterialTheme.typography.headlineSmall,
+                            style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.SemiBold,
                             color = Color.White,
                             maxLines = 1,
@@ -497,7 +519,7 @@ private fun CityCard(
                         )
                     }
                     Text(
-                        text = summary?.condition?.takeIf { it.isNotBlank() } ?: "多云",
+                        text = summary?.condition?.takeIf { it.isNotBlank() } ?: "\u591a\u4e91",
                         style = MaterialTheme.typography.titleMedium,
                         color = Color.White.copy(alpha = 0.92f)
                     )
@@ -513,8 +535,8 @@ private fun CityCard(
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
                             text = formatCitySummaryTemperature(summary?.temperature, temperatureUnit),
-                            fontSize = 52.sp,
-                            lineHeight = 54.sp,
+                            fontSize = 46.sp,
+                            lineHeight = 48.sp,
                             fontWeight = FontWeight.Light,
                             color = Color.White
                         )
@@ -545,14 +567,14 @@ private fun CityEditActions(
     Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
         CityEditAction(
             iconRes = R.drawable.ic_home_24,
-            label = if (cityIsDefault) "常驻地" else "设为常驻地",
+            label = if (cityIsDefault) "\u5e38\u9a7b\u5730" else "\u8bbe\u4e3a\u5e38\u9a7b\u5730",
             enabled = actionsEnabled && !cityIsDefault,
             onClick = onSetDefault
         )
         if (!cityIsDefault) {
             CityEditAction(
                 iconRes = R.drawable.ic_delete_24,
-                label = "删除",
+                label = "\u5220\u9664",
                 enabled = actionsEnabled,
                 onClick = onDelete
             )
@@ -591,33 +613,30 @@ private fun CityEditAction(
 }
 
 @Composable
-private fun rememberCityPageColors(darkPalette: Boolean): CityPageColors {
+private fun rememberCityPageColors(): CityPageColors {
     val colorScheme = MaterialTheme.colorScheme
-    return if (darkPalette) {
-        CityPageColors(
-            background = Color.Black,
-            primaryText = Color.White,
-            secondaryText = Color.White.copy(alpha = 0.58f),
-            searchContainer = Color(0xFF171717),
-            cardStroke = Color.White.copy(alpha = 0.18f),
-            bottomButton = Color(0xFF1E1E1E),
-            onBottomButton = Color.White
-        )
-    } else {
-        CityPageColors(
-            background = colorScheme.background,
-            primaryText = colorScheme.onBackground,
-            secondaryText = colorScheme.onSurfaceVariant,
-            searchContainer = colorScheme.surface.copy(alpha = 0.76f),
-            cardStroke = colorScheme.outline.copy(alpha = 0.18f),
-            bottomButton = colorScheme.surface,
-            onBottomButton = colorScheme.onSurface
-        )
-    }
+    val visualTheme = LocalYunJiVisualTheme.current
+    val darkPalette = visualTheme.background.luminance() < 0.35f ||
+            visualTheme.defaultWeatherGradient.top.luminance() < 0.35f
+    return CityPageColors(
+        backgroundBrush = Brush.verticalGradient(
+            listOf(
+                visualTheme.defaultWeatherGradient.top,
+                visualTheme.defaultWeatherGradient.middle,
+                visualTheme.defaultWeatherGradient.bottom
+            )
+        ),
+        primaryText = if (darkPalette) Color.White else colorScheme.onBackground,
+        secondaryText = if (darkPalette) Color.White.copy(alpha = 0.66f) else colorScheme.onSurfaceVariant,
+        searchContainer = colorScheme.surface.copy(alpha = if (darkPalette) 0.34f else 0.76f),
+        cardStroke = colorScheme.onSurface.copy(alpha = if (darkPalette) 0.10f else 0.14f),
+        bottomButton = colorScheme.surface.copy(alpha = if (darkPalette) 0.42f else 0.76f),
+        onBottomButton = if (darkPalette) Color.White else colorScheme.onSurface
+    )
 }
 
 private data class CityPageColors(
-    val background: Color,
+    val backgroundBrush: Brush,
     val primaryText: Color,
     val secondaryText: Color,
     val searchContainer: Color,
@@ -625,6 +644,21 @@ private data class CityPageColors(
     val bottomButton: Color,
     val onBottomButton: Color
 )
+
+private fun cityCardBackgroundBrush(iconCode: String?, fallback: WeatherGradient): Brush {
+    val normalizedIcon = iconCode?.trim().orEmpty()
+    if (normalizedIcon.isEmpty()) {
+        return Brush.verticalGradient(listOf(fallback.top, fallback.middle, fallback.bottom))
+    }
+    val scene = WeatherSceneSpec.fromIconCode(normalizedIcon)
+    return Brush.verticalGradient(
+        listOf(
+            Color(scene.topColor),
+            Color(scene.middleColor),
+            Color(scene.bottomColor)
+        )
+    )
+}
 
 internal fun formatCitySummaryTemperature(value: String?, unit: String): String {
     val temperature = value?.trim()
@@ -639,12 +673,12 @@ internal fun formatCitySummaryTemperatureRange(tempMax: String?, tempMin: String
     val max = tempMax?.trim()
     val min = tempMin?.trim()
     return if (max.isNullOrEmpty() || min.isNullOrEmpty()) {
-        "读取中"
+        "\u8bfb\u53d6\u4e2d"
     } else {
         "${WeatherDisplayUtils.formatTemperature(max, unit)}/${WeatherDisplayUtils.formatTemperature(min, unit)}"
     }
 }
 
 private fun temperaturePlaceholder(unit: String): String {
-    return if (WeatherDisplayUtils.TEMPERATURE_FAHRENHEIT == unit) "--°F" else "--℃"
+    return if (WeatherDisplayUtils.TEMPERATURE_FAHRENHEIT == unit) "--\u00b0F" else "--\u2103"
 }

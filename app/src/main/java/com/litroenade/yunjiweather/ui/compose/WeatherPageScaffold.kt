@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -44,13 +45,20 @@ internal fun WeatherPageScaffold(
     content: @Composable (Modifier) -> Unit
 ) {
     val visualTheme = LocalYunJiVisualTheme.current
-    val resolvedTitleColor = titleColor ?: MaterialTheme.colorScheme.onBackground
-    val resolvedSubtitleColor = subtitleColor ?: MaterialTheme.colorScheme.onSurfaceVariant
+    val pageBackgroundBrush = Brush.verticalGradient(
+        listOf(
+            visualTheme.defaultWeatherGradient.top,
+            visualTheme.defaultWeatherGradient.middle,
+            visualTheme.defaultWeatherGradient.bottom
+        )
+    )
+    val resolvedTitleColor = titleColor ?: visualTheme.primaryWeatherText
+    val resolvedSubtitleColor = subtitleColor ?: visualTheme.secondaryWeatherText
     if (immersive) {
         Box(
             modifier = modifier
                 .fillMaxSize()
-                .background(visualTheme.background)
+                .background(pageBackgroundBrush)
                 .navigationBarsPadding()
         ) {
             content(Modifier.fillMaxSize())
@@ -71,7 +79,7 @@ internal fun WeatherPageScaffold(
         Column(
             modifier = modifier
                 .fillMaxSize()
-                .background(visualTheme.background)
+                .background(pageBackgroundBrush)
                 .statusBarsPadding()
                 .navigationBarsPadding()
         ) {

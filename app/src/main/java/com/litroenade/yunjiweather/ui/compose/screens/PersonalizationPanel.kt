@@ -1,4 +1,4 @@
-package com.litroenade.yunjiweather.ui.compose.screens
+﻿package com.litroenade.yunjiweather.ui.compose.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
@@ -80,13 +80,15 @@ import com.litroenade.yunjiweather.data.model.CustomThemeWeatherKey
 import com.litroenade.yunjiweather.ui.compose.UriImage
 import com.litroenade.yunjiweather.ui.compose.home.modules.HomeModuleDefinition
 import com.litroenade.yunjiweather.ui.compose.theme.CustomThemeImage
+import com.litroenade.yunjiweather.ui.compose.theme.YunJiUiTokens
 import com.litroenade.yunjiweather.ui.compose.theme.skins.ThemeSkinCatalog
 import com.litroenade.yunjiweather.utils.VisualTheme
 import com.litroenade.yunjiweather.utils.VisualThemeUtils
 import kotlin.math.abs
 
-private val PersonalizationSheetShape = RoundedCornerShape(topStart = 18.dp, topEnd = 18.dp)
-private val PersonalizationPhoneShape = RoundedCornerShape(22.dp)
+private val PersonalizationSheetShape = RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp)
+private val PersonalizationEditorSheetShape = RoundedCornerShape(0.dp)
+private val PersonalizationPhoneShape = RoundedCornerShape(18.dp)
 private val PersonalizationCardShape = RoundedCornerShape(8.dp)
 private val PersonalizationSmallShape = RoundedCornerShape(6.dp)
 private val PersonalizationIndicatorShape = RoundedCornerShape(99.dp)
@@ -251,44 +253,63 @@ internal fun CustomThemeEditorPanel(
         customThemeCropAnchor
     )
     CompositionLocalProvider(LocalContentColor provides editorContentColor) {
-        Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
-            CustomThemeEditorHero(
-                imageUri = editorPreviewImageUri,
-                cropAnchor = editorPreviewCropAnchor,
-                mediaType = customThemeMediaTypeForPreview(editorPreviewImageUri),
-                fadeColor = editorPanelColor
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(themeBrush(VisualThemeUtils.THEME_CUSTOM_1))
+        ) {
+            ThemePreviewBackdrop(
+                themeKey = VisualThemeUtils.THEME_CUSTOM_1,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .fillMaxWidth()
+                    .height(YunJiUiTokens.ImmersiveContentTopPadding),
+                customThemeImageUri = editorPreviewImageUri,
+                customThemeCropAnchor = editorPreviewCropAnchor,
+                customThemeMediaType = customThemeMediaTypeForPreview(editorPreviewImageUri)
             )
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .offset(y = (-18).dp),
-                shape = PersonalizationSheetShape,
+                    .padding(top = YunJiUiTokens.ImmersiveContentTopPadding),
+                shape = PersonalizationEditorSheetShape,
                 color = editorPanelColor,
                 contentColor = editorContentColor
             ) {
                 Column(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 18.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
+                    CustomThemeEditorTabs(
+                        selectedSection = selectedSection,
+                        onSectionSelected = { selectedSection = it }
+                    )
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
+                        Column(
                             modifier = Modifier.weight(1f),
-                            text = "素材、规则、首页布局和桌面小组件分开配置。",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = editorSecondaryColor
-                        )
+                            verticalArrangement = Arrangement.spacedBy(3.dp)
+                        ) {
+                            Text(
+                                text = "\u81ea\u5b9a\u4e49\u4e3b\u9898",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = "\u7d20\u6750\u3001\u89c4\u5219\u3001\u9996\u9875\u5e03\u5c40\u548c\u684c\u9762\u5c0f\u7ec4\u4ef6\u5206\u5f00\u914d\u7f6e\u3002",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = editorSecondaryColor,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                         OutlinedButton(onClick = onBackToThemeStore) {
-                            Text("皮肤商店")
+                            Text("鐨偆鍟嗗簵")
                         }
                     }
-                    CustomThemeEditorTabs(
-                        selectedSection = selectedSection,
-                        onSectionSelected = { selectedSection = it }
-                    )
                     AnimatedContent(
                         targetState = selectedSection,
                         transitionSpec = {
@@ -340,61 +361,6 @@ internal fun CustomThemeEditorPanel(
 }
 
 @Composable
-private fun CustomThemeEditorHero(
-    imageUri: String,
-    cropAnchor: String,
-    mediaType: String,
-    fadeColor: Color
-) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(278.dp)
-            .background(themeBrush(VisualThemeUtils.THEME_CUSTOM_1))
-    ) {
-        ThemePreviewBackdrop(
-            themeKey = VisualThemeUtils.THEME_CUSTOM_1,
-            modifier = Modifier.fillMaxSize(),
-            customThemeImageUri = imageUri,
-            customThemeCropAnchor = cropAnchor,
-            customThemeMediaType = mediaType
-        )
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .fillMaxWidth()
-                .height(118.dp)
-                .background(
-                    Brush.verticalGradient(
-                        listOf(Color.Transparent, fadeColor),
-                        startY = 0f
-                    )
-                )
-        )
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomStart)
-                .padding(horizontal = 22.dp, vertical = 34.dp),
-            verticalArrangement = Arrangement.spacedBy(5.dp)
-        ) {
-            Text(
-                text = "自定义主题",
-                style = MaterialTheme.typography.titleMedium,
-                color = Color.White,
-                fontWeight = FontWeight.SemiBold
-            )
-            Text(
-                text = "多素材底图、天气规则和桌面小组件共用同一套配置",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.White.copy(alpha = 0.78f),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
-
-@Composable
 internal fun PersonalizationBlockEditor(
     homeModules: List<HomeModuleDefinition>,
     homeModuleEnabled: Map<String, Boolean>,
@@ -411,12 +377,12 @@ internal fun PersonalizationBlockEditor(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
-            text = "首页模块",
+            text = "棣栭〉妯″潡",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold
         )
         Text(
-            text = "当前主题会单独保存下方模块的显示和顺序。",
+            text = "\u5f53\u524d\u4e3b\u9898\u4f1a\u5355\u72ec\u4fdd\u5b58\u4e0b\u65b9\u6a21\u5757\u7684\u663e\u793a\u548c\u987a\u5e8f\u3002",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -435,7 +401,7 @@ internal fun PersonalizationBlockEditor(
             modifier = Modifier.fillMaxWidth(),
             onClick = onResetHomeBlocks
         ) {
-            Text("恢复默认模块布局")
+            Text("鎭㈠榛樿妯″潡甯冨眬")
         }
     }
 }
@@ -566,13 +532,13 @@ private fun ThemeDetailPage(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "皮肤详情",
+                        text = "鐨偆璇︽儏",
                         style = MaterialTheme.typography.titleMedium,
                         color = detailTitleColor,
                         fontWeight = FontWeight.SemiBold
                     )
                     TextButton(onClick = onBack) {
-                        Text("返回")
+                        Text("杩斿洖")
                     }
                 }
                 Row(
@@ -586,7 +552,7 @@ private fun ThemeDetailPage(
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
-                                text = if (isCustomTheme) "自\n定" else "云\n迹",
+                                text = if (isCustomTheme) "\u81ea\n\u5b9a" else "\u4e91\n\u8ff9",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Color(0xFF18242A),
                                 fontWeight = FontWeight.SemiBold
@@ -607,9 +573,9 @@ private fun ThemeDetailPage(
                         )
                         Text(
                             text = if (isCustomTheme && hasCustomAssets) {
-                                "$customAssetCount 个素材 | $customRuleCount 条规则"
+                                "$customAssetCount \u4e2a\u7d20\u6750 | $customRuleCount \u6761\u89c4\u5219"
                             } else if (isCustomTheme) {
-                                "上传多张图片/GIF，按天气和时间自动切换"
+                                "\u4e0a\u4f20\u591a\u5f20\u56fe\u7247/GIF\uff0c\u6309\u5929\u6c14\u548c\u65f6\u95f4\u81ea\u52a8\u5207\u6362"
                             } else {
                                 theme.shortDescription
                             },
@@ -629,14 +595,14 @@ private fun ThemeDetailPage(
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
-                            text = "资源简介",
+                            text = "\u8d44\u6e90\u7b80\u4ecb",
                             style = MaterialTheme.typography.titleSmall,
                             color = detailTitleColor,
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
                             text = if (isCustomTheme) {
-                                "支持多张图片/GIF，按天气、夜间、清晨/黄昏和雨夜/雪夜规则自动切换。桌面组件沿用同一套素材预览。"
+                                "\u652f\u6301\u591a\u5f20\u56fe\u7247/GIF\uff0c\u6309\u5929\u6c14\u3001\u591c\u95f4\u3001\u6e05\u6668/\u9ec4\u660f\u548c\u96e8\u5929/\u96ea\u591c\u89c4\u5219\u81ea\u52a8\u5207\u6362\u3002\u684c\u9762\u7ec4\u4ef6\u6cbf\u7528\u540c\u4e00\u5957\u7d20\u6750\u9884\u89c8\u3002"
                             } else {
                                 theme.shortDescription
                             },
@@ -650,14 +616,14 @@ private fun ThemeDetailPage(
                         modifier = Modifier.fillMaxWidth(),
                         onClick = onOpenCustomThemeEditor
                     ) {
-                        Text(if (hasCustomAssets) "继续编辑自定义主题" else "创建自定义主题")
+                        Text(if (hasCustomAssets) "\u7ee7\u7eed\u7f16\u8f91\u81ea\u5b9a\u4e49\u4e3b\u9898" else "\u521b\u5efa\u81ea\u5b9a\u4e49\u4e3b\u9898")
                     }
                     OutlinedButton(
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !isApplied,
                         onClick = onApplyTheme
                     ) {
-                        Text(if (isApplied) "已应用" else "应用自定义主题")
+                        Text(if (isApplied) "\u5df2\u5e94\u7528" else "\u5e94\u7528\u81ea\u5b9a\u4e49\u4e3b\u9898")
                     }
                 } else {
                     Button(
@@ -665,7 +631,7 @@ private fun ThemeDetailPage(
                         enabled = !isApplied,
                         onClick = onApplyTheme
                     ) {
-                        Text(if (isApplied) "已应用" else "应用皮肤")
+                        Text(if (isApplied) "\u5df2\u5e94\u7528" else "\u5e94\u7528\u76ae\u80a4")
                     }
                 }
             }
@@ -733,10 +699,10 @@ private fun ThemeDetailPreview(
                 horizontalArrangement = Arrangement.spacedBy(54.dp),
                 verticalAlignment = Alignment.Bottom
             ) {
-                ThemeDetailPreviewTab("首页", selected = !showDesktopCard) {
+                ThemeDetailPreviewTab("棣栭〉", selected = !showDesktopCard) {
                     showDesktopCard = false
                 }
-                ThemeDetailPreviewTab("桌面卡片", selected = showDesktopCard) {
+                ThemeDetailPreviewTab("妗岄潰鍗＄墖", selected = showDesktopCard) {
                     showDesktopCard = true
                 }
             }
@@ -813,7 +779,7 @@ private fun ThemeDetailWidgetCard(
         modifier = Modifier
             .width(280.dp)
             .height(146.dp),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(16.dp),
         color = Color.Transparent,
         border = BorderStroke(1.dp, Color.White.copy(alpha = 0.40f)),
         shadowElevation = 12.dp
@@ -837,13 +803,13 @@ private fun ThemeDetailWidgetCard(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
-                        text = "龙岗区",
+                        text = "\u9f99\u5c97\u533a",
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White,
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
-                        text = "26°",
+                        text = "26掳",
                         fontSize = 44.sp,
                         lineHeight = 46.sp,
                         color = Color.White,
@@ -855,13 +821,13 @@ private fun ThemeDetailWidgetCard(
                     verticalArrangement = Arrangement.spacedBy(5.dp)
                 ) {
                     Text(
-                        text = "晴  空气优",
+                        text = "\u6674  \u7a7a\u6c14\u4f18",
                         style = MaterialTheme.typography.titleSmall,
                         color = Color.White,
                         fontWeight = FontWeight.SemiBold
                     )
                     Text(
-                        text = "30 / 18°C",
+                        text = "30 / 18掳C",
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.White.copy(alpha = 0.82f)
                     )
@@ -892,7 +858,18 @@ private fun CurrentThemePreview(
     var selectedPreviewMode by remember(themeKey) { mutableStateOf(ThemePreviewMode.HOME) }
     var previewSwitchDirection by remember { mutableStateOf(1) }
     var horizontalSwipeDistance by remember { mutableStateOf(0f) }
+    var previewDragging by remember { mutableStateOf(false) }
     val swipeThresholdPx = with(LocalDensity.current) { 54.dp.toPx() }
+    val previewDragProgress = if (previewDragging) {
+        (abs(horizontalSwipeDistance) / swipeThresholdPx).coerceIn(0f, 1f)
+    } else {
+        0f
+    }
+    val previewDragOffset = if (previewDragging) {
+        horizontalSwipeDistance.coerceIn(-swipeThresholdPx, swipeThresholdPx)
+    } else {
+        0f
+    }
     val activePreviewIndex = selectedPreviewMode.ordinalIndex()
     fun selectPreviewMode(mode: ThemePreviewMode) {
         if (mode != selectedPreviewMode) {
@@ -905,9 +882,15 @@ private fun CurrentThemePreview(
     }
     val previewSwipeModifier = Modifier.pointerInput(selectedPreviewMode, swipeThresholdPx) {
         detectHorizontalDragGestures(
-            onDragStart = { horizontalSwipeDistance = 0f },
+            onDragStart = {
+                horizontalSwipeDistance = 0f
+                previewDragging = true
+            },
             onHorizontalDrag = { _, dragAmount -> horizontalSwipeDistance += dragAmount },
-            onDragCancel = { horizontalSwipeDistance = 0f },
+            onDragCancel = {
+                horizontalSwipeDistance = 0f
+                previewDragging = false
+            },
             onDragEnd = {
                 if (abs(horizontalSwipeDistance) >= swipeThresholdPx) {
                     if (horizontalSwipeDistance < 0f) {
@@ -917,6 +900,7 @@ private fun CurrentThemePreview(
                     }
                 }
                 horizontalSwipeDistance = 0f
+                previewDragging = false
             }
         )
     }
@@ -1016,7 +1000,14 @@ private fun CurrentThemePreview(
                 AnimatedContent(
                     modifier = Modifier
                         .width(phoneWidth)
-                        .height(phoneHeight),
+                        .height(phoneHeight)
+                        .graphicsLayer {
+                            translationX = previewDragOffset * 0.30f
+                            alpha = 1f - previewDragProgress * 0.18f
+                            val scale = 1f - previewDragProgress * 0.035f
+                            scaleX = scale
+                            scaleY = scale
+                        },
                     targetState = selectedPreviewMode,
                     transitionSpec = {
                         val direction = previewSwitchDirection
@@ -1116,10 +1107,10 @@ private fun PersonalizationPageDots(
 }
 
 private enum class CustomThemeEditorSection(val title: String) {
-    MATERIALS("素材"),
-    RULES("规则"),
-    LAYOUT("布局"),
-    WIDGETS("小组件")
+    MATERIALS("\u7d20\u6750"),
+    RULES("\u89c4\u5219"),
+    LAYOUT("\u5e03\u5c40"),
+    WIDGETS("\u5c0f\u7ec4\u4ef6")
 }
 
 @Composable
@@ -1136,65 +1127,92 @@ private fun CurrentThemeInfo(
         return
     }
     val isCustomTheme = theme.key == VisualThemeUtils.THEME_CUSTOM_1
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Surface(
-            modifier = Modifier.size(56.dp),
-            shape = PersonalizationSmallShape,
-            color = Color.White
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(contentAlignment = Alignment.Center) {
+            Surface(
+                modifier = Modifier.size(52.dp),
+                shape = PersonalizationSmallShape,
+                color = Color.White
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = if (isCustomTheme) "\u81ea\n\u5b9a" else "\u4e91\n\u8ff9",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color(0xFF18242A),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
                 Text(
-                    text = if (isCustomTheme) "自\n定" else "云\n迹",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color(0xFF18242A),
+                    text = theme.displayName,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = titleColor,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = if (isCustomTheme) {
+                        if (hasCustomAssets) {
+                            "$customAssetCount \u4e2a\u7d20\u6750 | $customRuleCount \u6761\u89c4\u5219"
+                        } else {
+                            "\u4e0a\u4f20\u591a\u5f20\u56fe\u7247/GIF\uff0c\u6309\u5929\u6c14\u548c\u65f6\u95f4\u81ea\u52a8\u5207\u6362"
+                        }
+                    } else {
+                        theme.shortDescription
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = secondaryColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+            if (isCustomTheme) {
+                Button(onClick = onOpenCustomThemeEditor) {
+                    Text("\u7f16\u8f91")
+                }
+            }
+        }
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onOpenCustomThemeEditor),
+            shape = PersonalizationCardShape,
+            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.22f),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.10f))
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    modifier = Modifier.weight(1f),
+                    text = "\u81ea\u5b9a\u4e49\u4e3b\u9898\uff1a\u7f16\u8f91\u7d20\u6750 / \u89c4\u5219 / \u5c0f\u7ec4\u4ef6",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = titleColor,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = "\u8fdb\u5165",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.SemiBold
                 )
             }
         }
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(3.dp)
-        ) {
-            Text(
-                text = theme.displayName,
-                style = MaterialTheme.typography.titleMedium,
-                color = titleColor,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-            Text(
-                text = if (isCustomTheme) {
-                    if (hasCustomAssets) {
-                        "$customAssetCount 个素材 | $customRuleCount 条规则"
-                    } else {
-                        "上传多张图片/GIF，按天气和时间自动切换"
-                    }
-                } else {
-                    theme.shortDescription
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = secondaryColor,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        if (isCustomTheme) {
-            Button(onClick = onOpenCustomThemeEditor) {
-                Text("编辑")
-            }
-        } else {
-            OutlinedButton(enabled = false, onClick = {}) {
-                Text("已应用")
-            }
-        }
     }
 }
-
 @Composable
 private fun CustomThemeEditorTabs(
     selectedSection: CustomThemeEditorSection,
@@ -1208,30 +1226,36 @@ private fun CustomThemeEditorTabs(
     ) {
         CustomThemeEditorSection.values().forEach { section ->
             val selected = section == selectedSection
-            Column(
+            Surface(
                 modifier = Modifier
                     .weight(1f)
-                    .clickable { onSectionSelected(section) }
-                    .padding(vertical = 8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(6.dp)
+                    .height(34.dp)
+                    .clickable { onSectionSelected(section) },
+                shape = PersonalizationIndicatorShape,
+                color = if (selected) {
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
+                } else {
+                    MaterialTheme.colorScheme.surface.copy(alpha = 0.18f)
+                },
+                contentColor = if (selected) MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(alpha = 0.74f),
+                border = BorderStroke(
+                    1.dp,
+                    if (selected) {
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.32f)
+                    } else {
+                        LocalContentColor.current.copy(alpha = 0.16f)
+                    }
+                )
             ) {
-                Text(
-                    text = section.title,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = if (selected) MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(alpha = 0.70f),
-                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Box(
-                    modifier = Modifier
-                        .size(width = 26.dp, height = 3.dp)
-                        .background(
-                            if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
-                            PersonalizationIndicatorShape
-                        )
-                )
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = section.title,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
         }
     }
@@ -1245,18 +1269,18 @@ private fun CustomThemeRuleStudio(customThemeProfile: CustomThemeProfile) {
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Text(
-            text = "规则工作台",
+            text = "\u89c4\u5219\u5de5\u4f5c\u53f0",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold
         )
         Text(
-            text = "当前规则会按优先级匹配天气、昼夜和时间段。素材页的每个槽位都会生成一条可运行规则。",
+            text = "\u5f53\u524d\u89c4\u5219\u4f1a\u6309\u4f18\u5148\u7ea7\u5339\u914d\u5929\u6c14\u3001\u663c\u591c\u548c\u65f6\u95f4\u6bb5\u3002\u7d20\u6750\u9875\u7684\u6bcf\u4e2a\u69fd\u4f4d\u90fd\u4f1a\u751f\u6210\u4e00\u6761\u53ef\u8fd0\u884c\u89c4\u5219\u3002",
             style = MaterialTheme.typography.bodySmall,
             color = secondaryColor
         )
         if (customThemeProfile.rules.isEmpty()) {
             Text(
-                text = "还没有规则。先到“素材”添加默认图或天气图。",
+                text = "\u8fd8\u6ca1\u6709\u89c4\u5219\u3002\u5148\u5230\u201c\u7d20\u6750\u201d\u6dfb\u52a0\u9ed8\u8ba4\u56fe\u6216\u5929\u6c14\u56fe\u3002",
                 style = MaterialTheme.typography.bodySmall,
                 color = secondaryColor
             )
@@ -1280,7 +1304,7 @@ private fun CustomThemeRuleStudio(customThemeProfile: CustomThemeProfile) {
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            text = "${customThemeRuleLightText(rule)} · ${customThemeRuleTimeText(rule)} · 优先级 ${rule.priority}",
+                            text = "${customThemeRuleLightText(rule)} 路 ${customThemeRuleTimeText(rule)} 路 浼樺厛绾?${rule.priority}",
                             style = MaterialTheme.typography.bodySmall,
                             color = contentColor.copy(alpha = 0.68f)
                         )
@@ -1302,17 +1326,17 @@ private fun CustomThemeLayoutStudio(
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Text(
-            text = "首页布局",
+            text = "棣栭〉甯冨眬",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold
         )
         Text(
-            text = "模块开关和拖动排序会写入当前自定义主题。",
+            text = "\u6a21\u5757\u5f00\u5173\u548c\u62d6\u52a8\u6392\u5e8f\u4f1a\u5199\u5165\u5f53\u524d\u81ea\u5b9a\u4e49\u4e3b\u9898\u3002",
             style = MaterialTheme.typography.bodySmall,
             color = secondaryColor
         )
         Text(
-            text = "已保存顺序 ${customThemeProfile.homeModuleOrder.size} 项，隐藏模块 ${customThemeProfile.disabledHomeModules.size} 项。",
+            text = "\u5df2\u4fdd\u5b58\u987a\u5e8f ${customThemeProfile.homeModuleOrder.size} \u9879\uff0c\u9690\u85cf\u6a21\u5757 ${customThemeProfile.disabledHomeModules.size} \u9879\u3002",
             style = MaterialTheme.typography.bodySmall,
             color = secondaryColor
         )
@@ -1320,7 +1344,7 @@ private fun CustomThemeLayoutStudio(
             modifier = Modifier.fillMaxWidth(),
             onClick = onOpenHomeBlockEditor
         ) {
-            Text("调整首页模块")
+            Text("璋冩暣棣栭〉妯″潡")
         }
     }
 }
@@ -1356,12 +1380,12 @@ private fun CustomThemeWidgetStudio(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         Text(
-            text = "自定义小组件",
+            text = "鑷畾涔夊皬缁勪欢",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.SemiBold
         )
         Text(
-            text = "桌面天气、基础天气和生活建议将沿用同一套自定义主题素材；GIF 在系统小组件中会按静态封面降级。",
+            text = "\u684c\u9762\u5929\u6c14\u3001\u57fa\u7840\u5929\u6c14\u548c\u751f\u6d3b\u5efa\u8bae\u5c06\u6cbf\u7528\u540c\u4e00\u5957\u81ea\u5b9a\u4e49\u4e3b\u9898\u7d20\u6750\uff0cGIF \u5728\u7cfb\u7edf\u5c0f\u7ec4\u4ef6\u4e2d\u4f1a\u6309\u9759\u6001\u5c01\u9762\u964d\u7ea7\u3002",
             style = MaterialTheme.typography.bodySmall,
             color = secondaryColor
         )
@@ -1372,13 +1396,13 @@ private fun CustomThemeWidgetStudio(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.Bottom
         ) {
-            CustomThemeWidgetPreviewCard("天气时钟") {
+            CustomThemeWidgetPreviewCard("澶╂皵鏃堕挓") {
                 CompactWidgetPreview(widgetBackground)
             }
-            CustomThemeWidgetPreviewCard("基础天气") {
+            CustomThemeWidgetPreviewCard("鍩虹澶╂皵") {
                 StandardWidgetPreview(widgetBackground)
             }
-            CustomThemeWidgetPreviewCard("生活建议") {
+            CustomThemeWidgetPreviewCard("鐢熸椿寤鸿") {
                 LifeAdviceWidgetPreview(widgetBackground)
             }
         }
@@ -1396,7 +1420,7 @@ private fun CustomThemeWidgetStudio(
             ) {
                 Text(
                     modifier = Modifier.weight(1f),
-                    text = "桌面小组件素材 / 规则",
+                    text = "妗岄潰灏忕粍浠剁礌鏉?/ 瑙勫垯",
                     style = MaterialTheme.typography.bodySmall
                 )
                 Text(
@@ -1543,16 +1567,16 @@ private fun CustomThemeControls(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "自定义主题编辑器",
+                    text = "绱犳潗閰嶇疆",
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.SemiBold
                 )
                 Text(
                     text = when {
-                        customThemeImporting -> "正在导入本地底图"
-                        hasDraft -> "已有未保存底图，确认后保存为自定义主题"
-                        !hasSavedImages -> "上传图片或 GIF；可按天气、夜间、清晨/黄昏和雨夜/雪夜组合切换"
-                        else -> "当前自定义主题按天气、时间和组合规则切换素材，动效实时叠加"
+                        customThemeImporting -> "姝ｅ湪瀵煎叆鏈湴搴曞浘"
+                        hasDraft -> "\u5df2\u6709\u672a\u4fdd\u5b58\u5e95\u56fe\uff0c\u786e\u8ba4\u540e\u4fdd\u5b58\u4e3a\u81ea\u5b9a\u4e49\u4e3b\u9898"
+                        !hasSavedImages -> "涓婁紶鍥剧墖鎴?GIF锛涘彲鎸夊ぉ姘斻€佸闂淬€佹竻鏅?榛勬槒鍜岄洦澶?闆缁勫悎鍒囨崲"
+                        else -> "\u5f53\u524d\u81ea\u5b9a\u4e49\u4e3b\u9898\u6309\u5929\u6c14\u3001\u65f6\u95f4\u548c\u7ec4\u5408\u89c4\u5219\u5207\u6362\u7d20\u6750\uff0c\u52a8\u6548\u5b9e\u65f6\u53d6\u81ea\u7d20\u6750\u3002"
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = LocalContentColor.current.copy(alpha = 0.68f)
@@ -1562,7 +1586,7 @@ private fun CustomThemeControls(
                 enabled = !customThemeImporting,
                 onClick = onPickMultipleCustomThemeImages
             ) {
-                Text("批量导入")
+                Text("鎵归噺瀵煎叆")
             }
         }
         CustomThemeProfileSummary(
@@ -1617,20 +1641,20 @@ private fun CustomThemeControls(
                     enabled = !customThemeImporting,
                     onClick = onDiscardCustomThemeDraft
                 ) {
-                    Text("放弃草稿")
+                    Text("鏀惧純鑽夌")
                 }
                 Button(
                     enabled = !customThemeImporting,
                     onClick = { onApplyCustomThemeDraft(draftCustomThemeImageUris, draftCustomThemeCropAnchors) }
                 ) {
-                    Text("保存并应用")
+                    Text("\u4fdd\u5b58\u5e76\u5e94\u7528")
                 }
             } else if (hasSavedImages) {
                 TextButton(
                     enabled = !customThemeImporting,
                     onClick = onClearCustomThemeImage
                 ) {
-                    Text("移除自定义主题")
+                    Text("\u79fb\u9664\u81ea\u5b9a\u4e49\u4e3b\u9898")
                 }
             }
         }
@@ -1660,18 +1684,18 @@ private fun CustomThemeProfileSummary(
             verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Text(
-                text = "素材库与规则",
+                text = "绱犳潗搴撲笌瑙勫垯",
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold
             )
             Text(
-                text = "已保存 $assetCount 个素材 / $ruleCount 条规则，GIF $gifCount 个，草稿 $draftCount 个，槽位 $savedSlotCount 个。",
+                text = "\u5df2\u4fdd\u5b58 $assetCount \u4e2a\u7d20\u6750 / $ruleCount \u6761\u89c4\u5219\uff0cGIF $gifCount \u4e2a\uff0c\u8349\u7a3f $draftCount \u4e2a\uff0c\u69fd\u4f4d $savedSlotCount \u4e2a\u3002",
                 style = MaterialTheme.typography.bodySmall,
                 color = secondaryColor
             )
             if (customThemeProfile.rules.isNotEmpty()) {
                 Text(
-                    text = customThemeProfile.rules.take(3).joinToString("；") { rule ->
+                    text = customThemeProfile.rules.take(3).joinToString("\uff1b") { rule ->
                         "${customThemeRuleWeatherText(rule)} ${customThemeRuleLightText(rule)} ${customThemeRuleTimeText(rule)}"
                     },
                     style = MaterialTheme.typography.bodySmall,
@@ -1743,17 +1767,17 @@ private fun CustomThemeWeatherSlotRow(
                 )
                 Text(
                     text = when {
-                        draft -> "待保存"
-                        imageUri.isNotBlank() -> "已配置 · $ruleText${customThemeMediaBadge(imageUri)}"
-                        else -> "未配置，将回退默认图"
+                        draft -> "\u5f85\u4fdd\u5b58"
+                        imageUri.isNotBlank() -> "宸查厤缃?路 $ruleText${customThemeMediaBadge(imageUri)}"
+                        else -> "\u672a\u914d\u7f6e\uff0c\u5c06\u56de\u9000\u9ed8\u8ba4\u56fe"
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = secondaryColor
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    CropAnchorButton("顶", CustomThemeCropAnchor.TOP, cropAnchor, onCropAnchorChanged)
-                    CropAnchorButton("中", CustomThemeCropAnchor.CENTER, cropAnchor, onCropAnchorChanged)
-                    CropAnchorButton("底", CustomThemeCropAnchor.BOTTOM, cropAnchor, onCropAnchorChanged)
+                    CropAnchorButton("\u9876", CustomThemeCropAnchor.TOP, cropAnchor, onCropAnchorChanged)
+                    CropAnchorButton("\u4e2d", CustomThemeCropAnchor.CENTER, cropAnchor, onCropAnchorChanged)
+                    CropAnchorButton("\u5e95", CustomThemeCropAnchor.BOTTOM, cropAnchor, onCropAnchorChanged)
                 }
             }
             Column(
@@ -1764,14 +1788,14 @@ private fun CustomThemeWeatherSlotRow(
                     enabled = enabled,
                     onClick = { onPickCustomThemeImage(weatherKey) }
                 ) {
-                    Text(if (imageUri.isBlank()) "选择" else "替换")
+                    Text(if (imageUri.isBlank()) "閫夋嫨" else "鏇挎崲")
                 }
                 if (imageUri.isNotBlank()) {
                     TextButton(
                         enabled = enabled,
                         onClick = { onClearCustomThemeImage(weatherKey) }
                     ) {
-                        Text("移除")
+                        Text("绉婚櫎")
                     }
                 }
             }
@@ -1867,79 +1891,116 @@ private fun HomePhonePreviewContent(runtimeSelectable: Boolean, previewMode: The
         ThemePreviewMode.DESKTOP_CARD -> "22"
         ThemePreviewMode.CITY_MANAGEMENT -> "18"
     }
-    val detail = when (previewMode) {
-        ThemePreviewMode.HOME -> "30 / 18°C"
-        ThemePreviewMode.DESKTOP_CARD -> "24 / 17°C"
-        ThemePreviewMode.CITY_MANAGEMENT -> "20 / 15°C"
+    val condition = when (previewMode) {
+        ThemePreviewMode.HOME -> "\u6674"
+        ThemePreviewMode.DESKTOP_CARD -> "\u591a\u4e91"
+        ThemePreviewMode.CITY_MANAGEMENT -> "\u5c0f\u96e8"
     }
-    val summary = when (previewMode) {
-        ThemePreviewMode.HOME -> "晴  |  空气优"
-        ThemePreviewMode.DESKTOP_CARD -> "多云  |  空气优"
-        ThemePreviewMode.CITY_MANAGEMENT -> "小雨  |  空气良"
+    val range = when (previewMode) {
+        ThemePreviewMode.HOME -> "30\u00b0 / 18\u00b0"
+        ThemePreviewMode.DESKTOP_CARD -> "24\u00b0 / 17\u00b0"
+        ThemePreviewMode.CITY_MANAGEMENT -> "20\u00b0 / 15\u00b0"
     }
-    val notice = when (previewMode) {
-        ThemePreviewMode.HOME -> "未来8小时晴天，明日转多云"
-        ThemePreviewMode.DESKTOP_CARD -> "今天多云微风，适合通勤"
-        ThemePreviewMode.CITY_MANAGEMENT -> "雨势转弱，出门记得带伞"
+    val notice = if (runtimeSelectable) {
+        when (previewMode) {
+            ThemePreviewMode.HOME -> "\u672a\u67658\u5c0f\u65f6\u6674\u5929\uff0c\u660e\u65e5\u8f6c\u591a\u4e91"
+            ThemePreviewMode.DESKTOP_CARD -> "\u4eca\u5929\u591a\u4e91\u5fae\u98ce\uff0c\u9002\u5408\u901a\u52e4"
+            ThemePreviewMode.CITY_MANAGEMENT -> "\u96e8\u52bf\u8f6c\u5f31\uff0c\u51fa\u95e8\u8bb0\u5f97\u5e26\u4f1e"
+        }
+    } else {
+        "\u9884\u7559\u76ae\u80a4\u4f4d"
     }
     Column(
-        modifier = Modifier.padding(18.dp),
-        verticalArrangement = Arrangement.spacedBy(11.dp)
+        modifier = Modifier.padding(13.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text(
-            text = "龙岗区",
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.SemiBold,
-            color = Color.White
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Row(verticalAlignment = Alignment.Top) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(
-                text = temperature,
-                fontSize = 48.sp,
-                lineHeight = 50.sp,
-                color = Color.White,
-                fontWeight = FontWeight.Light
-            )
-            Text(
-                text = "°C",
-                modifier = Modifier.padding(top = 8.dp),
-                style = MaterialTheme.typography.bodySmall,
+                text = "\u9f99\u5c97\u533a",
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
                 color = Color.White
             )
+            Text(
+                text = "\u7f13\u5b58 05-31 12:37",
+                style = MaterialTheme.typography.labelSmall,
+                color = Color.White.copy(alpha = 0.72f)
+            )
         }
-        Text(
-            text = detail,
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.White.copy(alpha = 0.82f)
-        )
-        Text(
-            text = if (runtimeSelectable) summary else "预留皮肤位",
-            style = MaterialTheme.typography.bodySmall,
-            color = Color.White.copy(alpha = 0.88f)
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Row(verticalAlignment = Alignment.Top) {
+                    Text(
+                        text = temperature,
+                        fontSize = 46.sp,
+                        lineHeight = 48.sp,
+                        color = Color.White,
+                        fontWeight = FontWeight.Light
+                    )
+                    Text(
+                        text = "\u00b0C",
+                        modifier = Modifier.padding(top = 7.dp),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = Color.White
+                    )
+                }
+                Text(range, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.82f))
+                Text("$condition  |  \u7a7a\u6c14\u4f18", style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.88f))
+            }
+            MiniWeatherGlyph(previewMode)
+        }
         Surface(
+            modifier = Modifier.fillMaxWidth(),
             shape = PersonalizationCardShape,
             color = Color.White.copy(alpha = 0.16f)
         ) {
-            Text(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
-                text = if (runtimeSelectable) {
-                    notice
-                } else {
-                    "后续版本开放"
-                },
-                style = MaterialTheme.typography.labelSmall,
-                color = Color.White,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            repeat(3) { index ->
-                MiniForecastTile(index)
+            Column(
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text("\u4eca\u65e5\u8d44\u8baf", style = MaterialTheme.typography.labelMedium, color = Color.White, fontWeight = FontWeight.SemiBold)
+                Text(notice, style = MaterialTheme.typography.labelSmall, color = Color.White.copy(alpha = 0.84f), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = PersonalizationCardShape,
+            color = Color.White.copy(alpha = 0.13f)
+        ) {
+            Column(
+                modifier = Modifier.padding(horizontal = 9.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(7.dp)
+            ) {
+                Text("\u9010\u5c0f\u65f6", style = MaterialTheme.typography.labelMedium, color = Color.White, fontWeight = FontWeight.SemiBold)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    repeat(3) { index ->
+                        MiniForecastTile(index)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MiniWeatherGlyph(previewMode: ThemePreviewMode) {
+    Canvas(modifier = Modifier.size(62.dp)) {
+        val base = size.minDimension
+        val sunColor = when (previewMode) {
+            ThemePreviewMode.CITY_MANAGEMENT -> Color(0xFFE8EEF3)
+            else -> Color(0xFFFFD15C)
+        }
+        drawCircle(sunColor, radius = base * 0.24f, center = Offset(base * 0.42f, base * 0.40f))
+        drawCircle(Color.White.copy(alpha = 0.88f), radius = base * 0.20f, center = Offset(base * 0.58f, base * 0.50f))
+        drawCircle(Color.White.copy(alpha = 0.82f), radius = base * 0.16f, center = Offset(base * 0.43f, base * 0.56f))
     }
 }
 
@@ -1948,7 +2009,7 @@ private fun RowScope.MiniForecastTile(index: Int) {
     Column(
         modifier = Modifier.weight(1f),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        verticalArrangement = Arrangement.spacedBy(5.dp)
     ) {
         Text(
             text = "${11 + index}:00",
@@ -1958,18 +2019,17 @@ private fun RowScope.MiniForecastTile(index: Int) {
         )
         Box(
             modifier = Modifier
-                .size(18.dp)
-                .background(Color.White.copy(alpha = 0.88f), CircleShape)
+                .size(14.dp)
+                .background(Color.White.copy(alpha = 0.86f), CircleShape)
         )
         Text(
-            text = "${26 + index}°",
-            style = MaterialTheme.typography.labelMedium,
+            text = "${26 + index}\u00b0",
+            style = MaterialTheme.typography.labelSmall,
             color = Color.White,
             maxLines = 1
         )
     }
 }
-
 @Composable
 private fun ThemeCardGrid(
     themes: List<VisualTheme>,
@@ -1982,7 +2042,7 @@ private fun ThemeCardGrid(
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Text(
-            text = "更多皮肤",
+            text = "鏇村鐨偆",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.SemiBold,
             color = titleColor
@@ -2022,14 +2082,14 @@ private fun ThemeCard(
 ) {
     val enabled = theme.isSelectable
     val sampleTemperature = when (theme.key) {
-        VisualThemeUtils.THEME_PANORAMA -> "22°C"
-        VisualThemeUtils.THEME_CUSTOM_1 -> "18°C"
-        else -> "26°C"
+        VisualThemeUtils.THEME_PANORAMA -> "22掳C"
+        VisualThemeUtils.THEME_CUSTOM_1 -> "18掳C"
+        else -> "26掳C"
     }
     val sampleSummary = when (theme.key) {
-        VisualThemeUtils.THEME_PANORAMA -> "多云  |  空气优"
-        VisualThemeUtils.THEME_CUSTOM_1 -> "小雨  |  空气良"
-        else -> "晴  |  空气优"
+        VisualThemeUtils.THEME_PANORAMA -> "\u591a\u4e91  |  \u7a7a\u6c14\u4f18"
+        VisualThemeUtils.THEME_CUSTOM_1 -> "\u5c0f\u96e8  |  \u7a7a\u6c14\u826f"
+        else -> "\u6674  |  \u7a7a\u6c14\u4f18"
     }
     Column(
         modifier = modifier.alpha(if (enabled) 1f else 0.58f),
@@ -2067,7 +2127,7 @@ private fun ThemeCard(
                 )
                 Text(
                     modifier = Modifier.padding(12.dp),
-                    text = if (enabled) sampleTemperature else "待开放",
+                    text = if (enabled) sampleTemperature else "\u5f85\u5f00\u653e",
                     fontSize = 22.sp,
                     lineHeight = 26.sp,
                     color = Color.White,
@@ -2077,7 +2137,7 @@ private fun ThemeCard(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
                         .padding(12.dp),
-                    text = if (enabled) sampleSummary else "预留皮肤位",
+                    text = if (enabled) sampleSummary else "\u9884\u7559\u76ae\u80a4\u4f4d",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.86f)
                 )
@@ -2092,7 +2152,7 @@ private fun ThemeCard(
             overflow = TextOverflow.Ellipsis
         )
         Text(
-            text = if (selected) "应用中" else theme.shortDescription,
+            text = if (selected) "\u5e94\u7528\u4e2d" else theme.shortDescription,
             style = MaterialTheme.typography.bodySmall,
             color = if (selected) MaterialTheme.colorScheme.primary else secondaryColor,
             maxLines = 2,
@@ -2185,13 +2245,13 @@ private fun HomeBlockRow(
                     enabled = canMoveUp,
                     onClick = onMoveUp
                 ) {
-                    Text("上移")
+                    Text("涓婄Щ")
                 }
                 TextButton(
                     enabled = canMoveDown,
                     onClick = onMoveDown
                 ) {
-                    Text("下移")
+                    Text("涓嬬Щ")
                 }
             }
         }
@@ -2345,33 +2405,33 @@ private fun customThemeMediaTypeForPreview(imageUri: String): String {
 
 private fun customThemeRuleSummary(weatherKey: String): String {
     return when (CustomThemeWeatherKey.normalize(weatherKey)) {
-        CustomThemeWeatherKey.RAIN_NIGHT -> "雨天 + 夜间"
-        CustomThemeWeatherKey.SNOW_NIGHT -> "雪天 + 夜间"
+        CustomThemeWeatherKey.RAIN_NIGHT -> "闆ㄥぉ + 澶滈棿"
+        CustomThemeWeatherKey.SNOW_NIGHT -> "闆ぉ + 澶滈棿"
         CustomThemeWeatherKey.DAWN -> "05:00-08:00"
         CustomThemeWeatherKey.DUSK -> "17:00-20:00"
-        CustomThemeWeatherKey.NIGHT -> "夜间通用"
-        CustomThemeWeatherKey.FALLBACK -> "默认回退"
-        else -> "天气匹配"
+        CustomThemeWeatherKey.NIGHT -> "澶滈棿閫氱敤"
+        CustomThemeWeatherKey.FALLBACK -> "榛樿鍥為€€"
+        else -> "澶╂皵鍖归厤"
     }
 }
 
 private fun customThemeMediaBadge(imageUri: String): String {
-    return if (imageUri.trim().lowercase().endsWith(".gif")) " · GIF" else " · 图片"
+    return if (imageUri.trim().lowercase().endsWith(".gif")) " 路 GIF" else " 路 鍥剧墖"
 }
 
 private fun customThemeRuleWeatherText(rule: CustomThemeRule): String {
     return when {
-        rule.weatherKey == CustomThemeWeatherKey.RAIN && rule.lightMode == CustomThemeRule.LIGHT_NIGHT -> "雨夜"
-        rule.weatherKey == CustomThemeWeatherKey.SNOW && rule.lightMode == CustomThemeRule.LIGHT_NIGHT -> "雪夜"
+        rule.weatherKey == CustomThemeWeatherKey.RAIN && rule.lightMode == CustomThemeRule.LIGHT_NIGHT -> "闆ㄥ"
+        rule.weatherKey == CustomThemeWeatherKey.SNOW && rule.lightMode == CustomThemeRule.LIGHT_NIGHT -> "闆"
         else -> CustomThemeWeatherKey.displayName(rule.weatherKey)
     }
 }
 
 private fun customThemeRuleLightText(rule: CustomThemeRule): String {
     return when (rule.lightMode) {
-        CustomThemeRule.LIGHT_DAY -> "白天"
-        CustomThemeRule.LIGHT_NIGHT -> "夜间"
-        else -> "全天"
+        CustomThemeRule.LIGHT_DAY -> "鐧藉ぉ"
+        CustomThemeRule.LIGHT_NIGHT -> "澶滈棿"
+        else -> "鍏ㄥぉ"
     }
 }
 
@@ -2379,7 +2439,7 @@ private fun customThemeRuleTimeText(rule: CustomThemeRule): String {
     return if (rule.hasTimeWindow()) {
         "${minuteText(rule.startMinute)}-${minuteText(rule.endMinute)}"
     } else {
-        "不限时段"
+        "涓嶉檺鏃舵"
     }
 }
 

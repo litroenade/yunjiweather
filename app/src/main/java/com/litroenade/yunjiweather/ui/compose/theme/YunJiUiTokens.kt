@@ -7,17 +7,17 @@ object YunJiUiTokens {
     const val SCREEN_HORIZONTAL_PADDING_DP = 20
     const val PAGE_HEADER_HORIZONTAL_PADDING_DP = 24
     const val PAGE_HEADER_VERTICAL_PADDING_DP = 18
-    const val PAGE_HEADER_ICON_BUTTON_DP = 48
-    const val PAGE_HEADER_ICON_DP = 30
+    const val PAGE_HEADER_ICON_BUTTON_DP = 40
+    const val PAGE_HEADER_ICON_DP = 22
     const val IMMERSIVE_CONTENT_TOP_PADDING_DP = 112
     const val BOTTOM_ACTION_HORIZONTAL_PADDING_DP = 28
     const val PRIMARY_BUTTON_HEIGHT_DP = 58
 
-    const val PAGE_HEADER_TITLE_SP = 26
-    const val PAGE_HEADER_TITLE_LINE_HEIGHT_SP = 30
-    const val PAGE_TAB_TEXT_SP = 18
-    const val PRIMARY_ACTION_TEXT_SP = 18
-    const val SECTION_TITLE_SP = 17
+    const val PAGE_HEADER_TITLE_SP = 20
+    const val PAGE_HEADER_TITLE_LINE_HEIGHT_SP = 26
+    const val PAGE_TAB_TEXT_SP = 16
+    const val PRIMARY_ACTION_TEXT_SP = 16
+    const val SECTION_TITLE_SP = 16
 
     val ScreenHorizontalPadding = SCREEN_HORIZONTAL_PADDING_DP.dp
     val PageHeaderHorizontalPadding = PAGE_HEADER_HORIZONTAL_PADDING_DP.dp

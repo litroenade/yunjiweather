@@ -6,6 +6,7 @@ data class CityWeatherSummary(
     val locationId: String,
     val temperature: String,
     val condition: String,
+    val iconCode: String,
     val tempMax: String,
     val tempMin: String,
     val updateTime: Long,
@@ -16,6 +17,7 @@ data class CityWeatherSummary(
         requireText(locationId, "locationId")
         requireOptionalText(temperature, "temperature")
         requireOptionalText(condition, "condition")
+        requireOptionalText(iconCode, "iconCode")
         requireOptionalText(tempMax, "tempMax")
         requireOptionalText(tempMin, "tempMin")
         requireOptionalText(errorMessage, "errorMessage")
@@ -33,6 +35,7 @@ data class CityWeatherSummary(
                 locationId,
                 data.temperature,
                 data.condition,
+                data.iconCode,
                 data.tempMax,
                 data.tempMin,
                 updateTime,
@@ -43,7 +46,7 @@ data class CityWeatherSummary(
 
         @JvmStatic
         fun unavailable(locationId: String): CityWeatherSummary {
-            return CityWeatherSummary(locationId, "", "", "", "", 0L, false, UNAVAILABLE_TEXT)
+            return CityWeatherSummary(locationId, "", "", "", "", "", 0L, false, UNAVAILABLE_TEXT)
         }
 
         private fun requireText(value: String, fieldName: String) {
