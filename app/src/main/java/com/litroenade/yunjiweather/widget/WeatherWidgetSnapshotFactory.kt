@@ -2,6 +2,7 @@ package com.litroenade.yunjiweather.widget
 
 import com.litroenade.yunjiweather.data.model.CustomThemeAsset
 import com.litroenade.yunjiweather.data.model.HomeWeatherData
+import com.litroenade.yunjiweather.utils.VisualThemeUtils
 import com.litroenade.yunjiweather.utils.WeatherDisplayUtils
 
 object WeatherWidgetSnapshotFactory {
@@ -22,6 +23,17 @@ object WeatherWidgetSnapshotFactory {
         customBackground: CustomThemeAsset,
         temperatureUnit: String
     ): WeatherWidgetSnapshot {
+        return fromHomeWeather(data, updateText, customBackground, temperatureUnit, VisualThemeUtils.THEME_SKY)
+    }
+
+    @JvmStatic
+    fun fromHomeWeather(
+        data: HomeWeatherData,
+        updateText: String,
+        customBackground: CustomThemeAsset,
+        temperatureUnit: String,
+        visualThemeKey: String
+    ): WeatherWidgetSnapshot {
         return WeatherWidgetSnapshot(
             cityName = data.cityName,
             temperatureText = WeatherDisplayUtils.formatTemperature(data.temperature, temperatureUnit),
@@ -38,6 +50,7 @@ object WeatherWidgetSnapshotFactory {
             fishingValue = fishingValue(data.condition),
             sunsetValue = sunsetValue(data.condition),
             coldValue = coldValue(data.temperature),
+            visualThemeKey = VisualThemeUtils.normalizeThemeKey(visualThemeKey),
             customBackgroundUri = customBackground.uri,
             customBackgroundCropAnchor = customBackground.cropAnchor,
             customBackgroundMediaType = customBackground.mediaType

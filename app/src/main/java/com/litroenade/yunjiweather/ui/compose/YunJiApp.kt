@@ -171,6 +171,9 @@ fun YunJiApp(
                 activePage == WeatherNavigationTarget.DESKTOP_WEATHER ||
                 activePage == WeatherNavigationTarget.PERSONALIZATION
         val pageTitleColor = when {
+            activePage == WeatherNavigationTarget.PERSONALIZATION &&
+                    MaterialTheme.colorScheme.background.luminance() > 0.5f &&
+                    visualTheme.defaultWeatherGradient.top.luminance() > 0.45f -> MaterialTheme.colorScheme.onBackground
             visualTheme.defaultWeatherGradient.top.luminance() < 0.35f ||
                     visualTheme.background.luminance() < 0.35f -> Color.White
             activePage == WeatherNavigationTarget.MANAGE_CITIES &&

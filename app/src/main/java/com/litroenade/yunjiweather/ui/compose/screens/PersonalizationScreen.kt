@@ -10,10 +10,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -34,9 +31,7 @@ import com.litroenade.yunjiweather.data.model.CustomThemeProfile
 import com.litroenade.yunjiweather.data.model.CustomThemeRule
 import com.litroenade.yunjiweather.data.model.CustomThemeWeatherKey
 import com.litroenade.yunjiweather.data.model.HomeWeatherData
-import com.litroenade.yunjiweather.ui.compose.InfoCard
 import com.litroenade.yunjiweather.ui.compose.theme.LocalYunJiVisualTheme
-import com.litroenade.yunjiweather.ui.compose.theme.YunJiUiTokens
 import com.litroenade.yunjiweather.ui.mine.MineViewModel
 import com.litroenade.yunjiweather.utils.VisualThemeUtils
 import com.litroenade.yunjiweather.utils.DateTimeUtils
@@ -64,7 +59,6 @@ fun PersonalizationScreen(
     val customThemeImageUris by viewModel.customThemeImageUris.observeAsState(emptyMap())
     val customThemeCropAnchors by viewModel.customThemeCropAnchors.observeAsState(emptyMap())
     val customThemeProfile by viewModel.customThemeProfile.observeAsState(CustomThemeProfile.empty())
-    val message by viewModel.message.observeAsState("")
     val themes = remember(viewModel) { viewModel.visualThemes }
     val visualTheme = LocalYunJiVisualTheme.current
     val widgetSnapshot = remember(homeWeatherData, homeWeatherUpdateTime, temperatureUnit) {
@@ -373,22 +367,6 @@ fun PersonalizationScreen(
                         showingCustomThemeEditor = true
                     }
                 )
-            }
-            if (message.isNotBlank() && !message.startsWith("\u4e3b\u9898/\u4e2a\u6027\u5316")) {
-                item {
-                    InfoCard(
-                        modifier = Modifier.padding(
-                            horizontal = YunJiUiTokens.ScreenHorizontalPadding,
-                            vertical = 12.dp
-                        )
-                    ) {
-                        Text(
-                            text = message,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
             }
         }
     }

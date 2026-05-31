@@ -46,7 +46,8 @@ class WeatherWidgetSnapshotLoader @JvmOverloads constructor(
                 data = data,
                 updateText = DateTimeUtils.formatMinuteTime(cache.updateTime),
                 customBackground = customBackgroundFor(data, settings),
-                temperatureUnit = settings.temperatureUnit
+                temperatureUnit = settings.temperatureUnit,
+                visualThemeKey = settings.visualThemeKey
             )
         } catch (exception: RuntimeException) {
             WeatherWidgetSnapshotFactory.unavailable(cityName)

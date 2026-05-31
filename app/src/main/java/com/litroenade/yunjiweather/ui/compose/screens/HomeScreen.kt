@@ -816,7 +816,7 @@ private fun WeatherTopActions(
                         }
                     )
                     DropdownMenuItem(
-                        text = { Text("璁剧疆") },
+                        text = { Text("\u8bbe\u7f6e") },
                         onClick = {
                             expanded = false
                             onSettings()

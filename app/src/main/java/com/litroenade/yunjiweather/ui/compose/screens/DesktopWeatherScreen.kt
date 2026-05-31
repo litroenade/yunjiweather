@@ -66,6 +66,7 @@ import com.litroenade.yunjiweather.ui.location.LocationUiState
 import com.litroenade.yunjiweather.utils.DateTimeUtils
 import com.litroenade.yunjiweather.utils.DefaultCityUtils
 import com.litroenade.yunjiweather.utils.VisualThemeUtils
+import com.litroenade.yunjiweather.utils.WeatherIconUtils
 import com.litroenade.yunjiweather.widget.WeatherWidgetLayoutMode
 import com.litroenade.yunjiweather.widget.WeatherWidgetSnapshot
 import com.litroenade.yunjiweather.widget.WeatherWidgetSnapshotFactory
@@ -97,15 +98,17 @@ fun DesktopWeatherScreen(
     val visualTheme = LocalYunJiVisualTheme.current
     val customThemeOptions = LocalCustomThemeOptions.current
     val customWidgetBackground = customWidgetBackground(visualTheme.key, customThemeOptions)
-    val previewSnapshot = remember(homeWeatherData, homeWeatherUpdateTime, temperatureUnit) {
+    val previewSnapshot = remember(homeWeatherData, homeWeatherUpdateTime, temperatureUnit, visualTheme.key, customWidgetBackground) {
+        val customWidgetAsset = customWidgetBackground.toCustomThemeAsset()
         homeWeatherData?.let { data ->
             WeatherWidgetSnapshotFactory.fromHomeWeather(
                 data,
                 DateTimeUtils.formatMinuteTime(
                     if (homeWeatherUpdateTime > 0L) homeWeatherUpdateTime else data.updateTime
                 ),
-                CustomThemeAsset.empty(),
-                temperatureUnit
+                customWidgetAsset,
+                temperatureUnit,
+                visualTheme.key
             )
         } ?: WeatherWidgetSnapshotFactory.unavailable(DefaultCityUtils.DEFAULT_CITY_NAME)
     }
@@ -463,11 +466,27 @@ private fun customWidgetBackground(
     )
 }
 
+private fun CustomThemeImage.toCustomThemeAsset(): CustomThemeAsset {
+    if (uri.isBlank()) {
+        return CustomThemeAsset.empty()
+    }
+    return CustomThemeAsset(
+        assetId.ifBlank { "widget-preview" },
+        uri,
+        mediaType,
+        cropAnchor,
+        ""
+    )
+}
+
 @Composable
-internal fun WidgetPreviewBackground(customBackground: CustomThemeImage) {
+internal fun WidgetPreviewBackground(
+    snapshot: WeatherWidgetSnapshot,
+    customBackground: CustomThemeImage
+) {
     if (customBackground.uri.isBlank()) {
         Image(
-            painter = painterResource(R.drawable.theme_panorama_day),
+            painter = painterResource(widgetBackgroundResId(snapshot.visualThemeKey, snapshot.iconCode)),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
@@ -512,6 +531,18 @@ private fun WidgetModeTabs(
         WidgetModeTab("\u5929\u6c14\u65f6\u949f", WeatherWidgetLayoutMode.COMPACT, selectedMode, colors, onModeSelected)
         WidgetModeTab("\u57fa\u7840\u5929\u6c14", WeatherWidgetLayoutMode.STANDARD, selectedMode, colors, onModeSelected)
         WidgetModeTab("\u751f\u6d3b\u5efa\u8bae", WeatherWidgetLayoutMode.EXPANDED, selectedMode, colors, onModeSelected)
+    }
+}
+
+private fun widgetBackgroundResId(visualThemeKey: String, iconCode: String): Int {
+    if (visualThemeKey != VisualThemeUtils.THEME_PANORAMA) {
+        return R.drawable.widget_weather_background
+    }
+    return when (WeatherIconUtils.getWeatherCategory(iconCode)) {
+        WeatherIconUtils.WeatherCategory.RAIN -> R.drawable.theme_panorama_rain
+        WeatherIconUtils.WeatherCategory.SNOW -> R.drawable.theme_panorama_snow
+        WeatherIconUtils.WeatherCategory.NIGHT -> R.drawable.theme_panorama_night
+        else -> R.drawable.theme_panorama_day
     }
 }
 

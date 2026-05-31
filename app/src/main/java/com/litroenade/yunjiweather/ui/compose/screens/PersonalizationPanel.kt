@@ -40,6 +40,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -252,14 +253,19 @@ internal fun CustomThemeEditorPanel(
 ) {
     var selectedSection by remember { mutableStateOf(CustomThemeEditorSection.MATERIALS) }
     val editorSkin = ThemeSkinCatalog.getSkin(VisualThemeUtils.THEME_CUSTOM_1)
-    val editorDarkPalette = editorSkin.previewBottom.luminance() < 0.35f
-    val editorPanelColor = editorSkin.previewBottom.copy(alpha = if (editorDarkPalette) 0.94f else 0.96f)
-    val editorContentColor = if (editorDarkPalette) Color.White else Color(0xFF15242B)
-    val editorSecondaryColor = if (editorDarkPalette) {
-        Color.White.copy(alpha = 0.64f)
+    val editorDarkPalette = MaterialTheme.colorScheme.background.luminance() < 0.35f
+    val editorPanelColor = if (editorDarkPalette) {
+        MaterialTheme.colorScheme.surface.copy(alpha = 0.96f)
     } else {
-        Color(0x9915242B)
+        editorSkin.previewBottom.copy(alpha = 0.99f)
     }
+    val editorContentColor = if (editorDarkPalette) MaterialTheme.colorScheme.onSurface else Color(0xFF10282F)
+    val editorSecondaryColor = if (editorDarkPalette) {
+        Color.White.copy(alpha = 0.74f)
+    } else {
+        Color(0xCC10282F)
+    }
+    val editorActionColor = if (editorDarkPalette) Color(0xFF9EEAF2) else Color(0xFF0B6F7A)
     val editorPreviewImageUri = firstThemeImage(draftCustomThemeImageUris)
         .ifBlank { firstThemeImage(customThemeImageUris) }
         .ifBlank { customThemeImageUri }
@@ -327,7 +333,11 @@ internal fun CustomThemeEditorPanel(
                                 overflow = TextOverflow.Ellipsis
                             )
                         }
-                        OutlinedButton(onClick = onBackToThemeStore) {
+                        OutlinedButton(
+                            onClick = onBackToThemeStore,
+                            colors = ButtonDefaults.outlinedButtonColors(contentColor = editorActionColor),
+                            border = BorderStroke(1.dp, editorActionColor.copy(alpha = 0.68f))
+                        ) {
                             Text("皮肤商店")
                         }
                     }
@@ -899,6 +909,13 @@ private fun CurrentThemePreview(
         0f
     }
     val activePreviewIndex = selectedPreviewMode.ordinalIndex()
+    val previewDragRatio = if (swipeThresholdPx > 0f) {
+        (previewDragOffset / swipeThresholdPx).coerceIn(-1f, 1f)
+    } else {
+        0f
+    }
+    val leftPreviewFocus = previewDragRatio.coerceAtLeast(0f)
+    val rightPreviewFocus = (-previewDragRatio).coerceAtLeast(0f)
     fun selectPreviewMode(mode: ThemePreviewMode) {
         if (mode != selectedPreviewMode) {
             previewSwitchDirection = if (mode.ordinalIndex() > selectedPreviewMode.ordinalIndex()) 1 else -1
@@ -991,9 +1008,11 @@ private fun CurrentThemePreview(
                         .height(phoneHeight)
                         .clickable { selectPreviewModeByOffset(-1) }
                         .graphicsLayer {
-                            scaleX = 0.86f
-                            scaleY = 0.86f
-                            alpha = 0.42f
+                            translationX = previewDragOffset * 0.62f
+                            val scale = 0.86f + leftPreviewFocus * 0.10f
+                            scaleX = scale
+                            scaleY = scale
+                            alpha = 0.42f + leftPreviewFocus * 0.34f
                         },
                     selectedTheme = themeKey,
                     customThemeImageUri = customThemeImageUri,
@@ -1012,9 +1031,11 @@ private fun CurrentThemePreview(
                         .height(phoneHeight)
                         .clickable { selectPreviewModeByOffset(1) }
                         .graphicsLayer {
-                            scaleX = 0.86f
-                            scaleY = 0.86f
-                            alpha = 0.42f
+                            translationX = previewDragOffset * 0.62f
+                            val scale = 0.86f + rightPreviewFocus * 0.10f
+                            scaleX = scale
+                            scaleY = scale
+                            alpha = 0.42f + rightPreviewFocus * 0.34f
                         },
                     selectedTheme = themeKey,
                     customThemeImageUri = customThemeImageUri,
@@ -1031,7 +1052,7 @@ private fun CurrentThemePreview(
                         .width(phoneWidth)
                         .height(phoneHeight)
                         .graphicsLayer {
-                            translationX = previewDragOffset * 0.30f
+                            translationX = previewDragOffset * 0.62f
                             alpha = 1f - previewDragProgress * 0.18f
                             val scale = 1f - previewDragProgress * 0.035f
                             scaleX = scale
@@ -1206,6 +1227,29 @@ private enum class CustomThemeEditorSection(val title: String) {
 }
 
 @Composable
+private fun editorAccentColor(): Color {
+    return if (LocalContentColor.current.luminance() > 0.5f) {
+        Color(0xFF9EEAF2)
+    } else {
+        Color(0xFF0B6F7A)
+    }
+}
+
+@Composable
+private fun editorCardColor(lightAlpha: Float = 0.72f): Color {
+    return if (LocalContentColor.current.luminance() > 0.5f) {
+        Color.White.copy(alpha = 0.12f)
+    } else {
+        Color.White.copy(alpha = lightAlpha)
+    }
+}
+
+@Composable
+private fun editorBorderColor(): Color {
+    return LocalContentColor.current.copy(alpha = if (LocalContentColor.current.luminance() > 0.5f) 0.18f else 0.16f)
+}
+
+@Composable
 private fun CurrentThemeInfo(
     theme: VisualTheme?,
     hasCustomAssets: Boolean,
@@ -1220,11 +1264,12 @@ private fun CurrentThemeInfo(
         return
     }
     val isCustomTheme = theme.key == VisualThemeUtils.THEME_CUSTOM_1
+    val primaryAction = if (isCustomTheme) onOpenCustomThemeEditor else onOpenThemeDetail
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onOpenThemeDetail),
+                .clickable(onClick = primaryAction),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -1280,36 +1325,6 @@ private fun CurrentThemeInfo(
                 }
             }
         }
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onOpenCustomThemeEditor),
-            shape = PersonalizationCardShape,
-            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.22f),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.10f))
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    modifier = Modifier.weight(1f),
-                    text = "\u81ea\u5b9a\u4e49\u4e3b\u9898\uff1a\u7f16\u8f91\u7d20\u6750 / \u89c4\u5219 / \u5c0f\u7ec4\u4ef6",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = titleColor,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = "\u8fdb\u5165",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-        }
     }
 }
 @Composable
@@ -1317,6 +1332,7 @@ private fun CustomThemeEditorTabs(
     selectedSection: CustomThemeEditorSection,
     onSectionSelected: (CustomThemeEditorSection) -> Unit
 ) {
+    val accentColor = editorAccentColor()
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -1332,17 +1348,17 @@ private fun CustomThemeEditorTabs(
                     .clickable { onSectionSelected(section) },
                 shape = PersonalizationIndicatorShape,
                 color = if (selected) {
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
+                    accentColor.copy(alpha = 0.22f)
                 } else {
-                    MaterialTheme.colorScheme.surface.copy(alpha = 0.18f)
+                    editorCardColor(lightAlpha = 0.46f)
                 },
-                contentColor = if (selected) MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(alpha = 0.74f),
+                contentColor = if (selected) accentColor else LocalContentColor.current.copy(alpha = 0.82f),
                 border = BorderStroke(
                     1.dp,
                     if (selected) {
-                        MaterialTheme.colorScheme.primary.copy(alpha = 0.32f)
+                        accentColor.copy(alpha = 0.45f)
                     } else {
-                        LocalContentColor.current.copy(alpha = 0.16f)
+                        editorBorderColor()
                     }
                 )
             ) {
@@ -1656,6 +1672,7 @@ private fun CustomThemeControls(
 ) {
     val hasDraft = draftCustomThemeImageUris.isNotEmpty()
     val hasSavedImages = customThemeImageUris.isNotEmpty() || customThemeImageUri.isNotBlank()
+    val accentColor = editorAccentColor()
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -1679,12 +1696,14 @@ private fun CustomThemeControls(
                         else -> "\u5f53\u524d\u81ea\u5b9a\u4e49\u4e3b\u9898\u6309\u5929\u6c14\u3001\u65f6\u95f4\u548c\u7ec4\u5408\u89c4\u5219\u5207\u6362\u7d20\u6750\uff0c\u52a8\u6548\u5b9e\u65f6\u53d6\u81ea\u7d20\u6750\u3002"
                     },
                     style = MaterialTheme.typography.bodySmall,
-                    color = LocalContentColor.current.copy(alpha = 0.68f)
+                    color = LocalContentColor.current.copy(alpha = 0.78f)
                 )
             }
             OutlinedButton(
                 enabled = !customThemeImporting,
-                onClick = onPickMultipleCustomThemeImages
+                onClick = onPickMultipleCustomThemeImages,
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = accentColor),
+                border = BorderStroke(1.dp, accentColor.copy(alpha = 0.64f))
             ) {
                 Text("批量导入")
             }
@@ -1729,7 +1748,7 @@ private fun CustomThemeControls(
             Text(
                 text = customThemeEditorMessage,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary
+                color = accentColor
             )
         }
         Row(
@@ -1771,13 +1790,13 @@ private fun CustomThemeProfileSummary(
     val ruleCount = customThemeProfile.rules.size
     val gifCount = customThemeProfile.assets.count { asset -> asset.mediaType == CustomThemeAsset.MEDIA_GIF }
     val contentColor = LocalContentColor.current
-    val secondaryColor = contentColor.copy(alpha = 0.68f)
+    val secondaryColor = contentColor.copy(alpha = 0.78f)
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = PersonalizationCardShape,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.30f),
+        color = editorCardColor(lightAlpha = 0.74f),
         contentColor = contentColor,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+        border = BorderStroke(1.dp, editorBorderColor())
     ) {
         Column(
             modifier = Modifier.padding(12.dp),
@@ -1821,13 +1840,14 @@ private fun CustomThemeWeatherSlotRow(
     onCropAnchorChanged: (String) -> Unit
 ) {
     val contentColor = LocalContentColor.current
-    val secondaryColor = contentColor.copy(alpha = 0.68f)
+    val secondaryColor = contentColor.copy(alpha = 0.78f)
+    val accentColor = editorAccentColor()
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = PersonalizationCardShape,
-        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.22f),
+        color = editorCardColor(lightAlpha = 0.70f),
         contentColor = contentColor,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.12f))
+        border = BorderStroke(1.dp, editorBorderColor())
     ) {
         Row(
             modifier = Modifier.padding(9.dp),
@@ -1886,14 +1906,17 @@ private fun CustomThemeWeatherSlotRow(
             ) {
                 OutlinedButton(
                     enabled = enabled,
-                    onClick = { onPickCustomThemeImage(weatherKey) }
+                    onClick = { onPickCustomThemeImage(weatherKey) },
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = accentColor),
+                    border = BorderStroke(1.dp, accentColor.copy(alpha = 0.58f))
                 ) {
                     Text(if (imageUri.isBlank()) "选择" else "替换")
                 }
                 if (imageUri.isNotBlank()) {
                     TextButton(
                         enabled = enabled,
-                        onClick = { onClearCustomThemeImage(weatherKey) }
+                        onClick = { onClearCustomThemeImage(weatherKey) },
+                        colors = ButtonDefaults.textButtonColors(contentColor = accentColor)
                     ) {
                         Text("移除")
                     }
@@ -1911,17 +1934,18 @@ private fun RowScope.CropAnchorButton(
     onCustomThemeCropAnchorChanged: (String) -> Unit
 ) {
     val selected = anchor == selectedAnchor
+    val accentColor = editorAccentColor()
     Surface(
         modifier = Modifier
             .weight(1f)
             .height(30.dp)
             .clickable { onCustomThemeCropAnchorChanged(anchor) },
         shape = PersonalizationIndicatorShape,
-        color = if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.22f) else Color.Transparent,
-        contentColor = if (selected) MaterialTheme.colorScheme.primary else LocalContentColor.current.copy(alpha = 0.70f),
+        color = if (selected) accentColor.copy(alpha = 0.20f) else Color.Transparent,
+        contentColor = if (selected) accentColor else LocalContentColor.current.copy(alpha = 0.82f),
         border = BorderStroke(
             1.dp,
-            if (selected) MaterialTheme.colorScheme.primary.copy(alpha = 0.36f) else LocalContentColor.current.copy(alpha = 0.24f)
+            if (selected) accentColor.copy(alpha = 0.46f) else LocalContentColor.current.copy(alpha = 0.28f)
         )
     ) {
         Box(contentAlignment = Alignment.Center) {

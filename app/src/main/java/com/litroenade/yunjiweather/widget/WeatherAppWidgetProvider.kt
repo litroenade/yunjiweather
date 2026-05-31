@@ -15,6 +15,8 @@ import android.util.Log
 import android.widget.RemoteViews
 import com.litroenade.yunjiweather.R
 import com.litroenade.yunjiweather.ui.splash.SplashActivity
+import com.litroenade.yunjiweather.utils.VisualThemeUtils
+import com.litroenade.yunjiweather.utils.WeatherIconUtils
 import java.io.File
 import java.util.concurrent.Executors
 
@@ -197,9 +199,21 @@ open class WeatherAppWidgetProvider : AppWidgetProvider() {
         private fun RemoteViews.applyWidgetBackground(snapshot: WeatherWidgetSnapshot) {
             val customBitmap = bitmapFromFileUri(snapshot.customBackgroundUri)
             if (customBitmap == null) {
-                setImageViewResource(R.id.widget_background_image, R.drawable.theme_panorama_day)
+                setImageViewResource(R.id.widget_background_image, snapshot.widgetBackgroundResId())
             } else {
                 setImageViewBitmap(R.id.widget_background_image, customBitmap)
+            }
+        }
+
+        private fun WeatherWidgetSnapshot.widgetBackgroundResId(): Int {
+            if (visualThemeKey != VisualThemeUtils.THEME_PANORAMA) {
+                return R.drawable.widget_weather_background
+            }
+            return when (WeatherIconUtils.getWeatherCategory(iconCode)) {
+                WeatherIconUtils.WeatherCategory.RAIN -> R.drawable.theme_panorama_rain
+                WeatherIconUtils.WeatherCategory.SNOW -> R.drawable.theme_panorama_snow
+                WeatherIconUtils.WeatherCategory.NIGHT -> R.drawable.theme_panorama_night
+                else -> R.drawable.theme_panorama_day
             }
         }
 
