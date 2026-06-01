@@ -107,18 +107,10 @@ fun DesktopWeatherScreen(
     )
     val previewSnapshot = remember(homeWeatherData, homeWeatherUpdateTime, temperatureUnit, visualTheme.key, customWidgetBackground) {
         val customWidgetAsset = customWidgetBackground.toCustomThemeAsset()
-        homeWeatherData?.let { data ->
-            WeatherWidgetSnapshotFactory.fromHomeWeather(
-                data,
-                DateTimeUtils.formatMinuteTime(
-                    if (homeWeatherUpdateTime > 0L) homeWeatherUpdateTime else data.updateTime
-                ),
-                customWidgetAsset,
-                temperatureUnit,
-                visualTheme.key
-            )
-        } ?: WeatherWidgetSnapshotFactory.unavailable(
-            DefaultCityUtils.DEFAULT_CITY_NAME,
+        desktopPreviewSnapshot(
+            homeWeatherData,
+            homeWeatherUpdateTime,
+            temperatureUnit,
             visualTheme.key,
             customWidgetAsset
         )
@@ -459,18 +451,20 @@ private fun customWidgetBackground(
     if (visualThemeKey != VisualThemeUtils.THEME_CUSTOM_1) {
         return CustomThemeImage()
     }
-    val resolvedAsset = homeWeatherData?.let { data ->
-        WeatherWidgetSnapshotFactory.customBackgroundForHomeWeather(
+    val resolvedAsset = runCatching {
+        homeWeatherData?.let { data ->
+            WeatherWidgetSnapshotFactory.customBackgroundForHomeWeather(
+                visualThemeKey,
+                customThemeOptions.profile,
+                data,
+                minuteOfDay
+            )
+        } ?: WeatherWidgetSnapshotFactory.customBackgroundForFallback(
             visualThemeKey,
             customThemeOptions.profile,
-            data,
             minuteOfDay
         )
-    } ?: WeatherWidgetSnapshotFactory.customBackgroundForFallback(
-        visualThemeKey,
-        customThemeOptions.profile,
-        minuteOfDay
-    )
+    }.getOrDefault(CustomThemeAsset.empty())
     if (!resolvedAsset.isEmpty) {
         return CustomThemeImage(
             assetId = resolvedAsset.id,
@@ -488,6 +482,41 @@ private fun customWidgetBackground(
             CustomThemeAsset.MEDIA_IMAGE
         }
     )
+}
+
+private fun desktopPreviewSnapshot(
+    homeWeatherData: HomeWeatherData?,
+    homeWeatherUpdateTime: Long,
+    temperatureUnit: String,
+    visualThemeKey: String,
+    customWidgetAsset: CustomThemeAsset
+): WeatherWidgetSnapshot {
+    val fallbackCityName = runCatching {
+        homeWeatherData?.cityName?.takeIf { it.isNotBlank() }
+    }.getOrNull() ?: DefaultCityUtils.DEFAULT_CITY_NAME
+    return runCatching {
+        homeWeatherData?.let { data ->
+            WeatherWidgetSnapshotFactory.fromHomeWeather(
+                data,
+                DateTimeUtils.formatMinuteTime(
+                    if (homeWeatherUpdateTime > 0L) homeWeatherUpdateTime else data.updateTime
+                ),
+                customWidgetAsset,
+                temperatureUnit,
+                visualThemeKey
+            )
+        } ?: WeatherWidgetSnapshotFactory.unavailable(
+            fallbackCityName,
+            visualThemeKey,
+            customWidgetAsset
+        )
+    }.getOrElse {
+        WeatherWidgetSnapshotFactory.unavailable(
+            fallbackCityName,
+            visualThemeKey,
+            customWidgetAsset
+        )
+    }
 }
 
 private fun currentWidgetMinuteOfDay(): Int {

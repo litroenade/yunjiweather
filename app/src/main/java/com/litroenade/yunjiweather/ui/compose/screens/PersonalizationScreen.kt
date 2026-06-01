@@ -62,14 +62,19 @@ fun PersonalizationScreen(
     val themes = remember(viewModel) { viewModel.visualThemes }
     val visualTheme = LocalYunJiVisualTheme.current
     val widgetSnapshot = remember(homeWeatherData, homeWeatherUpdateTime, temperatureUnit) {
-        homeWeatherData?.let { data ->
-            WeatherWidgetSnapshotFactory.fromHomeWeather(
-                data,
-                DateTimeUtils.formatMinuteTime(if (homeWeatherUpdateTime > 0L) homeWeatherUpdateTime else data.updateTime),
-                CustomThemeAsset.empty(),
-                temperatureUnit
-            )
-        } ?: WeatherWidgetSnapshotFactory.unavailable(DefaultCityUtils.DEFAULT_CITY_NAME)
+        runCatching {
+            homeWeatherData?.let { data ->
+                WeatherWidgetSnapshotFactory.fromHomeWeather(
+                    data,
+                    DateTimeUtils.formatMinuteTime(if (homeWeatherUpdateTime > 0L) homeWeatherUpdateTime else data.updateTime),
+                    CustomThemeAsset.empty(),
+                    temperatureUnit
+                )
+            }
+        }.getOrNull() ?: WeatherWidgetSnapshotFactory.unavailable(
+            runCatching { homeWeatherData?.cityName?.takeIf { it.isNotBlank() } }.getOrNull()
+                ?: DefaultCityUtils.DEFAULT_CITY_NAME
+        )
     }
     val scope = rememberCoroutineScope()
     val draftCustomThemeImageUris = remember { mutableStateMapOf<String, String>() }
@@ -209,6 +214,11 @@ fun PersonalizationScreen(
         uris.forEach { uri -> persistReadPermission(context, uri) }
         importDraftImages(uris.take(CustomThemeWeatherKey.orderedKeys().size))
     }
+    fun runCustomThemeSettingAction(errorPrefix: String, action: () -> Unit): Boolean {
+        return runCatching(action).onFailure { throwable ->
+            customThemeEditorMessage = "$errorPrefix\uff1a${throwable.message ?: "\u8bf7\u91cd\u8bd5"}"
+        }.isSuccess
+    }
 
     LaunchedEffect(Unit) {
         viewModel.refresh()
@@ -229,10 +239,20 @@ fun PersonalizationScreen(
 
     val commonOnPickCustomThemeImage: (String) -> Unit = { weatherKey ->
         pendingCustomThemeWeatherKey = weatherKey
-        imagePickerLauncher.launch(arrayOf("image/*"))
+        runCatching {
+            imagePickerLauncher.launch(arrayOf("image/*"))
+        }.onFailure { throwable ->
+            customThemeEditorMessage =
+                "\u65e0\u6cd5\u6253\u5f00\u56fe\u7247\u9009\u62e9\u5668\uff1a${throwable.message ?: "\u8bf7\u68c0\u67e5\u7cfb\u7edf\u6587\u4ef6\u7ba1\u7406\u5668"}"
+        }
     }
-    val commonOnPickMultipleCustomThemeImages = {
-        multiImagePickerLauncher.launch(arrayOf("image/*"))
+    val commonOnPickMultipleCustomThemeImages: () -> Unit = {
+        runCatching {
+            multiImagePickerLauncher.launch(arrayOf("image/*"))
+        }.onFailure { throwable ->
+            customThemeEditorMessage =
+                "\u65e0\u6cd5\u6253\u5f00\u6279\u91cf\u56fe\u7247\u9009\u62e9\u5668\uff1a${throwable.message ?: "\u8bf7\u68c0\u67e5\u7cfb\u7edf\u6587\u4ef6\u7ba1\u7406\u5668"}"
+        }
     }
     val commonOnCustomThemeCropAnchorChanged: (String, String) -> Unit = { weatherKey, cropAnchor ->
         val imageUri = customThemeImageUris[weatherKey].orEmpty().ifBlank {
@@ -243,9 +263,11 @@ fun PersonalizationScreen(
             savedImageUris[weatherKey] = imageUri
             val savedCropAnchors = customThemeCropAnchors.toMutableMap()
             savedCropAnchors[weatherKey] = cropAnchor
-            viewModel.setCustomThemeProfile(
-                buildCustomThemeProfile(savedImageUris, savedCropAnchors, customThemeProfile)
-            )
+            runCustomThemeSettingAction("\u88c1\u526a\u4f4d\u7f6e\u4fdd\u5b58\u5931\u8d25") {
+                viewModel.setCustomThemeProfile(
+                    buildCustomThemeProfile(savedImageUris, savedCropAnchors, customThemeProfile)
+                )
+            }
         }
     }
     val commonOnDraftCustomThemeCropAnchorChanged: (String, String) -> Unit = { weatherKey, anchor ->
@@ -257,17 +279,21 @@ fun PersonalizationScreen(
             val savedCropAnchors = customThemeCropAnchors.toMutableMap()
             savedImageUris.putAll(imageUris)
             savedCropAnchors.putAll(cropAnchors)
-            viewModel.setCustomThemeProfile(
-                buildCustomThemeProfile(savedImageUris, savedCropAnchors, customThemeProfile)
-            )
-            draftCustomThemeImageUris.clear()
-            draftCustomThemeCropAnchors.clear()
-            customThemeEditorMessage = ""
-            scope.launch(Dispatchers.IO) {
-                CustomThemeImageStore.pruneImportedImages(
-                    context,
-                    savedImageUris.values + listOf(customThemeImageUri)
+            val saved = runCustomThemeSettingAction("\u81ea\u5b9a\u4e49\u4e3b\u9898\u4fdd\u5b58\u5931\u8d25") {
+                viewModel.setCustomThemeProfile(
+                    buildCustomThemeProfile(savedImageUris, savedCropAnchors, customThemeProfile)
                 )
+            }
+            if (saved) {
+                draftCustomThemeImageUris.clear()
+                draftCustomThemeCropAnchors.clear()
+                customThemeEditorMessage = ""
+                scope.launch(Dispatchers.IO) {
+                    CustomThemeImageStore.pruneImportedImages(
+                        context,
+                        savedImageUris.values + listOf(customThemeImageUri)
+                    )
+                }
             }
         }
     }
@@ -300,8 +326,10 @@ fun PersonalizationScreen(
                 savedImageUris.putIfAbsent(CustomThemeWeatherKey.FALLBACK, customThemeImageUri)
             }
             val removedSavedUri = savedImageUris.remove(weatherKey).orEmpty()
-            viewModel.clearCustomThemeImage(weatherKey)
-            if (removedSavedUri.isNotBlank()) {
+            val cleared = runCustomThemeSettingAction("\u573a\u666f\u7d20\u6750\u79fb\u9664\u5931\u8d25") {
+                viewModel.clearCustomThemeImage(weatherKey)
+            }
+            if (cleared && removedSavedUri.isNotBlank()) {
                 val remainingUris = savedImageUris.values + draftCustomThemeImageUris.values
                 if (removedSavedUri !in remainingUris) {
                     scope.launch(Dispatchers.IO) {
@@ -312,12 +340,16 @@ fun PersonalizationScreen(
         }
     }
     val commonOnClearCustomThemeImage: () -> Unit = {
-        viewModel.clearCustomThemeImage()
-        draftCustomThemeImageUris.clear()
-        draftCustomThemeCropAnchors.clear()
-        customThemeEditorMessage = ""
-        scope.launch(Dispatchers.IO) {
-            CustomThemeImageStore.deleteAllImportedImages(context)
+        val cleared = runCustomThemeSettingAction("\u81ea\u5b9a\u4e49\u4e3b\u9898\u6e05\u9664\u5931\u8d25") {
+            viewModel.clearCustomThemeImage()
+        }
+        if (cleared) {
+            draftCustomThemeImageUris.clear()
+            draftCustomThemeCropAnchors.clear()
+            customThemeEditorMessage = ""
+            scope.launch(Dispatchers.IO) {
+                CustomThemeImageStore.deleteAllImportedImages(context)
+            }
         }
     }
 
