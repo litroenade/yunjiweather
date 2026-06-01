@@ -123,7 +123,7 @@ open class WeatherAppWidgetProvider : AppWidgetProvider() {
         ): RemoteViews {
             val spec = WidgetStyleSpec.forMode(mode)
             return RemoteViews(context.packageName, mode.layoutResId()).apply {
-                applyWidgetBackground(snapshot, spec)
+                applyWidgetBackground(context.applicationContext, snapshot, spec)
                 setTextViewText(R.id.widget_title, snapshot.cityName)
                 setTextViewText(R.id.widget_temperature, snapshot.temperatureText)
                 setTextViewText(R.id.widget_summary, snapshot.conditionText)
@@ -198,8 +198,13 @@ open class WeatherAppWidgetProvider : AppWidgetProvider() {
             setViewVisibility(R.id.widget_advice, if (spec.isAdviceVisible) View.VISIBLE else View.GONE)
         }
 
-        private fun RemoteViews.applyWidgetBackground(snapshot: WeatherWidgetSnapshot, spec: WidgetStyleSpec) {
-            val customBitmap = bitmapFromFileUri(
+        private fun RemoteViews.applyWidgetBackground(
+            context: Context,
+            snapshot: WeatherWidgetSnapshot,
+            spec: WidgetStyleSpec
+        ) {
+            val customBitmap = bitmapFromUri(
+                context = context,
                 snapshot.customBackgroundUri,
                 snapshot.customBackgroundCropAnchor,
                 spec
@@ -223,7 +228,8 @@ open class WeatherAppWidgetProvider : AppWidgetProvider() {
             }
         }
 
-        private fun bitmapFromFileUri(
+        private fun bitmapFromUri(
+            context: Context,
             imageUri: String,
             cropAnchor: String,
             spec: WidgetStyleSpec
@@ -232,19 +238,75 @@ open class WeatherAppWidgetProvider : AppWidgetProvider() {
                 return null
             }
             val uri = runCatching { Uri.parse(imageUri) }.getOrNull() ?: return null
-            if (uri.scheme != "file") {
-                return null
-            }
-            val path = uri.path ?: return null
-            val file = File(path)
-            if (!file.isFile) {
-                return null
-            }
             return runCatching {
-                BitmapFactory.decodeFile(file.absolutePath)?.let { bitmap ->
-                    cropBitmapToWidgetAspect(bitmap, cropAnchor, spec)
+                val (targetWidth, targetHeight) = widgetBitmapSizePx(context, spec)
+                val bitmap = decodeSampledBitmap(context, uri, targetWidth, targetHeight)
+                bitmap?.let { source ->
+                    val cropped = cropBitmapToWidgetAspect(source, cropAnchor, spec)
+                    if (cropped.width == targetWidth && cropped.height == targetHeight) {
+                        cropped
+                    } else {
+                        Bitmap.createScaledBitmap(cropped, targetWidth, targetHeight, true)
+                    }
                 }
             }.getOrNull()
+        }
+
+        private fun decodeSampledBitmap(
+            context: Context,
+            uri: Uri,
+            targetWidth: Int,
+            targetHeight: Int
+        ): Bitmap? {
+            val boundsOptions = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            openBitmapInputStream(context, uri)?.use { input ->
+                BitmapFactory.decodeStream(input, null, boundsOptions)
+            } ?: return null
+            if (boundsOptions.outWidth <= 0 || boundsOptions.outHeight <= 0) {
+                return null
+            }
+            val decodeOptions = BitmapFactory.Options().apply {
+                inSampleSize = calculateWidgetInSampleSize(boundsOptions, targetWidth, targetHeight)
+                inPreferredConfig = Bitmap.Config.ARGB_8888
+            }
+            return openBitmapInputStream(context, uri)?.use { input ->
+                BitmapFactory.decodeStream(input, null, decodeOptions)
+            }
+        }
+
+        private fun openBitmapInputStream(context: Context, uri: Uri) = when (uri.scheme) {
+            "file" -> {
+                val path = uri.path ?: return null
+                val file = File(path)
+                if (!file.isFile) null else file.inputStream()
+            }
+            "content" -> context.contentResolver.openInputStream(uri)
+            else -> null
+        }
+
+        private fun calculateWidgetInSampleSize(
+            options: BitmapFactory.Options,
+            targetWidth: Int,
+            targetHeight: Int
+        ): Int {
+            var inSampleSize = 1
+            var halfHeight = options.outHeight / 2
+            var halfWidth = options.outWidth / 2
+            while (halfHeight / inSampleSize >= targetHeight && halfWidth / inSampleSize >= targetWidth) {
+                inSampleSize *= 2
+            }
+            return inSampleSize.coerceAtLeast(1)
+        }
+
+        private fun widgetBitmapSizePx(context: Context, spec: WidgetStyleSpec): Pair<Int, Int> {
+            val density = context.resources.displayMetrics.density
+            val rawWidth = (spec.previewWidthDp * density).toInt().coerceAtLeast(1)
+            val rawHeight = (spec.previewHeightDp * density).toInt().coerceAtLeast(1)
+            val scale = minOf(1f, 512f / maxOf(rawWidth, rawHeight).toFloat())
+            return (rawWidth * scale).toInt().coerceAtLeast(120) to
+                    (rawHeight * scale).toInt().coerceAtLeast(120)
         }
 
         private fun cropBitmapToWidgetAspect(

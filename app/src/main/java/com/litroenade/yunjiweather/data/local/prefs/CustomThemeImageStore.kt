@@ -2,6 +2,7 @@ package com.litroenade.yunjiweather.data.local.prefs
 
 import android.content.Context
 import android.net.Uri
+import android.webkit.MimeTypeMap
 import com.litroenade.yunjiweather.data.model.CustomThemeAsset
 import java.io.File
 import java.io.FileOutputStream
@@ -135,7 +136,24 @@ object CustomThemeImageStore {
     }
 
     private fun importExtension(context: Context, sourceUri: Uri): String {
-        return if (mediaTypeForUri(context, sourceUri) == CustomThemeAsset.MEDIA_GIF) ".gif" else ".jpg"
+        val mimeType = runCatching {
+            context.applicationContext.contentResolver.getType(sourceUri)
+        }.getOrNull().orEmpty().lowercase()
+        val mimeExtension = MimeTypeMap.getSingleton()
+            .getExtensionFromMimeType(mimeType)
+            ?.lowercase()
+            ?.takeIf { extension -> extension in setOf("jpg", "jpeg", "png", "webp", "gif") }
+        if (!mimeExtension.isNullOrBlank()) {
+            return ".$mimeExtension"
+        }
+        val path = sourceUri.toString().lowercase()
+        return when {
+            path.endsWith(".gif") -> ".gif"
+            path.endsWith(".png") -> ".png"
+            path.endsWith(".webp") -> ".webp"
+            path.endsWith(".jpeg") -> ".jpeg"
+            else -> ".jpg"
+        }
     }
 
     private fun pruneImportedImages(directory: File, keepFile: File) {

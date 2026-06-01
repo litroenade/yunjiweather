@@ -1,6 +1,5 @@
 package com.litroenade.yunjiweather.ui.compose.screens
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -39,6 +38,7 @@ import com.litroenade.yunjiweather.widget.WeatherWidgetSnapshotFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Calendar
 
 @Composable
 fun PersonalizationScreen(
@@ -66,19 +66,28 @@ fun PersonalizationScreen(
     val customThemeProfile = observedCustomThemeProfile ?: CustomThemeProfile.empty()
     val themes = remember(viewModel) { viewModel.visualThemes }
     val visualTheme = LocalYunJiVisualTheme.current
-    val widgetSnapshot = remember(homeWeatherData, homeWeatherUpdateTime, temperatureUnit) {
+    val widgetSnapshot = remember(homeWeatherData, homeWeatherUpdateTime, temperatureUnit, selectedTheme, customThemeProfile) {
         runCatching {
+            val minuteOfDay = currentMinuteOfDay()
             homeWeatherData?.let { data ->
+                val customBackground = WeatherWidgetSnapshotFactory.customBackgroundForHomeWeather(
+                    selectedTheme,
+                    customThemeProfile,
+                    data,
+                    minuteOfDay
+                )
                 WeatherWidgetSnapshotFactory.fromHomeWeather(
                     data,
                     DateTimeUtils.formatMinuteTime(if (homeWeatherUpdateTime > 0L) homeWeatherUpdateTime else data.updateTime),
-                    CustomThemeAsset.empty(),
-                    temperatureUnit
+                    customBackground,
+                    temperatureUnit,
+                    selectedTheme
                 )
             }
         }.getOrNull() ?: WeatherWidgetSnapshotFactory.unavailable(
             runCatching { homeWeatherData?.cityName?.takeIf { it.isNotBlank() } }.getOrNull()
-                ?: DefaultCityUtils.DEFAULT_CITY_NAME
+                ?: DefaultCityUtils.DEFAULT_CITY_NAME,
+            selectedTheme
         )
     }
     val scope = rememberCoroutineScope()
@@ -97,15 +106,12 @@ fun PersonalizationScreen(
             val importResult = withContext(Dispatchers.IO) {
                 runCatching {
                     CustomThemeImageStore.importImage(context, sourceUri)
-                }.also {
-                    if (deleteCacheAfterImport) {
-                        runCatching {
-                            CustomThemeImageStore.deleteCacheImage(context, sourceUri.toString())
-                        }
-                    }
                 }
             }
             customThemeImporting = false
+            val fallbackOriginalUri = sourceUri.toString().takeIf {
+                !deleteCacheAfterImport && sourceUri.scheme == "content"
+            }
             importResult.onSuccess { importedUri ->
                 val previousDraftUri = draftCustomThemeImageUris[weatherKey]
                 draftCustomThemeImageUris[weatherKey] = importedUri
@@ -113,14 +119,29 @@ fun PersonalizationScreen(
                     ?: customThemeCropAnchor
                 customThemeEditorMessage =
                     "${CustomThemeWeatherKey.displayName(weatherKey)}\u5df2\u5bfc\u5165\uff0c\u786e\u8ba4\u540e\u70b9\u51fb\u4fdd\u5b58\u3002"
+                if (deleteCacheAfterImport) {
+                    scope.launch(Dispatchers.IO) {
+                        runCatching {
+                            CustomThemeImageStore.deleteCacheImage(context, sourceUri.toString())
+                        }
+                    }
+                }
                 if (!previousDraftUri.isNullOrBlank() && previousDraftUri != importedUri) {
                     scope.launch(Dispatchers.IO) {
                         CustomThemeImageStore.deleteImportedImage(context, previousDraftUri)
                     }
                 }
             }.onFailure { throwable ->
-                customThemeEditorMessage =
-                    "\u5e95\u56fe\u5bfc\u5165\u5931\u8d25\uff1a${throwable.message ?: "\u65e0\u6cd5\u8bfb\u53d6\u56fe\u7247"}"
+                if (fallbackOriginalUri != null) {
+                    draftCustomThemeImageUris[weatherKey] = fallbackOriginalUri
+                    draftCustomThemeCropAnchors[weatherKey] = customThemeCropAnchors[weatherKey]
+                        ?: customThemeCropAnchor
+                    customThemeEditorMessage =
+                        "${CustomThemeWeatherKey.displayName(weatherKey)}已使用原图导入，确认后点击保存。"
+                } else {
+                    customThemeEditorMessage =
+                        "\u5e95\u56fe\u5bfc\u5165\u5931\u8d25\uff1a${throwable.message ?: "\u65e0\u6cd5\u8bfb\u53d6\u56fe\u7247"}"
+                }
             }
         }
     }
@@ -185,37 +206,13 @@ fun PersonalizationScreen(
         }
     }
 
-    val cropImageLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            val croppedUri = CustomThemeCropActivity.resultUri(result.data)
-            if (croppedUri == null) {
-                customThemeEditorMessage = "\u5e95\u56fe\u88c1\u526a\u5931\u8d25\uff1a\u6ca1\u6709\u8fd4\u56de\u88c1\u526a\u7ed3\u679c"
-                return@rememberLauncherForActivityResult
-            }
-            importDraftImage(croppedUri, pendingCustomThemeWeatherKey, deleteCacheAfterImport = true)
-        } else {
-            customThemeEditorMessage = "\u5e95\u56fe\u88c1\u526a\u5df2\u53d6\u6d88"
-        }
-    }
     val imagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri == null) {
             customThemeEditorMessage = "\u5e95\u56fe\u9009\u62e9\u5df2\u53d6\u6d88"
             return@rememberLauncherForActivityResult
         }
         persistReadPermission(context, uri)
-        val mediaType = runCatching {
-            CustomThemeImageStore.mediaTypeForUri(context, uri)
-        }.getOrDefault(CustomThemeAsset.MEDIA_IMAGE)
-        if (mediaType == CustomThemeAsset.MEDIA_GIF) {
-            importDraftImage(uri, pendingCustomThemeWeatherKey, deleteCacheAfterImport = false)
-        } else {
-            runCatching {
-                cropImageLauncher.launch(CustomThemeCropActivity.createIntent(context, uri))
-            }.onFailure {
-                customThemeEditorMessage = "\u88c1\u526a\u5668\u6253\u5f00\u5931\u8d25\uff0c\u5df2\u6539\u4e3a\u76f4\u63a5\u5bfc\u5165\u539f\u56fe\u3002"
-                importDraftImage(uri, pendingCustomThemeWeatherKey, deleteCacheAfterImport = false)
-            }
-        }
+        importDraftImage(uri, pendingCustomThemeWeatherKey, deleteCacheAfterImport = false)
     }
     val multiImagePickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
         uris.forEach { uri -> persistReadPermission(context, uri) }
@@ -531,4 +528,9 @@ private fun customThemeMediaType(imageUri: String): String {
     } else {
         CustomThemeAsset.MEDIA_IMAGE
     }
+}
+
+private fun currentMinuteOfDay(): Int {
+    val calendar = Calendar.getInstance()
+    return calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
 }

@@ -711,7 +711,8 @@ private fun ThemeDetailPreview(
             includeImage = true,
             customThemeImageUri = backdropAsset.uri,
             customThemeCropAnchor = backdropAsset.cropAnchor,
-            customThemeMediaType = backdropAsset.mediaType
+            customThemeMediaType = backdropAsset.mediaType,
+            previewMode = selectedPreviewMode
         )
         Box(
             modifier = Modifier
@@ -2440,6 +2441,15 @@ private fun customThemePreviewAsset(
     )
     if (!draftAsset.isEmpty) {
         return draftAsset
+    }
+    val draftFallbackAsset = customThemeAssetFromSlot(
+        weatherKey = CustomThemeWeatherKey.FALLBACK,
+        imageUris = draftCustomThemeImageUris,
+        cropAnchors = draftCustomThemeCropAnchors,
+        assetPrefix = "preview-draft"
+    )
+    if (!draftFallbackAsset.isEmpty) {
+        return draftFallbackAsset
     }
     if (!customThemeProfile.isEmpty) {
         val resolved = resolveCustomThemeAssetOrEmpty(
