@@ -100,7 +100,8 @@ open class WeatherAppWidgetProvider : AppWidgetProvider() {
                     val snapshot = WeatherWidgetSnapshotLoader.fromContext(context).load()
                     val mode = fixedLayoutMode.takeUnless { it == WeatherWidgetLayoutMode.AUTO }
                         ?: appWidgetManager.getLayoutMode(appWidgetId)
-                    val views = createRemoteViews(context, snapshot, mode)
+                    val bounds = appWidgetManager.getWidgetBounds(appWidgetId, WidgetStyleSpec.forMode(mode))
+                    val views = createRemoteViews(context, snapshot, mode, bounds.first, bounds.second)
                     appWidgetManager.updateAppWidget(appWidgetId, views)
                 } catch (exception: Exception) {
                     Log.e(TAG, "Failed to update weather widget $appWidgetId", exception)
@@ -122,8 +123,19 @@ open class WeatherAppWidgetProvider : AppWidgetProvider() {
             mode: WeatherWidgetLayoutMode
         ): RemoteViews {
             val spec = WidgetStyleSpec.forMode(mode)
+            return createRemoteViews(context, snapshot, mode, spec.previewWidthDp, spec.previewHeightDp)
+        }
+
+        private fun createRemoteViews(
+            context: Context,
+            snapshot: WeatherWidgetSnapshot,
+            mode: WeatherWidgetLayoutMode,
+            renderWidthDp: Int,
+            renderHeightDp: Int
+        ): RemoteViews {
+            val spec = WidgetStyleSpec.forMode(mode)
             return RemoteViews(context.packageName, mode.layoutResId()).apply {
-                applyWidgetBackground(context.applicationContext, snapshot, spec)
+                applyWidgetBackground(context.applicationContext, snapshot, spec, renderWidthDp, renderHeightDp)
                 setTextViewText(R.id.widget_title, snapshot.cityName)
                 setTextViewText(R.id.widget_temperature, snapshot.temperatureText)
                 setTextViewText(R.id.widget_summary, snapshot.conditionText)
@@ -187,6 +199,18 @@ open class WeatherAppWidgetProvider : AppWidgetProvider() {
             )
         }
 
+        private fun AppWidgetManager.getWidgetBounds(
+            appWidgetId: Int,
+            spec: WidgetStyleSpec
+        ): Pair<Int, Int> {
+            val options = getAppWidgetOptions(appWidgetId)
+            val width = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0)
+                .takeIf { it > 0 } ?: spec.previewWidthDp
+            val height = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0)
+                .takeIf { it > 0 } ?: spec.previewHeightDp
+            return width.coerceAtLeast(1) to height.coerceAtLeast(1)
+        }
+
         private fun RemoteViews.applyLayoutMode(spec: WidgetStyleSpec) {
             setTextViewTextSize(
                 R.id.widget_temperature,
@@ -201,13 +225,17 @@ open class WeatherAppWidgetProvider : AppWidgetProvider() {
         private fun RemoteViews.applyWidgetBackground(
             context: Context,
             snapshot: WeatherWidgetSnapshot,
-            spec: WidgetStyleSpec
+            spec: WidgetStyleSpec,
+            renderWidthDp: Int,
+            renderHeightDp: Int
         ) {
             val customBitmap = bitmapFromUri(
                 context = context,
                 snapshot.customBackgroundUri,
                 snapshot.customBackgroundCropAnchor,
-                spec
+                spec,
+                renderWidthDp,
+                renderHeightDp
             )
             if (customBitmap == null) {
                 setImageViewResource(R.id.widget_background_image, snapshot.widgetBackgroundResId())
@@ -232,17 +260,19 @@ open class WeatherAppWidgetProvider : AppWidgetProvider() {
             context: Context,
             imageUri: String,
             cropAnchor: String,
-            spec: WidgetStyleSpec
+            spec: WidgetStyleSpec,
+            renderWidthDp: Int,
+            renderHeightDp: Int
         ): Bitmap? {
             if (imageUri.isBlank()) {
                 return null
             }
             val uri = runCatching { Uri.parse(imageUri) }.getOrNull() ?: return null
             return runCatching {
-                val (targetWidth, targetHeight) = widgetBitmapSizePx(context, spec)
+                val (targetWidth, targetHeight) = widgetBitmapSizePx(context, spec, renderWidthDp, renderHeightDp)
                 val bitmap = decodeSampledBitmap(context, uri, targetWidth, targetHeight)
                 bitmap?.let { source ->
-                    val cropped = cropBitmapToWidgetAspect(source, cropAnchor, spec)
+                    val cropped = cropBitmapToWidgetAspect(source, cropAnchor, renderWidthDp, renderHeightDp)
                     if (cropped.width == targetWidth && cropped.height == targetHeight) {
                         cropped
                     } else {
@@ -300,10 +330,17 @@ open class WeatherAppWidgetProvider : AppWidgetProvider() {
             return inSampleSize.coerceAtLeast(1)
         }
 
-        private fun widgetBitmapSizePx(context: Context, spec: WidgetStyleSpec): Pair<Int, Int> {
+        private fun widgetBitmapSizePx(
+            context: Context,
+            spec: WidgetStyleSpec,
+            renderWidthDp: Int,
+            renderHeightDp: Int
+        ): Pair<Int, Int> {
             val density = context.resources.displayMetrics.density
-            val rawWidth = (spec.previewWidthDp * density).toInt().coerceAtLeast(1)
-            val rawHeight = (spec.previewHeightDp * density).toInt().coerceAtLeast(1)
+            val widthDp = renderWidthDp.takeIf { it > 0 } ?: spec.previewWidthDp
+            val heightDp = renderHeightDp.takeIf { it > 0 } ?: spec.previewHeightDp
+            val rawWidth = (widthDp * density).toInt().coerceAtLeast(1)
+            val rawHeight = (heightDp * density).toInt().coerceAtLeast(1)
             val scale = minOf(1f, 512f / maxOf(rawWidth, rawHeight).toFloat())
             return (rawWidth * scale).toInt().coerceAtLeast(120) to
                     (rawHeight * scale).toInt().coerceAtLeast(120)
@@ -312,12 +349,13 @@ open class WeatherAppWidgetProvider : AppWidgetProvider() {
         private fun cropBitmapToWidgetAspect(
             bitmap: Bitmap,
             cropAnchor: String,
-            spec: WidgetStyleSpec
+            renderWidthDp: Int,
+            renderHeightDp: Int
         ): Bitmap {
-            if (bitmap.width <= 0 || bitmap.height <= 0 || spec.previewWidthDp <= 0 || spec.previewHeightDp <= 0) {
+            if (bitmap.width <= 0 || bitmap.height <= 0 || renderWidthDp <= 0 || renderHeightDp <= 0) {
                 return bitmap
             }
-            val targetRatio = spec.previewWidthDp.toFloat() / spec.previewHeightDp.toFloat()
+            val targetRatio = renderWidthDp.toFloat() / renderHeightDp.toFloat()
             val bitmapRatio = bitmap.width.toFloat() / bitmap.height.toFloat()
             val cropWidth: Int
             val cropHeight: Int

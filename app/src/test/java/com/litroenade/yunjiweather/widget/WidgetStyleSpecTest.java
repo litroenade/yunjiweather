@@ -22,7 +22,7 @@ public class WidgetStyleSpecTest {
 
         assertTrue(compact.getPreviewWidthDp() < standard.getPreviewWidthDp());
         assertTrue(standard.getPreviewWidthDp() < expanded.getPreviewWidthDp());
-        assertEquals(compact.getPreviewWidthDp(), compact.getPreviewHeightDp());
+        assertEquals(176, compact.getPreviewHeightDp());
         assertTrue(expanded.isAdviceVisible());
     }
 

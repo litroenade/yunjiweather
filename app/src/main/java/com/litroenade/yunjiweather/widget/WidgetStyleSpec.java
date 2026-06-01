@@ -7,7 +7,7 @@ public final class WidgetStyleSpec {
             140,
             140,
             140,
-            140,
+            176,
             22,
             14,
             34,

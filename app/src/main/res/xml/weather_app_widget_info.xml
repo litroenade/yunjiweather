@@ -2,10 +2,13 @@
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/widget_weather_standard_name"
     android:initialLayout="@layout/widget_weather"
+    android:previewLayout="@layout/widget_weather"
     android:minHeight="140dp"
     android:minResizeHeight="140dp"
     android:minResizeWidth="220dp"
     android:minWidth="220dp"
     android:resizeMode="horizontal|vertical"
+    android:targetCellHeight="2"
+    android:targetCellWidth="4"
     android:updatePeriodMillis="1800000"
     android:widgetCategory="home_screen"/>
