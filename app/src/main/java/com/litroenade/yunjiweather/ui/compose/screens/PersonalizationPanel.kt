@@ -219,7 +219,6 @@ internal fun PersonalizationPanel(
                     detailThemeKey = null
                 },
                 onOpenCustomThemeEditor = {
-                    onThemeSelected(VisualThemeUtils.THEME_CUSTOM_1)
                     onOpenCustomThemeEditor()
                 }
             )
@@ -1588,7 +1587,7 @@ private fun customThemeWidgetBackground(
         return draftAsset.toCustomThemeImage()
     }
     if (!customThemeProfile.isEmpty) {
-        val resolved = CustomThemeResolver.resolve(
+        val resolved = resolveCustomThemeAssetOrEmpty(
             customThemeProfile,
             CustomThemeWeatherKey.CLOUDY,
             false,
@@ -2443,7 +2442,7 @@ private fun customThemePreviewAsset(
         return draftAsset
     }
     if (!customThemeProfile.isEmpty) {
-        val resolved = CustomThemeResolver.resolve(
+        val resolved = resolveCustomThemeAssetOrEmpty(
             customThemeProfile,
             customThemeResolverWeatherKey(previewMode),
             customThemePreviewNight(previewMode),
@@ -2474,6 +2473,17 @@ private fun customThemePreviewAsset(
         customThemeCropAnchors[CustomThemeWeatherKey.FALLBACK] ?: customThemeCropAnchor,
         ""
     )
+}
+
+private fun resolveCustomThemeAssetOrEmpty(
+    customThemeProfile: CustomThemeProfile,
+    weatherKey: String,
+    night: Boolean,
+    minuteOfDay: Int
+): CustomThemeAsset {
+    return runCatching {
+        CustomThemeResolver.resolve(customThemeProfile, weatherKey, night, minuteOfDay)
+    }.getOrDefault(CustomThemeAsset.empty())
 }
 
 private fun customThemeAssetFromSlot(

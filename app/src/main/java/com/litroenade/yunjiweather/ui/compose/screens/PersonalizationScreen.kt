@@ -33,7 +33,6 @@ import com.litroenade.yunjiweather.data.model.CustomThemeWeatherKey
 import com.litroenade.yunjiweather.data.model.HomeWeatherData
 import com.litroenade.yunjiweather.ui.compose.theme.LocalYunJiVisualTheme
 import com.litroenade.yunjiweather.ui.mine.MineViewModel
-import com.litroenade.yunjiweather.utils.VisualThemeUtils
 import com.litroenade.yunjiweather.utils.DateTimeUtils
 import com.litroenade.yunjiweather.utils.DefaultCityUtils
 import com.litroenade.yunjiweather.widget.WeatherWidgetSnapshotFactory
@@ -53,12 +52,18 @@ fun PersonalizationScreen(
     onExitRequested: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val selectedTheme by viewModel.visualTheme.observeAsState(viewModel.currentVisualTheme)
-    val customThemeImageUri by viewModel.customThemeImageUri.observeAsState("")
-    val customThemeCropAnchor by viewModel.customThemeCropAnchor.observeAsState("center")
-    val customThemeImageUris by viewModel.customThemeImageUris.observeAsState(emptyMap())
-    val customThemeCropAnchors by viewModel.customThemeCropAnchors.observeAsState(emptyMap())
-    val customThemeProfile by viewModel.customThemeProfile.observeAsState(CustomThemeProfile.empty())
+    val observedSelectedTheme by viewModel.visualTheme.observeAsState(viewModel.currentVisualTheme)
+    val observedCustomThemeImageUri by viewModel.customThemeImageUri.observeAsState("")
+    val observedCustomThemeCropAnchor by viewModel.customThemeCropAnchor.observeAsState("center")
+    val observedCustomThemeImageUris by viewModel.customThemeImageUris.observeAsState(emptyMap())
+    val observedCustomThemeCropAnchors by viewModel.customThemeCropAnchors.observeAsState(emptyMap())
+    val observedCustomThemeProfile by viewModel.customThemeProfile.observeAsState(CustomThemeProfile.empty())
+    val selectedTheme = observedSelectedTheme ?: viewModel.currentVisualTheme
+    val customThemeImageUri = observedCustomThemeImageUri.orEmpty()
+    val customThemeCropAnchor = observedCustomThemeCropAnchor ?: "center"
+    val customThemeImageUris = observedCustomThemeImageUris.orEmpty()
+    val customThemeCropAnchors = observedCustomThemeCropAnchors.orEmpty()
+    val customThemeProfile = observedCustomThemeProfile ?: CustomThemeProfile.empty()
     val themes = remember(viewModel) { viewModel.visualThemes }
     val visualTheme = LocalYunJiVisualTheme.current
     val widgetSnapshot = remember(homeWeatherData, homeWeatherUpdateTime, temperatureUnit) {
@@ -94,7 +99,9 @@ fun PersonalizationScreen(
                     CustomThemeImageStore.importImage(context, sourceUri)
                 }.also {
                     if (deleteCacheAfterImport) {
-                        CustomThemeImageStore.deleteCacheImage(context, sourceUri.toString())
+                        runCatching {
+                            CustomThemeImageStore.deleteCacheImage(context, sourceUri.toString())
+                        }
                     }
                 }
             }
@@ -403,7 +410,6 @@ fun PersonalizationScreen(
                         }
                     },
                     onOpenCustomThemeEditor = {
-                        viewModel.setVisualTheme(VisualThemeUtils.THEME_CUSTOM_1)
                         showingCustomThemeEditor = true
                     }
                 )

@@ -187,12 +187,14 @@ object WeatherWidgetSnapshotFactory {
         ) {
             return CustomThemeAsset.empty()
         }
-        return CustomThemeResolver.resolve(
-            customThemeProfile,
-            weatherKey,
-            night,
-            normalizeMinute(minuteOfDay)
-        )
+        return runCatching {
+            CustomThemeResolver.resolve(
+                customThemeProfile,
+                weatherKey,
+                night,
+                normalizeMinute(minuteOfDay)
+            )
+        }.getOrDefault(CustomThemeAsset.empty())
     }
 
     private fun isNight(sunrise: String, sunset: String, minuteOfDay: Int): Boolean {

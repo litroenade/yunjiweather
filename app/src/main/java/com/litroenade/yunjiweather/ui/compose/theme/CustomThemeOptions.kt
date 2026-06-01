@@ -33,7 +33,9 @@ data class CustomThemeOptions(
     ): CustomThemeImage {
         val weatherKey = CustomThemeWeatherKey.fromWeatherCategory(sceneSpec.category)
         if (!profile.isEmpty) {
-            val asset = CustomThemeResolver.resolve(profile, weatherKey, lightContext.isNight, minuteOfDay)
+            val asset = runCatching {
+                CustomThemeResolver.resolve(profile, weatherKey, lightContext.isNight, minuteOfDay)
+            }.getOrDefault(CustomThemeAsset.empty())
             if (!asset.isEmpty) {
                 return CustomThemeImage(
                     assetId = asset.id,
